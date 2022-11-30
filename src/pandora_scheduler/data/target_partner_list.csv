@@ -1,0 +1,13 @@
+Planet Name,Planet Simbad Name,Star Name,Star Simbad Name,Gravity (m/s^2),Gravity (cgs calced),Gravity (log cgs),Gravity (cgs),Planet temp(K),Stellar temp (K),Stellar radius (solar radii),Planet Mass (earth mass),Planet radius (earth radii),Planet radius (jupiter radii),Transit depth (ppm),Jmag,Transit duration (s),rp/rs (from t_depth),rp/rs calc,ppm from transit_depth,ppm calc,Period (day),Period Uncertainty (day),Transit Duration (hrs),Transit Epoch (BJD_TDB-2400000.5),Transit Epoch Uncertainty
+GJ 9827 b,GJ 9827 b,GJ 9827,GJ 9827,,,,,,,,,,,,,,,,,,1.2089819,7.10E-06,1.2598,57738.32586,2.60E-04
+GJ 9827 d,GJ 9827 d,GJ 9827,GJ 9827,,,,,,,,,,,,,,,,,,6.2014698,6.26E-05,1.2264,57740.4611,4.40E-04
+K2-141 b,K2-141 b,K2-141,K2-141,,,,,,,,,,,,,,,,,,0.2803244,1.50E-06,0.94,57743.5716,2.20E-04
+K2-3 c,K2-3 c,K2-3,K2-3,,,,,,,,,,,,,,,,,,24.646582,4.10E-05,3.428,56811.78018,1.00E-03
+K2-3 d,K2-3 d,K2-3,K2-3,,,,,,,,,,,,,,,,,,44.55646,1.10E-04,4.17,56825.72346,5.60E-04
+L 98-59 b,L 98-59 b,L 98-59,L 98-59,,,,,,,,,,,,,,,,,,2.2531136,1.50E-06,1.0693,58365.6708,1.00E-04
+LHS 1140 b,LHS 1140 b,LHS 1140,LHS 1140,,,,,,,,,,,,,,,,,,24.73694,4.10E-04,2.055,56915.21154,4.00E-05
+LTT 1445 A c,BD-17 588Ac,LTT 1445 A,BD-17 588A,,,,,,,,,,,,,,,,,,3.1239035,3.60E-06,0.482,58412.08159,5.90E-04
+TRAPPIST-1 c,TRAPPIST-1 c,TRAPPIST-1,TRAPPIST-1,,,,,,,,,,,,,,,,,,2.421937,1.80E-05,0.7005,57512.38019,1.60E-04
+TRAPPIST-1 d,TRAPPIST-1 d,TRAPPIST-1,TRAPPIST-1,,,,,,,,,,,,,,,,,,4.049219,2.60E-05,0.8145,57669.64165,3.50E-04
+TRAPPIST-1 g,TRAPPIST-1 g,TRAPPIST-1,TRAPPIST-1,,,,,,,,,,,,,,,,,,12.352446,5.40E-05,1.137,57664.84937,2.10E-04
+TRAPPIST-1 h,TRAPPIST-1 h,TRAPPIST-1,TRAPPIST-1,,,,,,,,,,,,,,,,,,18.772866,2.14E-04,1.269,57662.05284,3.70E-04
