@@ -7,10 +7,12 @@ from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from datetime import timedelta
 from progressbar import ProgressBar
-import barycorr 
+from . import barycorr 
 
-# from . import PACKAGEDIR
-PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
+from . import PACKAGEDIR
+# PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
+
+
 
 def star_vis(sun_block:float, moon_block:float, earth_block:float, 
                obs_start:str, obs_stop:str):
