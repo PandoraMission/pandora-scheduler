@@ -72,6 +72,7 @@ def Schedule(pandora_start:str, pandora_stop:str, obs_window:timedelta,
 ### Initialize schedule tracker
     planet_names = pd.DataFrame(np.array(target_data['Planet Name']), columns=['Planet Name'])
     transit_need = pd.DataFrame(np.ones(len(planet_names))*10, columns=['Transits Needed'])
+    # transit_need = pd.DataFrame(np.ones(len(planet_names))*1, columns=['Transits Needed'])
     transit_have = pd.DataFrame(np.zeros(len(planet_names)), columns=['Transits Acquired'])
     tracker = pd.concat([planet_names, transit_need, transit_have], axis=1)
 
@@ -122,7 +123,7 @@ def Schedule(pandora_start:str, pandora_stop:str, obs_window:timedelta,
 ### Begin scheduling
     start = sched_start
     stop  = start + obs_window
-    sched_df = pd.DataFrame([], columns=['Target', 'Observation Start', 'Observation Stop', 'Quality Factor'])
+    sched_df = pd.DataFrame([], columns=['Target', 'Observation Start', 'Observation Stop', 'Schedule Factor', 'Quality Factor'])
 
     while (stop <= sched_stop):
         tracker = tracker.sort_values(by=['Transit Priority']).reset_index(drop=True)
@@ -205,9 +206,9 @@ def Schedule(pandora_start:str, pandora_stop:str, obs_window:timedelta,
                         s_factor = gap_time/obs_window
 
                         # Calc a quality factor (currently based on transit coverage, SAA crossing, scheduling efficiency)
-                        t_cover   = 1-planet_data['Transit_Coverage'][j] # maximize
+                        trans_cover   = 1-planet_data['Transit_Coverage'][j] 
                         saa_cover = planet_data['SAA_Overlap'][j]
-                        q_factor  = (0.5*t_cover) + (0.25*saa_cover) + (0.25*s_factor)
+                        q_factor  = (0.5*trans_cover) + (0.25*saa_cover) + (0.25*s_factor)
 
                         temp = [[planet_name, obs_start, gap_time, s_factor, t_factor, q_factor]]
                         temp = pd.DataFrame(temp, columns=['Planet Name', 'Obs Start', 'Obs Gap Time', 
@@ -216,14 +217,14 @@ def Schedule(pandora_start:str, pandora_stop:str, obs_window:timedelta,
 
 ### Check if there's no transits occuring during the observing window
         if len(temp_df) == 0:
-            free = [['Free Time', obs_start, obs_stop]]
+            free = [['Free Time', start, stop]]
             free = pd.DataFrame(free, columns=['Target', 'Observation Start', 'Observation Stop'])
             sched_df = pd.concat([sched_df, free], axis=0)
             
-            print('No transits in window!', obs_start, obs_stop)
-            start = obs_stop
+            print('No transits in window!', start, stop)
+            start = stop
             stop  = start + obs_window
-            pass
+            continue
             
         else:
             # Check Transit Factor first for planets running out of available transits
@@ -238,14 +239,16 @@ def Schedule(pandora_start:str, pandora_stop:str, obs_window:timedelta,
             planet_name = temp_df['Planet Name'][0]    
             obs_start   = temp_df['Obs Start'][0]
             obs_stop    = obs_start + timedelta(hours=24)
+            s_factor    = temp_df['Schedule Factor'][0]
+            q_factor    = temp_df['Quality Factor'][0]
             
             if (obs_rng[0] < obs_start):
                 free = [['Free Time', obs_rng[0], obs_start]]
                 free = pd.DataFrame(free, columns=['Target', 'Observation Start', 'Observation Stop'])
                 sched_df = pd.concat([sched_df, free], axis=0)
 
-            sched = [[planet_name, obs_start, obs_stop, 1-q_factor]]
-            sched = pd.DataFrame(sched, columns=['Target', 'Observation Start', 'Observation Stop', 'Quality Factor'])
+            sched = [[planet_name, obs_start, obs_stop, s_factor, 1-q_factor]]
+            sched = pd.DataFrame(sched, columns=['Target', 'Observation Start', 'Observation Stop', 'Schedule Factor', 'Quality Factor'])
             sched_df = pd.concat([sched_df, sched], axis=0)
 
             # update tracker info
@@ -268,5 +271,8 @@ def Schedule(pandora_start:str, pandora_stop:str, obs_window:timedelta,
     sched_df.to_csv((f'{PACKAGEDIR}/data/' + save_fname), sep=',', index=False)
 
 if __name__=="__main__":
+
+    # sched_start   = '2025-12-01 00:00:00'
+    # sched_stop    = '2025-12-30 00:00:00'
     Schedule(pandora_start, pandora_stop, obs_window, transit_coverage_min, )
                 # sched_start, sched_stop)
