@@ -10,9 +10,6 @@ from progressbar import ProgressBar
 from . import barycorr 
 
 from . import PACKAGEDIR
-# PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-
-
 
 def star_vis(sun_block:float, moon_block:float, earth_block:float, 
                obs_start:str, obs_stop:str):
@@ -62,54 +59,51 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
     gmat_mjd_utc =np.array(gmat_data['Earth.UTCModJulian']) + 2430000.0 - 2400000.5
 
 
-### Extract GMAT positions in MJ2000 Earth fixed cartesian coordinates
-    # Earth
-    gmat_ex = np.array(gmat_data['Earth.EarthMJ2000Eq.X'])
-    gmat_ey = np.array(gmat_data['Earth.EarthMJ2000Eq.Y'])
-    gmat_ez = np.array(gmat_data['Earth.EarthMJ2000Eq.Z'])
-
-    # Pandora
-    gmat_px = np.array(gmat_data['Pandora.EarthMJ2000Eq.X'])
-    gmat_py = np.array(gmat_data['Pandora.EarthMJ2000Eq.Y'])
-    gmat_pz = np.array(gmat_data['Pandora.EarthMJ2000Eq.Z'])
-
-    # Sun
-    gmat_sx = np.array(gmat_data['Sun.EarthMJ2000Eq.X'])
-    gmat_sy = np.array(gmat_data['Sun.EarthMJ2000Eq.Y'])
-    gmat_sz = np.array(gmat_data['Sun.EarthMJ2000Eq.Z'])
-
-    # Moon
-    gmat_mx = np.array(gmat_data['Luna.EarthMJ2000Eq.X'])
-    gmat_my = np.array(gmat_data['Luna.EarthMJ2000Eq.Y'])
-    gmat_mz = np.array(gmat_data['Luna.EarthMJ2000Eq.Z'])
-
-    # Pandora's Lat and Lon
-    gmat_lat = np.array(gmat_data['Pandora.Earth.Latitude'])
-    gmat_lon = np.array(gmat_data['Pandora.Earth.Longitude'])
+### Extract GMAT positions in MJ2000 Earth Centric (EC) cartesian coordinates
+    # Earth Centric (EC) coordinates from GMAT
+    earth_vectors_gmat = np.asarray(gmat_data[['Earth.EarthMJ2000Eq.X', 'Earth.EarthMJ2000Eq.Y', 'Earth.EarthMJ2000Eq.Z']])
+    pandora_vectors_gmat = np.asarray(gmat_data[['Pandora.EarthMJ2000Eq.X', 'Pandora.EarthMJ2000Eq.Y', 'Pandora.EarthMJ2000Eq.Z']])
+    sun_vectors_gmat = np.asarray(gmat_data[['Sun.EarthMJ2000Eq.X', 'Sun.EarthMJ2000Eq.Y', 'Sun.EarthMJ2000Eq.Z']])
+    moon_vectors_gmat = np.asarray(gmat_data[['Luna.EarthMJ2000Eq.X', 'Luna.EarthMJ2000Eq.Y', 'Luna.EarthMJ2000Eq.Z']])
 
 
 ### Interpolate all positions from GMAT to map to 1 minute intervals
-    # Earth
-    ex = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_ex)
-    ey = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_ey)
-    ez = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_ez)
+    earth_vectors_ec = np.empty((len(t_mjd_utc), 3))
+    pandora_vectors_ec = np.empty((len(t_mjd_utc), 3))
+    sun_vectors_ec = np.empty((len(t_mjd_utc), 3))
+    moon_vectors_ec = np.empty((len(t_mjd_utc), 3))
+    for i in range(3):
+        earth_vectors_ec[:, i] = np.interp(t_mjd_utc, gmat_mjd_utc, earth_vectors_gmat[:, i])
+        pandora_vectors_ec[:, i] = np.interp(t_mjd_utc, gmat_mjd_utc, pandora_vectors_gmat[:, i])
+        sun_vectors_ec[:, i] = np.interp(t_mjd_utc, gmat_mjd_utc, sun_vectors_gmat[:, i])
+        moon_vectors_ec[:, i] = np.interp(t_mjd_utc, gmat_mjd_utc, moon_vectors_gmat[:, i])
 
-    # Pandora
-    px = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_px)
-    py = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_py)
-    pz = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_pz)
 
-    # Moon
-    mx = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_mx)
-    my = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_my)
-    mz = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_mz)
+### Coordinate shift to Pandora Centric (PC) reference frame
+    earth_vectors_pc = earth_vectors_ec-pandora_vectors_ec
+    sun_vectors_pc = sun_vectors_ec-pandora_vectors_ec
+    moon_vectors_pc = moon_vectors_ec-pandora_vectors_ec
 
-    # Sun
-    sx = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_sx)
-    sy = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_sy)
-    sz = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_sz)
 
-    # Pandora Latitude & Longitude
+### Create SkyCoord for angular seperation calculations
+    earth_vectors_pc = SkyCoord(earth_vectors_pc, unit='km', representation_type='cartesian') 
+    sun_vectors_pc = SkyCoord(sun_vectors_pc, unit='km', representation_type='cartesian')
+    moon_vectors_pc = SkyCoord(moon_vectors_pc, unit='km', representation_type='cartesian')  
+
+
+### Define Constraints for each Solar system body
+    Sun_constraint   = sun_block   * u.deg
+    Moon_constraint  = moon_block  * u.deg
+    Earth_constraint = earth_block * u.deg #based on worst case orbital alt of 450km should be 63 deg
+
+    #Could be more robust to pull altitude from each time step but might be overkill
+    # Pandora_alt = 450
+    # Earth_constraint = np.arctan((1.*u.earthRad)/(1.*u.earthRad+Pandora_alt)).to(u.deg)
+
+### Pandora Latitude & Longitude
+    gmat_lat = np.array(gmat_data['Pandora.Earth.Latitude'])
+    gmat_lon = np.array(gmat_data['Pandora.Earth.Longitude'])
+
     gmat_lon_cont = np.copy(gmat_lon)
     for i in range(len(gmat_lon_cont)-1):
         if np.abs(gmat_lon_cont[i+1]-gmat_lon_cont[i]) > 100:
@@ -124,45 +118,6 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
 
     p_lon = p_lon * u.deg
     p_lat = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_lat) * u.deg
-
-
-### Coordinate shift to Pandora reference frame
-    #Earth 
-    exx = ex-px
-    eyy = ey-py
-    ezz = ez-pz
-
-    #Pandora
-    pxx = px-px
-    pyy = py-py
-    pzz = pz-pz
-
-    #Sun
-    sxx = sx-px
-    syy = sy-py
-    szz = sz-pz
-
-    #Moon
-    mxx = mx-px
-    myy = my-py
-    mzz = mz-pz
-
-
-### Create SkyCoord for angular seperation calculations
-    ss = SkyCoord(x=sxx, y=syy, z=szz, unit='km', representation_type='cartesian')
-    ee = SkyCoord(x=exx, y=eyy, z=ezz, unit='km', representation_type='cartesian')
-    mm = SkyCoord(x=mxx, y=myy, z=mzz, unit='km', representation_type='cartesian')
-    pp = SkyCoord(x=pxx, y=pyy, z=pzz, unit='km', representation_type='cartesian')
-
-
-### Define Constraints for each Solar system body
-    Sun_constraint   = sun_block   * u.deg
-    Moon_constraint  = moon_block  * u.deg
-    Earth_constraint = earth_block * u.deg #based on worst case orbital alt of 450km should be 63 deg
-
-    #Could be more robust to pull altitude from each time step but might be overkill
-    # Pandora_alt = 450
-    # Earth_constraint = np.arctan((1.*u.earthRad)/(1.*u.earthRad+Pandora_alt)).to(u.deg)
 
 ### Evaluate at each time step whether Pandora is crossing SAA
     # SAA coordinates at altitude of ~500km
@@ -188,21 +143,21 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         print('Analyzing constraints for:', star_name)
 
         #Evaluate at each time step whether target is blocked by each contraints
-        Sun_sep   = np.zeros(len(pp))
-        Moon_sep  = np.zeros(len(pp))
-        Earth_sep = np.zeros(len(pp))
-        Sun_req   = np.zeros(len(pp))
-        Moon_req  = np.zeros(len(pp))
-        Earth_req = np.zeros(len(pp))
+        Sun_sep   = np.zeros(len(sun_vectors_pc))
+        Sun_req   = np.zeros(len(sun_vectors_pc))
+        Moon_sep  = np.zeros(len(moon_vectors_pc))
+        Moon_req  = np.zeros(len(moon_vectors_pc))
+        Earth_sep = np.zeros(len(earth_vectors_pc))       
+        Earth_req = np.zeros(len(earth_vectors_pc))
 
         print('Calculating angular seperation requirements')
         pbar = ProgressBar()
-        for i in pbar(range(len(pp))):
-            Sun_sep[i]   = ss[i].separation(star_sc).deg
+        for i in pbar(range(len(sun_vectors_pc))):
+            Sun_sep[i]   = sun_vectors_pc[i].separation(star_sc).deg
             Sun_req[i]   = Sun_sep[i] * u.deg > Sun_constraint
-            Moon_sep[i]  = mm[i].separation(star_sc).deg
+            Moon_sep[i]  = moon_vectors_pc[i].separation(star_sc).deg
             Moon_req[i]  = Moon_sep[i] * u.deg > Moon_constraint
-            Earth_sep[i] = ee[i].separation(star_sc).deg
+            Earth_sep[i] = earth_vectors_pc[i].separation(star_sc).deg
             Earth_req[i] = Earth_sep[i] * u.deg > Earth_constraint
         all_req = Sun_req * Moon_req * Earth_req
 
@@ -213,12 +168,10 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
             os.makedirs(save_dir)
         
         #Save results for each star to csv file
-
         data = np.vstack((t_mjd_utc, saa_cross, all_req, Earth_sep, Moon_sep, Sun_sep))
         data = data.T.reshape(-1,6)
         vis_df = pd.DataFrame(data, columns = ['Time(MJD_UTC)', 'SAA_Crossing', \
             'Visible','Earth_Sep','Moon_Sep','Sun_Sep'])
-
         output_file_name = 'Visibility for %s.csv' %star_name
         vis_df.to_csv((save_dir + output_file_name), sep=',', index=False)
 
