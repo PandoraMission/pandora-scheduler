@@ -9,8 +9,8 @@ For it's scheduling of transits, this tool currently has three factors whose wei
 - Transit Coverage - how much of a transit will be captured by Pandora while maintaining keep out regions with the Sun, Moon, and Earth
 
 
-Requires
-~~~~~~~~~~
+# Requires
+----------
 - Internet to query external website for time conversion: https://astroutils.astronomy.osu.edu/time/bjd2utc.html
 - General Mission Analysis Tool (GMAT), a free open source tool for space mission design. Required to create orbital position file. More info on GMAT can be found here:
 https://software.nasa.gov/software/GSC-17177-1
