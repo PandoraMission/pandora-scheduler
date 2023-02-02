@@ -7,6 +7,7 @@ from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from datetime import timedelta
 from progressbar import ProgressBar
+import logging
 from . import barycorr 
 
 from . import PACKAGEDIR
@@ -45,7 +46,7 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
 
 
 ### Read in GMAT results
-    print('Importing GMAT data')
+    logging.info('Importing GMAT data')
     gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/GMAT_Pandora.txt', sep='\t')
 
     # Trim dataframe to slightly larger than date range of 
@@ -140,7 +141,7 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         star_name    = target_data['Star Name'][i]
         star_name_sc = target_data['Star Simbad Name'][i]
         star_sc      = SkyCoord.from_name(star_name_sc)
-        print('Analyzing constraints for:', star_name)
+        logging.info('Analyzing constraints for:', star_name)
 
         #Evaluate at each time step whether target is blocked by each contraints
         Sun_sep   = np.zeros(len(sun_vectors_pc))
@@ -333,9 +334,9 @@ def Transit_overlap(target_list:str, partner_list:str, star_name:str):
     total_planets.sort()
 
     if len(total_planets) < 2:
-        print('Only one planet in list around ', star_name)
+        logging.info('Only one planet in list around ', star_name)
     else:
-        print('Collecting Transit Times for all planets in list around ', star_name)
+        logging.info('Collecting Transit Times for all planets in list around ', star_name)
         for j in range(len(total_planets)):
             planet_name = total_planets[j]
             planet_data = pd.read_csv(f'{PACKAGEDIR}/data/targets/' + star_name + '/' + planet_name + '/' + 
@@ -375,11 +376,11 @@ def Transit_overlap(target_list:str, partner_list:str, star_name:str):
 
             for m in range(len(All_start_transits.columns)):
                 if All_start_transits.columns[m] == planet_name:
-                    print('Analyzing:', planet_name)
+                    logging.info('Analyzing:', planet_name)
                     continue
                 else:
                     planet_partner = All_start_transits.columns[m]
-                    # print('Checking ', planet_name, ' against: ', planet_partner)
+                    logging.info('Checking ', planet_name, ' against: ', planet_partner)
                 
                 for n in range(len(All_start_transits[planet_name].dropna())):
                     

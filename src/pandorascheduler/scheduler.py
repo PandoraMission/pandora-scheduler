@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from astropy.time import Time
 from datetime import datetime, timedelta
+import logging
 
 # from . import PACKAGEDIR
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
@@ -126,20 +127,12 @@ def Schedule(
             planet_data.index[(planet_data["Transit_Coverage"] < transit_coverage_min)]
         ).reset_index(drop=True)
 
-        print(
-            planet_name,
-            "has",
-            len(planet_data),
-            "transits with greater transit coverage than",
-            transit_coverage_min,
-        )
+        logging.info(planet_name, "has", len(planet_data), "transits with greater transit coverage than", transit_coverage_min,)
 
         start_transits = Time(
-            planet_data["Transit_Start"], format="mjd", scale="utc"
-        ).to_value("datetime")
+            planet_data["Transit_Start"], format="mjd", scale="utc").to_value("datetime")
         end_transits = Time(
-            planet_data["Transit_Stop"], format="mjd", scale="utc"
-        ).to_value("datetime")
+            planet_data["Transit_Stop"], format="mjd", scale="utc").to_value("datetime")
         p_trans = planet_data.index[
             (pandora_start <= start_transits) & (end_transits <= pandora_stop)
         ]
@@ -221,7 +214,7 @@ def Schedule(
             )
             sched_df = pd.concat([sched_df, sched], axis=0)
 
-            print("Scheduled no phase event", target)
+            logging.info("Scheduled no phase event", target)
             start = obs_stop
             stop = start + obs_window
             continue
@@ -371,7 +364,7 @@ def Schedule(
             )
             sched_df = pd.concat([sched_df, free], axis=0)
 
-            print("No transits in window!", start, stop)
+            logging.info("No transits in window!", start, stop)
             start = stop
             stop = start + obs_window
             continue
@@ -383,7 +376,7 @@ def Schedule(
                 temp_df = temp_df.sort_values(by=["Transit Factor"]).reset_index(
                     drop=True
                 )
-                print(temp_df["Planet Name"][0], "Transit Factor Warning")
+                logging.warning(temp_df["Planet Name"][0], "Transit Factor Warning")
 
             # Otherwise sort by Quality Factor and schedule best target
             else:
@@ -453,7 +446,7 @@ def Schedule(
                 ]
             )
 
-            print(
+            logging.info(
                 "Scheduled the ",
                 tracker.loc[
                     (tracker["Planet Name"] == planet_name), "Transits Acquired"
