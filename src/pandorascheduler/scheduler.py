@@ -148,7 +148,6 @@ def Schedule(
         ]
         pandora_transits_left.append(len(p_trans))
         schedule_transits_left.append(len(s_trans))
-    # breakpoint()
     pandora_transits_left = pd.DataFrame(
         pandora_transits_left, columns=["Transits Left in Lifetime"]
     )
@@ -330,10 +329,6 @@ def Schedule(
 
                         # Calc a quality factor (currently based on transit coverage, SAA crossing, scheduling efficiency)
                         trans_cover = planet_data["Transit_Coverage"][j]  # maximize
-                        if trans_cover < transit_coverage_min:
-                            print("how", planet_name)
-                            print(planet_data)
-                            breakpoint()
                         saa_cover = planet_data["SAA_Overlap"][j]
                         q_factor = (
                             (sched_wts[0] * trans_cover)
