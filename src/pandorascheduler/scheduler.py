@@ -48,7 +48,7 @@ def Schedule(
     csv file
         file containing schedule for Pandora
     """
-    assert sum(sched_wts) == 1., "Sum of weights should equal 1"
+    assert sum(sched_wts) == 1.0, "Sum of weights should equal 1"
 
     if sched_start == None:
         sched_start = pandora_start
@@ -127,12 +127,20 @@ def Schedule(
             planet_data.index[(planet_data["Transit_Coverage"] < transit_coverage_min)]
         ).reset_index(drop=True)
 
-        logging.info(planet_name, "has", len(planet_data), "transits with greater transit coverage than", transit_coverage_min,)
+        logging.info(
+            planet_name,
+            "has",
+            len(planet_data),
+            "transits with greater transit coverage than",
+            transit_coverage_min,
+        )
 
         start_transits = Time(
-            planet_data["Transit_Start"], format="mjd", scale="utc").to_value("datetime")
+            planet_data["Transit_Start"], format="mjd", scale="utc"
+        ).to_value("datetime")
         end_transits = Time(
-            planet_data["Transit_Stop"], format="mjd", scale="utc").to_value("datetime")
+            planet_data["Transit_Stop"], format="mjd", scale="utc"
+        ).to_value("datetime")
         p_trans = planet_data.index[
             (pandora_start <= start_transits) & (end_transits <= pandora_stop)
         ]
@@ -173,7 +181,8 @@ def Schedule(
             "Transit Coverage",
             "SAA Overlap",
             "Schedule Factor",
-            "Transit Factor" "Quality Factor",
+            "Transit Factor",
+            "Quality Factor",
         ],
     )
 
@@ -252,8 +261,8 @@ def Schedule(
                 planet_data = planet_data.drop(
                     planet_data.index[(planet_data["Transit_Start"] < start)]
                 ).reset_index(drop=True)
-                start_transits = planet_data["Transit_Start"]
-                end_transits = planet_data["Transit_Stop"]
+                start_transits = planet_data["Transit_Start"].copy()
+                end_transits = planet_data["Transit_Stop"].copy()
                 # start_transits = Time(planet_data["Transit_Start"], format="mjd", scale="utc").to_value("datetime")
                 # end_transits = Time(planet_data["Transit_Stop"], format="mjd", scale="utc").to_value("datetime")
 
