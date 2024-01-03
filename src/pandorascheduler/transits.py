@@ -8,12 +8,21 @@ from astropy.time import Time
 from datetime import timedelta
 from progressbar import ProgressBar
 import logging
-from . import barycorr 
+import barycorr
+from tqdm import tqdm
+# from . import barycorr
 
-from . import PACKAGEDIR
+PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
+# from . import PACKAGEDIR
+
+
 
 def star_vis(sun_block:float, moon_block:float, earth_block:float, 
-               obs_start:str, obs_stop:str):
+               obs_start:str, obs_stop:str, 
+               gmat_file:str = 'GMAT_pandora_450_20230713.csv',
+               obs_name:str = 'Pandora_450km_20230713',
+               save_pth:str = f'{PACKAGEDIR}/data/targets/',
+               targ_list:str = f'{PACKAGEDIR}/data/target_list.csv'):
     """ Determine visibility for target(s) host star with Pandora given avoidance angles
     for Sun, Moon, and Earth limb.
         
@@ -31,7 +40,12 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
     obs_stop:       string
                     Date and time of end of Pandora science observing 
                     ex. '2026-04-25 00:00:00'
-                                    
+    save_pth:       String
+                    Path to the directory to save the visibility results
+                    default: f'{PACKAGEDIR}/data/targets/'
+    targ_list:      String
+                    Path to the target list to consider for visibility calculations
+                    default: f'{PACKAGEDIR}/data/target_list.csv'
     Returns
     -------
     csv file
@@ -47,7 +61,7 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
 
 ### Read in GMAT results
     logging.info('Importing GMAT data')
-    gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/GMAT_Pandora.txt', sep='\t')
+    gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep='\t')
 
     # Trim dataframe to slightly larger than date range of 
     # Pandora science lifetime defined as obs_start and obs_stop
@@ -63,7 +77,7 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
 ### Extract GMAT positions in MJ2000 Earth Centric (EC) cartesian coordinates
     # Earth Centric (EC) coordinates from GMAT
     earth_vectors_gmat = np.asarray(gmat_data[['Earth.EarthMJ2000Eq.X', 'Earth.EarthMJ2000Eq.Y', 'Earth.EarthMJ2000Eq.Z']])
-    pandora_vectors_gmat = np.asarray(gmat_data[['Pandora.EarthMJ2000Eq.X', 'Pandora.EarthMJ2000Eq.Y', 'Pandora.EarthMJ2000Eq.Z']])
+    pandora_vectors_gmat = np.asarray(gmat_data[[f'{obs_name}.EarthMJ2000Eq.X', f'{obs_name}.EarthMJ2000Eq.Y', f'{obs_name}.EarthMJ2000Eq.Z']])
     sun_vectors_gmat = np.asarray(gmat_data[['Sun.EarthMJ2000Eq.X', 'Sun.EarthMJ2000Eq.Y', 'Sun.EarthMJ2000Eq.Z']])
     moon_vectors_gmat = np.asarray(gmat_data[['Luna.EarthMJ2000Eq.X', 'Luna.EarthMJ2000Eq.Y', 'Luna.EarthMJ2000Eq.Z']])
 
@@ -102,9 +116,13 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
     # Earth_constraint = np.arctan((1.*u.earthRad)/(1.*u.earthRad+Pandora_alt)).to(u.deg)
 
 ### Pandora Latitude & Longitude
-    gmat_lat = np.array(gmat_data['Pandora.Earth.Latitude'])
-    gmat_lon = np.array(gmat_data['Pandora.Earth.Longitude'])
-
+    gmat_lat = np.array(gmat_data[f'{obs_name}.Earth.Latitude'])
+    gmat_lon = np.array(gmat_data[f'{obs_name}.Earth.Longitude'])
+    
+    
+    
+    
+    
     gmat_lon_cont = np.copy(gmat_lon)
     for i in range(len(gmat_lon_cont)-1):
         if np.abs(gmat_lon_cont[i+1]-gmat_lon_cont[i]) > 100:
@@ -116,7 +134,12 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
             p_lon = p_lon + 360        
         if p_lon[i] < -180:
             p_lon[i:] = p_lon[i:] + 360
-
+    
+    
+    
+    
+    
+    
     p_lon = p_lon * u.deg
     p_lat = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_lat) * u.deg
 
@@ -127,54 +150,59 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
     saa_lon_max =  30. * u.deg
     saa_lon_min = -90. * u.deg
     saa_cross   = np.zeros(len(p_lat))
+    
+    
+    
     for i in range(len(p_lat)):
         if (saa_lat_min <= p_lat[i]) and (p_lat[i] <= saa_lat_max) and \
         (saa_lon_min <= p_lon[i]) and (p_lon[i] <= saa_lon_max):
             saa_cross[i] = 1.
 
 
+
+
 ### Import Target list
-    target_data = pd.read_csv(f'{PACKAGEDIR}/data/target_list.csv', sep=',')
+    target_data = pd.read_csv(targ_list, sep=',')
     
     #Cycle through host star targets
-    for i in range(len(target_data['Star Simbad Name'])):
+    for i in tqdm(range(len(target_data['Star Simbad Name']))):
+        
         star_name    = target_data['Star Name'][i]
         star_name_sc = target_data['Star Simbad Name'][i]
         star_sc      = SkyCoord.from_name(star_name_sc)
         logging.info('Analyzing constraints for:', star_name)
-
-        #Evaluate at each time step whether target is blocked by each contraints
-        Sun_sep   = np.zeros(len(sun_vectors_pc))
-        Sun_req   = np.zeros(len(sun_vectors_pc))
-        Moon_sep  = np.zeros(len(moon_vectors_pc))
-        Moon_req  = np.zeros(len(moon_vectors_pc))
-        Earth_sep = np.zeros(len(earth_vectors_pc))       
-        Earth_req = np.zeros(len(earth_vectors_pc))
-
-        print('Calculating angular seperation requirements')
-        pbar = ProgressBar()
-        for i in pbar(range(len(sun_vectors_pc))):
-            Sun_sep[i]   = sun_vectors_pc[i].separation(star_sc).deg
-            Sun_req[i]   = Sun_sep[i] * u.deg > Sun_constraint
-            Moon_sep[i]  = moon_vectors_pc[i].separation(star_sc).deg
-            Moon_req[i]  = Moon_sep[i] * u.deg > Moon_constraint
-            Earth_sep[i] = earth_vectors_pc[i].separation(star_sc).deg
-            Earth_req[i] = Earth_sep[i] * u.deg > Earth_constraint
-        all_req = Sun_req * Moon_req * Earth_req
-
-        #Check if folder exists for planet and if not create new folder for 
+        
+        #Check if folder exists for target and if not create new folder for 
         #output products
-        save_dir = f'{PACKAGEDIR}/data/targets/' + star_name + '/'
+        save_dir = save_pth + star_name + '/'
+        output_file_name = 'Visibility for %s.csv' %star_name
+        save_name = save_dir + output_file_name
         if os.path.exists(save_dir) != True:
             os.makedirs(save_dir)
+            
+        #Also check if vis calc have already been done for the target
+        else:
+            if os.path.exists(save_name) == True:
+                #Skip this round of the loop if vis calcs have been done
+                continue
+
+        #Evaluate at each time step whether target is blocked by each contraints
+        Sun_sep   = sun_vectors_pc.separation(star_sc).deg
+        Sun_req   = Sun_sep*u.deg > Sun_constraint
+        Moon_sep  = moon_vectors_pc.separation(star_sc).deg
+        Moon_req  = Moon_sep*u.deg > Moon_constraint
+        Earth_sep = earth_vectors_pc.separation(star_sc).deg       
+        Earth_req = Earth_sep*u.deg > Earth_constraint
+        all_req = Sun_req * Moon_req * Earth_req
+        
         
         #Save results for each star to csv file
         data = np.vstack((t_mjd_utc, saa_cross, all_req, Earth_sep, Moon_sep, Sun_sep))
         data = data.T.reshape(-1,6)
         vis_df = pd.DataFrame(data, columns = ['Time(MJD_UTC)', 'SAA_Crossing', \
             'Visible','Earth_Sep','Moon_Sep','Sun_Sep'])
-        output_file_name = 'Visibility for %s.csv' %star_name
-        vis_df.to_csv((save_dir + output_file_name), sep=',', index=False)
+        
+        vis_df.to_csv((save_name), sep=',', index=False)
 
 
 
@@ -216,16 +244,26 @@ def transit_timing(target_list:str, planet_name:str, star_name:str):
     target_data = pd.read_csv(f'{PACKAGEDIR}/data/' + target_list, sep=',')
     planet_name_sc = target_data.loc[target_data['Planet Name'] == planet_name,
                                 'Planet Simbad Name'].iloc[0]
-    planet_sc = SkyCoord.from_name(planet_name_sc)
+    planet_sc = SkyCoord.from_name(star_name)
 
     transit_dur = target_data.loc[target_data['Planet Name'] == planet_name, 
                             'Transit Duration (hrs)'].iloc[0] * u.hour
     period = target_data.loc[target_data['Planet Name'] == planet_name, 
-                            'Period (day)'].iloc[0] *u.day
+                            'Period (days)'].iloc[0] *u.day
                             
     epoch_BJD_TDB = target_data.loc[target_data['Planet Name'] == planet_name, 
                 'Transit Epoch (BJD_TDB-2400000.5)'].iloc[0]+2400000.5
+    
+    
+    
+    
     epoch_JD_UTC  = barycorr.bjd2utc(epoch_BJD_TDB, planet_sc.ra.degree, planet_sc.dec.degree)
+    
+    
+    
+    
+    
+    
     epoch_JD_UTC  = Time(epoch_JD_UTC, format='jd', scale= 'utc')
     epoch_MJD_UTC = Time(epoch_JD_UTC.mjd, format='mjd', scale='utc')
 
