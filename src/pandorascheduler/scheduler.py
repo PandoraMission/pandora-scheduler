@@ -673,29 +673,6 @@ def Schedule(
     sched_df.to_csv((f"{PACKAGEDIR}/data/" + save_fname), sep=",", index=False)
     return tracker
 
-
-#Default values for parameters used
-if __name__ == "__main__":
-
-    # Specify observing parameters
-    obs_window = timedelta(hours=24.0)
-    pandora_start = "2025-04-25 00:00:00"
-    pandora_stop = "2027-04-25 00:00:00"
-
-    # sched_wts[transit coverage, saa overlap, schedule factor]
-    # sched_wts = [0.5, 0.25, 0.25]
-    sched_wts = [0.0, 0.0, 1.0]
-    # sched_wts = [0., 0., 0.]
-    transit_coverage_min = 0.25
-    #Schedule(pandora_start, pandora_stop, obs_window, transit_coverage_min, sched_wts)
-    # sched_start, sched_stop)
-    
-    #Mission requirements: >= 91 deg avoidance for Sun, >= 20 deg avoidance for Moon and Earth limbs
-    blocks=[91.,40.,63.]
-    target_list='target_list.csv'
-    target_partner_list='target_partner_list.csv'
-
-
 def Schedule_aux(start, stop, aux_key, aux_list, **kwargs):
     
     obs_rng = pd.date_range(start, stop, freq="min")
@@ -919,3 +896,27 @@ def Schedule_all_scratch(
     
 # Need a functional addition to add in auxilliary science to the scheduler
 # Especially need prioritization of aux and to put aux in blank times
+    
+#Default values for parameters used
+if __name__ == "__main__":
+
+    # Specify observing parameters
+    obs_window = timedelta(hours=24.0)
+    pandora_start = "2025-04-25 00:00:00"
+    pandora_stop = "2027-04-25 00:00:00"
+
+    # sched_wts[transit coverage, saa overlap, schedule factor]
+    # sched_wts = [0.5, 0.25, 0.25]
+    sched_wts = [0.0, 0.0, 1.0]
+    # sched_wts = [0., 0., 0.]
+    transit_coverage_min = 0.25
+    #Schedule(pandora_start, pandora_stop, obs_window, transit_coverage_min, sched_wts)
+    # sched_start, sched_stop)
+    
+    #Mission requirements: >= 91 deg avoidance for Sun, >= 20 deg avoidance for Moon and Earth limbs
+    blocks=[91.,40.,63.]
+    target_list='target_list.csv'
+    target_partner_list='target_partner_list.csv'
+
+    Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
+                         obs_window, transit_coverage_min, sched_wts, commissioning_time=30)
