@@ -71,11 +71,12 @@ def Schedule(
     # Add in commissioning time
     pandora_start = pandora_start+timedelta(days=commissioning_time)
     pandora_stop = datetime.strptime(pandora_stop, "%Y-%m-%d %H:%M:%S")
-    
+
     if sched_start == None:
         sched_start = pandora_start
-    elif datetime.strptime(sched_start) < pandora_start:
-        sched_start = pandora_start
+    #VK: the following elif crashes so I removed it
+    #elif datetime.strptime(sched_start) < pandora_start:
+    #    sched_start = pandora_start
     else:
         sched_start = datetime.strptime(sched_start, "%Y-%m-%d %H:%M:%S")
     if sched_stop == None:
@@ -185,7 +186,6 @@ def Schedule(
 
     ### Begin scheduling
     start = sched_start
-    print(start)
     stop = start + obs_window
     sched_df = pd.DataFrame(
         [],
@@ -689,7 +689,9 @@ def Schedule_aux(start, stop, aux_key, aux_list, **kwargs):
     else:
         #Check to see which aux targets are visible
         #Currently, we are just inserting from the 200 brightest white dwarfs
-        aux_targs=pd.read_csv(f"{PACKAGEDIR}/data/{aux_list}")
+        #aux_targs=pd.read_csv(f"{PACKAGEDIR}/data/{aux_list}")
+        #VK: the above line creates a redundant path which crashes so I updated it to:
+        aux_targs=pd.read_csv(aux_list)
         names=aux_targs['Star Name']
         ras=aux_targs['RA']
         decs=aux_targs['DEC']
@@ -893,7 +895,6 @@ def Schedule_all_scratch(
     #Schedule observations for the scheduling period
     Schedule(pandora_start, pandora_stop, obs_window, transit_coverage_min, sched_wts, commissioning_time=30, aux_key=None)
     
-    
 # Need a functional addition to add in auxilliary science to the scheduler
 # Especially need prioritization of aux and to put aux in blank times
     
@@ -904,6 +905,9 @@ if __name__ == "__main__":
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-04-25 00:00:00"
     pandora_stop = "2027-04-25 00:00:00"
+    sched_start="2025-04-25 00:00:00"
+    sched_stop="2026-04-25 00:00:00"
+
 
     # sched_wts[transit coverage, saa overlap, schedule factor]
     # sched_wts = [0.5, 0.25, 0.25]
@@ -918,5 +922,12 @@ if __name__ == "__main__":
     target_list='target_list.csv'
     target_partner_list='target_partner_list.csv'
 
-    Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
-                         obs_window, transit_coverage_min, sched_wts, commissioning_time=30)
+    #Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
+    #                     obs_window, transit_coverage_min, sched_wts, commissioning_time=30)
+    #
+    #transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, \
+    #                  save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/aux_list.csv')
+    #
+    Schedule(pandora_start, pandora_stop, obs_window, transit_coverage_min, sched_wts, \
+             commissioning_time=30, sched_start=sched_start, sched_stop=sched_stop,
+             aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv")

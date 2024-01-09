@@ -18,11 +18,11 @@ from astropy.coordinates import SkyCoord
 import random
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path='/mnt/ede2dab4-59b1-4f32-9008-20b08df035c8/Code (Laptop)/pandora-scheduler-main/src/pandorascheduler/data/Pandora_Schedule_0.0_0.0_1.0.csv'
-tar_vis_path='/mnt/ede2dab4-59b1-4f32-9008-20b08df035c8/Code (Laptop)/pandora-scheduler-main/src/pandorascheduler/data/targets/'
-aux_vis_path='/mnt/ede2dab4-59b1-4f32-9008-20b08df035c8/Code (Laptop)/pandora-scheduler-main/src/pandorascheduler/data/aux_targets/'
-tar_path='/mnt/ede2dab4-59b1-4f32-9008-20b08df035c8/Code (Laptop)/pandora-scheduler-main/src/pandorascheduler/data/target_list.csv'
-aux_path='/mnt/ede2dab4-59b1-4f32-9008-20b08df035c8/Code (Laptop)/pandora-scheduler-main/src/pandorascheduler/data/aux_list.csv'
+schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_0.0_0.0_1.0.csv'
+tar_vis_path=f'{PACKAGEDIR}/data/targets/'
+aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
+tar_path=f'{PACKAGEDIR}/data/target_list.csv'
+aux_path=f'{PACKAGEDIR}/data/aux_list.csv'
 t_list=pd.read_csv(tar_path)
 a_list=pd.read_csv(aux_path)
 sch=pd.read_csv(schedule_path)

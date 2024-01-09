@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+from astropy.coordinates import EarthLocation
 from astropy.time import Time
 from datetime import timedelta
 from progressbar import ProgressBar
@@ -52,14 +53,14 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         file containing target's host star visibility by Pandora 
     """
 
-### Create an array of Pandora's science observation year with exactly 1 min spacings
+    ### Create an array of Pandora's science observation year with exactly 1 min spacings
     # datetime 
     dt_iso_utc = pd.date_range(obs_start, obs_stop, freq='min')
     t_jd_utc   = Time(dt_iso_utc.to_julian_date(), format='jd', scale='utc').value
     t_mjd_utc  = Time(t_jd_utc-2400000.5, format='mjd', scale='utc').value
 
 
-### Read in GMAT results
+    ### Read in GMAT results
     logging.info('Importing GMAT data')
     gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep='\t')
 
@@ -69,12 +70,12 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
             (gmat_data['Earth.UTCModJulian']<=(t_jd_utc[-1]-2430000.0)+0.0007)]
 
 
-### Convert GMAT times into standard MJD_UTC
+    ### Convert GMAT times into standard MJD_UTC
     # Note: GMAT uses different offset for it's MJD (uses 2,430,000.0 rather than 2,400,000.5)
     gmat_mjd_utc =np.array(gmat_data['Earth.UTCModJulian']) + 2430000.0 - 2400000.5
 
 
-### Extract GMAT positions in MJ2000 Earth Centric (EC) cartesian coordinates
+    ### Extract GMAT positions in MJ2000 Earth Centric (EC) cartesian coordinates
     # Earth Centric (EC) coordinates from GMAT
     earth_vectors_gmat = np.asarray(gmat_data[['Earth.EarthMJ2000Eq.X', 'Earth.EarthMJ2000Eq.Y', 'Earth.EarthMJ2000Eq.Z']])
     pandora_vectors_gmat = np.asarray(gmat_data[[f'{obs_name}.EarthMJ2000Eq.X', f'{obs_name}.EarthMJ2000Eq.Y', f'{obs_name}.EarthMJ2000Eq.Z']])
@@ -82,7 +83,7 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
     moon_vectors_gmat = np.asarray(gmat_data[['Luna.EarthMJ2000Eq.X', 'Luna.EarthMJ2000Eq.Y', 'Luna.EarthMJ2000Eq.Z']])
 
 
-### Interpolate all positions from GMAT to map to 1 minute intervals
+    ### Interpolate all positions from GMAT to map to 1 minute intervals
     earth_vectors_ec = np.empty((len(t_mjd_utc), 3))
     pandora_vectors_ec = np.empty((len(t_mjd_utc), 3))
     sun_vectors_ec = np.empty((len(t_mjd_utc), 3))
@@ -94,19 +95,19 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         moon_vectors_ec[:, i] = np.interp(t_mjd_utc, gmat_mjd_utc, moon_vectors_gmat[:, i])
 
 
-### Coordinate shift to Pandora Centric (PC) reference frame
+    ### Coordinate shift to Pandora Centric (PC) reference frame
     earth_vectors_pc = earth_vectors_ec-pandora_vectors_ec
     sun_vectors_pc = sun_vectors_ec-pandora_vectors_ec
     moon_vectors_pc = moon_vectors_ec-pandora_vectors_ec
 
 
-### Create SkyCoord for angular seperation calculations
+    ### Create SkyCoord for angular seperation calculations
     earth_vectors_pc = SkyCoord(earth_vectors_pc, unit='km', representation_type='cartesian') 
     sun_vectors_pc = SkyCoord(sun_vectors_pc, unit='km', representation_type='cartesian')
     moon_vectors_pc = SkyCoord(moon_vectors_pc, unit='km', representation_type='cartesian')  
 
 
-### Define Constraints for each Solar system body
+    ### Define Constraints for each Solar system body
     Sun_constraint   = sun_block   * u.deg
     Moon_constraint  = moon_block  * u.deg
     Earth_constraint = earth_block * u.deg #based on worst case orbital alt of 450km should be 63 deg
@@ -115,7 +116,7 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
     # Pandora_alt = 450
     # Earth_constraint = np.arctan((1.*u.earthRad)/(1.*u.earthRad+Pandora_alt)).to(u.deg)
 
-### Pandora Latitude & Longitude
+    ### Pandora Latitude & Longitude
     gmat_lat = np.array(gmat_data[f'{obs_name}.Earth.Latitude'])
     gmat_lon = np.array(gmat_data[f'{obs_name}.Earth.Longitude'])
     
@@ -143,7 +144,7 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
     p_lon = p_lon * u.deg
     p_lat = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_lat) * u.deg
 
-### Evaluate at each time step whether Pandora is crossing SAA
+    ### Evaluate at each time step whether Pandora is crossing SAA
     # SAA coordinates at altitude of ~500km
     saa_lat_max =   0. * u.deg
     saa_lat_min = -40. * u.deg
@@ -161,7 +162,7 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
 
 
 
-### Import Target list
+    ### Import Target list
     target_data = pd.read_csv(targ_list, sep=',')
     
     #Cycle through host star targets
@@ -205,10 +206,6 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         vis_df.to_csv((save_name), sep=',', index=False)
 
 
-
-
-
-
 def transit_timing(target_list:str, planet_name:str, star_name:str):
     """ Determine primary transits for target(s) during Pandora's science 
     observation lifetime.
@@ -239,7 +236,6 @@ def transit_timing(target_list:str, planet_name:str, star_name:str):
     T_iso_utc = Time(T_mjd_utc.iso, format='iso', scale='utc')
     dt_iso_utc = T_iso_utc.to_value('datetime')
 
-
 ### Extract planet specific parameters from target list
     target_data = pd.read_csv(f'{PACKAGEDIR}/data/' + target_list, sep=',')
     planet_name_sc = target_data.loc[target_data['Planet Name'] == planet_name,
@@ -253,22 +249,23 @@ def transit_timing(target_list:str, planet_name:str, star_name:str):
                             
     epoch_BJD_TDB = target_data.loc[target_data['Planet Name'] == planet_name, 
                 'Transit Epoch (BJD_TDB-2400000.5)'].iloc[0]+2400000.5
-    
-    
-    
-    
-    epoch_JD_UTC  = barycorr.bjd2utc(epoch_BJD_TDB, planet_sc.ra.degree, planet_sc.dec.degree)
-    
-    
-    
-    
-    
-    
-    epoch_JD_UTC  = Time(epoch_JD_UTC, format='jd', scale= 'utc')
-    epoch_MJD_UTC = Time(epoch_JD_UTC.mjd, format='mjd', scale='utc')
 
+    #epoch_JD_UTC  = barycorr.bjd2utc(epoch_BJD_TDB, planet_sc.ra.degree, planet_sc.dec.degree) 
+    # VK note: Jason Eastman's website (barycorr.bjd2utc) is broken as of 2024-01-05. 
+    # Instead, use the implementation from https://github.com/shbhuk/barycorrpy/issues/54
 
-### Calculate transit times
+    observer_location = EarthLocation(lat = 0.*u.deg, lon = 0.*u.deg, height=450*u.km)
+    bjd_tdb = Time(epoch_BJD_TDB, format='jd', scale='tdb', location=observer_location)
+
+    # From BJD_TDB to JD_TDB
+    ltt_bary = bjd_tdb.light_travel_time(planet_sc, kind='barycentric', location=observer_location)
+    jd_tdb = bjd_tdb - ltt_bary    
+    
+    # From JD_TDB to JD_UTC
+    epoch_JD_UTC  = Time(jd_tdb, format='jd', scale= 'utc')
+    epoch_MJD_UTC = Time(jd_tdb.mjd, format='mjd', scale='utc')
+
+    ### Calculate transit times
     # Calculate Pre mid-transit time on target
     half_obs_width = 0.75*u.hour + \
         np.maximum((1.*u.hour+transit_dur/2), transit_dur)
