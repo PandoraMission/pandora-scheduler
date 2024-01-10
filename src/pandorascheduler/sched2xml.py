@@ -18,7 +18,7 @@ from astropy.coordinates import SkyCoord
 import random
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_0.0_0.0_1.0.csv'
+schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_0.0_0.0_1.0_2025-05-25.csv'
 tar_vis_path=f'{PACKAGEDIR}/data/targets/'
 aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
 tar_path=f'{PACKAGEDIR}/data/target_list.csv'
@@ -417,7 +417,10 @@ for i in tqdm(range(len(sch))):
 
 etstr=ET.tostring(cal, xml_declaration=True)
 
-dom = xml.dom.minidom.parseString(etstr)
+from xml.dom import minidom
+dom = minidom.parseString(etstr)
+
+#dom = xml.dom.minidom.parseString(etstr)
 pretty_xml_as_string = dom.toprettyxml()
 f=open(f'{PACKAGEDIR}/data/cal_pretty.xml', 'w+')
 f.write(pretty_xml_as_string)
