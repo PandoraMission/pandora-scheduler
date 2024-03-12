@@ -211,7 +211,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Ephemeris='sma=6828.14, ecc=0.0, inc=97.2188, aop=0.0, raan=303.263, ta=0.0',
                    Keepout_Angles='90.0, 40.0, 63.0',
                    Created=f'{str(datetime.now())}',
-                   Author="P Bonney",
+#                   Author="P Bonney",
                    Delivery_Id='',
                    )
 
@@ -329,10 +329,7 @@ for i in tqdm(range(1)):#len(sch))):
             #check for a visible transit if primary science target and visible
             #set flag 0 = non-primary target; 1 = primary target; 2 = in-transit
             if i_flag:
-                if np.any((tv_st <= sp)*(tv_sp >= st)):
-                    pr=2
-                else:
-                    pr=1
+                pr = 2 if np.any((tv_st <= sp)*(tv_sp >= st)) else 1
             else:
                 pr=0
             ###
@@ -426,90 +423,112 @@ for i in tqdm(range(1)):#len(sch))):
         #occultation tracker
         oc_tr=0
         
+        st=start
+        sp=v_time[v_change[0]]
+
         #case where the main target isn't visible at first
-        if not v_t[0]:
-            #set observation sequence
-            o_seq=ET.SubElement(visit,'Observation_Sequence', ID='001', TARGET=info['Target'][0])
-            st=start
-            sp=v_time[v_change[0]]
-            
-            o_seq.append(ET.Element('Timing', START=info['start'][0], STOP=info['stop'][0]))
-            o_seq.append(ET.Element('Boresight', RA=info['RA'][0], DEC=info['DEC'][0]))
-            i_params=ET.SubElement(o_seq, 'Payload_Parameters')
-            i_params.append(ET.Element('VISDA', vparam1='', vparam2=''))
-            i_params.append(ET.Element('NIRDA', irparam1='', irparam2=''))
-            o_seq.set('Priority', f'{oc_flag}')
-            
+        if not v_t[0]:            
+            target_, start_, stop_, ra_, dec_ = info['Target'][0], \
+                info['start'][0], info['stop'][0], \
+                    info['RA'][0], info['DEC'][0]
+            priority_ = f'{oc_flag}'
             oc_tr += 1
-        
         #case where the main target is visible at first
         else:
-            o_seq=ET.SubElement(visit,'Observation_Sequence', ID='001', TARGET=t_name)
-            st=start
-            sp=v_time[v_change[0]]
-            
-            o_seq.append(ET.Element('Timing', START=f'{datetime.strftime(st, "%Y-%m-%dT%H:%M:%SZ")}', STOP=f'{datetime.strftime(sp, "%Y-%m-%dT%H:%M:%SZ")}'))
-            o_seq.append(ET.Element('Boresight', RA=f'{float(ra)}', DEC=f'{float(dec)}'))
-            i_params=ET.SubElement(o_seq, 'Payload_Parameters')
-            i_params.append(ET.Element('VISDA', vparam1='', vparam2=''))
-            i_params.append(ET.Element('NIRDA', irparam1='', irparam2=''))
-            
-            #check for a visible transit if primary science target and visible
+            target_, start_, stop_, ra_, dec_ = t_name,\
+                f'{datetime.strftime(st, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(sp, "%Y-%m-%dT%H:%M:%SZ")}',\
+                    f'{float(ra)}', f'{float(dec)}'
             #set flag 0 = non-primary target; 1 = primary target; 2 = in-transit 
             if i_flag:
-                if np.any((tv_st <= sp)*(tv_sp >= st)):
-                    o_seq.set('Priority', '2')
-                else:
-                    o_seq.set('Priority', '1')
+                    priority_ = '2' if np.any((tv_st <= sp)*(tv_sp >= st)) else '1'
             else:
-                o_seq.set('Priority', '0')
-            
+                priority_ = '0'
+        ###
+        ###
+        o_seq = ET.SubElement(visit,'Observation_Sequence')
+        obs_seq_id = ET.SubElement(o_seq, "ID")
+        obs_seq_id.text = "001"
+        ###
+        ### Observational Parameters
+        obs_parameters = ET.SubElement(o_seq, "Observational_Parameters")
+        observational_parameters = {
+            "Target": target_,
+            "Priority": priority_,
+            "Timing": ["Start", "Stop", start_, stop_], 
+            "Boresight": ["RA", "DEC", ra_, dec_], 
+        }
+        ###
+        ### Payload Parameters
+        payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
+        ### NIRDA Parameters
+        nirda = ET.SubElement(payload_parameters, "NIRDA")
+        for nirda_key, nirda_values in zip(params_NIRDA.keys(), params_NIRDA.values()):
+            nirda_subelement_ = ET.SubElement(nirda, nirda_key)
+            nirda_subelement_.text = nirda_values
+        ### VDA Parameters:
+        vda = ET.SubElement(payload_parameters, "VDA")
+        for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
+            vda_subelement_ = ET.SubElement(vda, vda_key)
+            vda_subelement_.text = str(vda_values)
         
         #loop to schedule consecutive observation sequences
         for v in range(len(v_change)-1):
             st=v_time[v_change[v]+1]
             sp=v_time[v_change[v+1]]
+
+            os_i=v+2
             
             #set elements for the target if target is visible for this sequence
             if v_t[v+1]:
-                os_i=v+2
-                o_seq=ET.SubElement(visit,'Observation_Sequence', ID=f'{("0"*(3-len(str(os_i))))+str(os_i)}', TARGET=t_name)
-                
-                o_seq.append(ET.Element('Timing', START=f'{datetime.strftime(st, "%Y-%m-%dT%H:%M:%SZ")}', STOP=f'{datetime.strftime(sp, "%Y-%m-%dT%H:%M:%SZ")}'))
-                o_seq.append(ET.Element('Boresight', RA=f'{float(ra)}', DEC=f'{float(dec)}'))
-                i_params=ET.SubElement(o_seq, 'Payload_Parameters')
-                i_params.append(ET.Element('VISDA', vparam1='', vparam2=''))
-                i_params.append(ET.Element('NIRDA', irparam1='', irparam2=''))
-                
+                target_, start_, stop_, ra_, dec_ = t_name, \
+                    f'{datetime.strftime(st, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(sp, "%Y-%m-%dT%H:%M:%SZ")}', \
+                        f'{float(ra)}', f'{float(dec)}'
                 #check for a visible transit if primary science target and visible
                 #set flag 0 = non-primary target; 1 = primary target; 2 = in-transit 
                 if i_flag:
-                    if np.any((tv_st <= sp)*(tv_sp >= st)):
-                        o_seq.set('Priority', '2')
-                    else:
-                        o_seq.set('Priority', '1')
+                    priority_ = '2' if np.any((tv_st <= sp)*(tv_sp >= st)) else '1'
                 else:
-                    o_seq.set('Priority', '0')
-            
+                    priority_ = '0'
+
             #otherwise, set elements for an occultation target
             else:
-                
-                #set observation sequence
-                os_i=v+2
-                o_seq=ET.SubElement(visit,'Observation_Sequence', ID=f'{("0"*(3-len(str(os_i))))+str(os_i)}', TARGET=info['Target'][oc_tr])
                 st=start
                 sp=v_time[v_change[0]]
-                
-                o_seq.append(ET.Element('Timing', START=info['start'][oc_tr], STOP=info['stop'][oc_tr]))
-                o_seq.append(ET.Element('Boresight', RA=info['RA'][oc_tr], DEC=info['DEC'][oc_tr]))
-                i_params=ET.SubElement(o_seq, 'Payload_Parameters')
-                i_params.append(ET.Element('VISDA', vparam1='', vparam2=''))
-                i_params.append(ET.Element('NIRDA', irparam1='', irparam2=''))
-                o_seq.set('Priority', f'{oc_flag}')
-                
-                oc_tr+=1
-                
 
+                target_, start_, stop_, ra_, dec_ = info['Target'][oc_tr], \
+                    info['start'][oc_tr], info['stop'][oc_tr], \
+                        info['RA'][oc_tr], info['DEC'][oc_tr]
+                priority_ = f'{oc_flag}'
+                oc_tr+=1
+            
+            ###
+            ###
+            o_seq = ET.SubElement(visit,'Observation_Sequence')
+            obs_seq_id = ET.SubElement(o_seq, "ID")
+            obs_seq_id.text = f'{("0"*(3-len(str(os_i))))+str(os_i)}'
+            ###
+            ### Observational Parameters
+            obs_parameters = ET.SubElement(o_seq, "Observational_Parameters")
+            observational_parameters = {
+                "Target": target_,
+                "Priority": priority_,
+                "Timing": ["Start", "Stop", start_, stop_], 
+                "Boresight": ["RA", "DEC", ra_, dec_], 
+            }
+            ###
+            ### Payload Parameters
+            payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
+            ### NIRDA Parameters
+            nirda = ET.SubElement(payload_parameters, "NIRDA")
+            for nirda_key, nirda_values in zip(params_NIRDA.keys(), params_NIRDA.values()):
+                nirda_subelement_ = ET.SubElement(nirda, nirda_key)
+                nirda_subelement_.text = nirda_values
+            ### VDA Parameters:
+            vda = ET.SubElement(payload_parameters, "VDA")
+            for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
+                vda_subelement_ = ET.SubElement(vda, vda_key)
+                vda_subelement_.text = str(vda_values)
+                
 etstr=ET.tostring(cal, xml_declaration=True)
 
 from xml.dom import minidom

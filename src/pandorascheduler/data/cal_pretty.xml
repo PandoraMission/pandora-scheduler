@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <ScienceCalendar xmlns="/pandora/calendar/">
-	<Meta Valid_From="2025-04-25 00:00:00" Expires="2026-04-24 12:29:00" Calendar_Weights="0.0, 0.0, 1.0" Ephemeris="sma=6828.14, ecc=0.0, inc=97.2188, aop=0.0, raan=303.263, ta=0.0" Keepout_Angles="90.0, 40.0, 63.0" Created="2024-03-12 13:30:59.227041" Author="P Bonney" Delivery_Id=""/>
+	<Meta Valid_From="2025-04-25 00:00:00" Expires="2026-04-24 12:29:00" Calendar_Weights="0.0, 0.0, 1.0" Ephemeris="sma=6828.14, ecc=0.0, inc=97.2188, aop=0.0, raan=303.263, ta=0.0" Keepout_Angles="90.0, 40.0, 63.0" Created="2024-03-12 14:25:02.183201" Delivery_Id=""/>
 	<Visit>
 		<ID>0000</ID>
 		<Observation_Sequence>
