@@ -239,9 +239,12 @@ for i in tqdm(range(21)):#len(sch))):
 
     #VK BEGIN: the original target_list.csv from Paul has incorrect RA & Dec. 
     # Instead of manually fixing these, I'll just get them from SkyCoord
-    star_sc = SkyCoord.from_name(st_name)
-    ra = star_sc.ra.deg
-    dec = star_sc.dec.deg
+    try:
+        star_sc = SkyCoord.from_name(st_name)
+        ra = star_sc.ra.deg
+        dec = star_sc.dec.deg
+    except:
+        pass
     # VK END
 
     ####
