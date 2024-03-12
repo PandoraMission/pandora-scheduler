@@ -74,7 +74,7 @@ def Schedule(
 
     if sched_start == None:
         sched_start = pandora_start
-    #VK: the following elif crashes so I removed it
+    #VK BEGIN: the following elif crashes so I removed it
     #elif datetime.strptime(sched_start) < pandora_start:
     #    sched_start = pandora_start
     else:
@@ -690,7 +690,7 @@ def Schedule_aux(start, stop, aux_key, aux_list, **kwargs):
         #Check to see which aux targets are visible
         #Currently, we are just inserting from the 200 brightest white dwarfs
         #aux_targs=pd.read_csv(f"{PACKAGEDIR}/data/{aux_list}")
-        #VK: the above line creates a redundant path which crashes so I updated it to:
+        #VK BEGIN: the above line creates a redundant path which crashes so I updated it to:
         aux_targs=pd.read_csv(aux_list)
         names=aux_targs['Star Name']
         ras=aux_targs['RA']

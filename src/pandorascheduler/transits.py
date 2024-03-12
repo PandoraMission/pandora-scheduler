@@ -14,6 +14,8 @@ from tqdm import tqdm
 # from . import barycorr
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
+
+print(PACKAGEDIR)
 # from . import PACKAGEDIR
 
 
@@ -252,7 +254,7 @@ def transit_timing(target_list:str, planet_name:str, star_name:str):
 
     #epoch_JD_UTC  = barycorr.bjd2utc(epoch_BJD_TDB, planet_sc.ra.degree, planet_sc.dec.degree) 
     # VK note: Jason Eastman's website (barycorr.bjd2utc) is broken as of 2024-01-05. 
-    # Instead, use the implementation from https://github.com/shbhuk/barycorrpy/issues/54
+    # Instead, use the implementation from https://github.com/shbhuk/barycorrpy/issues/54, i.e.: 
 
     observer_location = EarthLocation(lat = 0.*u.deg, lon = 0.*u.deg, height=450*u.km)
     bjd_tdb = Time(epoch_BJD_TDB, format='jd', scale='tdb', location=observer_location)

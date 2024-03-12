@@ -20,7 +20,7 @@ import random
 # VK BEGIN: remove warnings:
 import warnings
 warnings.filterwarnings("ignore")
-# VK END
+#
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_0.0_0.0_1.0_2025-05-25.csv'
@@ -41,11 +41,7 @@ save_csv=False
 #list_path is a path to a csv file with target info in it like aux_list.csv
 #visibility data needs to be in oc_targets for now
 #if 'closest' is given as sort_key, prev_obs needs to be given as a kwarg
-#def sch_occ(starts, stops, list_path, sort_key=None, **kwargs):
-#
-# VK BEGIN: adding explicit prev_obs keyword
-def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs):
-# VK END
+def sch_occ(starts, stops, list_path, sort_key=None, **kwargs):
     
     #build empty dataframe except for starts and stops
     e_sched = [['',datetime.strftime(starts[s], "%Y-%m-%dT%H:%M:%SZ"),datetime.strftime(stops[s], "%Y-%m-%dT%H:%M:%SZ"), '', ''] for s in range(len(starts))]
@@ -76,7 +72,7 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
             try:
                 po_sc=SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
                 oc_sc=[SkyCoord(unit='deg', ra=ras[n], dec=decs[n]) for n in range(len(ras))]
-
+                
                 dif=[oc_sc[n].separation(po_sc).deg for n in range(len(oc_sc))]
                 o_list['sk_dif']=dif
                 o_list.sort_values(by='sk_dif').reset_index(drop=True)
@@ -102,13 +98,8 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
         d_flag=False
         for n in range(len(v_names)):
             try:
-                #vis=pd.read_csv(f"{PACKAGEDIR}/data/oc_targets/{v_names[n]}/Visibility for {v_names[n]}.csv")
-                # VK BEGIN: there is no oc_targets directory, trying with targets or aux_targets directories:
-                if list_path == tar_path:
-                    vis=pd.read_csv(f"{PACKAGEDIR}/data/targets/{v_names[n]}/Visibility for {v_names[n]}.csv")
-                elif list_path == aux_path:
-                    vis=pd.read_csv(f"{PACKAGEDIR}/data/aux_targets/{v_names[n]}/Visibility for {v_names[n]}.csv")
-                # VK END
+                
+                vis=pd.read_csv(f"{PACKAGEDIR}/data/oc_targets/{v_names[n]}/Visibility for {v_names[n]}.csv")
                 vis_=vis['Time(MJD_UTC)']
                 
                 #array to hold visibility info for this target
@@ -121,7 +112,8 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                     ast=set(vis.index[vis_ >= starts[s]])
                     bsp=set(vis.index[vis_ <= stops[s]])
                     win=list(ast.intersection(bsp))
-                                      
+                    
+                    
                     if np.all(vis['Visible'][win] == 1):
                         v_ar[s]=True
                         
@@ -166,8 +158,6 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                     o_df['DEC'][:]=str(decs[n])
                     d_flag=True
                     break
-                
-                #print(st_name, ': ', n, v_names[n], ' not visible, try next on the list')
             
             #If a target(s) on the list don't have visibility data, ignore them!
             except FileNotFoundError:
@@ -203,7 +193,7 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
 #max time for an observation sequence
 dt=timedelta(minutes=90)
 
-cal=ET.Element('ScienceCalendar', xmlns="/pandora/calendar/")
+cal=ET.Element('ScienceCalendar')
 meta=ET.SubElement(cal, 'Meta', 
                    Valid_From=f"{sch['Observation Start'][0]}",
                    Expires=f"{sch['Observation Stop'][len(sch)-1]}",
@@ -215,14 +205,12 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(1)):#len(sch))):
+for i in tqdm(range(len(sch))):
     t_name=sch['Target'][i]
     st_name=t_name[:-2]
     
     #set visit number and visit element
-    visit=ET.SubElement(cal,'Visit')
-    id0 = ET.SubElement(visit, "ID")
-    id0.text = f'{("0"*(4-len(str(i))))+str(i)}'
+    visit=ET.SubElement(cal,'Visit', ID=f'{("0"*(4-len(str(i))))+str(i)}')
     
     start=datetime.strptime(sch['Observation Start'][i], "%Y-%m-%d %H:%M:%S")
     stop=datetime.strptime(sch['Observation Stop'][i], "%Y-%m-%d %H:%M:%S")
@@ -245,46 +233,9 @@ for i in tqdm(range(1)):#len(sch))):
 
     #VK BEGIN: the original target_list.csv from Paul has incorrect RA & Dec. 
     # Instead of manually fixing these, I'll just get them from SkyCoord
-    star_sc = SkyCoord.from_name(st_name)
-    ra = star_sc.ra.deg
-    dec = star_sc.dec.deg
-    # VK END
-
-    ####
-    params_NIRDA = {
-        "AverageGroups": "1", 
-        "ROI_StartX": "0", 
-        "ROI_StartY": "824", 
-        "ROI_SizeX": "80", 
-        "ROI_SizeY": "400", 
-        "SC_Resets1": "1", 
-        "SC_Resets2": "1", 
-        "SC_DropFrames1": "0", 
-        "SC_DropFrames2": "16", 
-        "SC_DropFrames3": "0", 
-        "SC_ReadFrames": "4", 
-        "TargetID": t_name, 
-        "SC_Groups": "2", 
-        "SC_Integrations": "525", 
-    }
-
-    params_VDA = {
-        "StartRoiDetMethod": 0,
-        "FramesPerCoadd": 50,
-        "NumTotalFramesRequested": 9000,
-        "TargetRA": f'{float(ra)}',
-        "TargetDEC": f'{float(dec)}',
-        "IncludeFieldSolnsInResp": 1,
-        "StarRoiDimension": 50,
-        "MaxNumStarRois": 0,
-        "numPredefinedStarRois": 5,
-        "PredefinedStarRoiRa": [60.1, 60.2, 60.3, 60.4, 60.5], 
-        "PredefinedStarRoiDec": [-30.1, -30.2, -30.3, -30.4, -30.5],
-        "TargetID": t_name,
-        "NumExposuresMax": 1,
-        "ExposureTime_us": 200000,
-        }
-    ####
+    #star_sc = SkyCoord.from_name(st_name)
+    #ra = star_sc.ra.deg
+    #dec = star_sc.dec.deg
     
     #get times during this visit
     v_time=Time(v_data["Time(MJD_UTC)"], format="mjd", scale="utc").to_value("datetime")
@@ -311,68 +262,42 @@ for i in tqdm(range(1)):#len(sch))):
         sps=[st+(dt*(i+1)) for i in range(int(n))]
         if int(n) < n:
             sps.append(sp)
-
-        for s in range(-1, len(sps)-1):
-            if s == -1:
-                st = start
-                sp = v_time[-1]
-                stop_tmp_ = sps[0]
-                idx1_tmp = "001"
+        
+        #first observation seq
+        o_seq=ET.SubElement(visit,'Observation_Sequence', ID='001', TARGET=t_name)
+        
+        o_seq.append(ET.Element('Timing', START=f'{datetime.strftime(st, "%Y-%m-%dT%H:%M:%SZ")}', STOP=f'{datetime.strftime(sps[0], "%Y-%m-%dT%H:%M:%SZ")}'))
+        o_seq.append(ET.Element('Boresight', RA=f'{float(ra)}', DEC=f'{float(dec)}'))
+        i_params=ET.SubElement(o_seq, 'Payload_Parameters')
+        i_params.append(ET.Element('VISDA', vparam1='', vparam2=''))
+        i_params.append(ET.Element('NIRDA', irparam1='', irparam2=''))
+        
+        #get priority
+        #check for a visible transit if primary science target and visible
+        #set flag 0 = non-primary target; 1 = primary target; 2 = in-transit
+        if i_flag:
+            if np.any((tv_st <= sp)*(tv_sp >= st)):
+                pr=2
             else:
-                st = sps[s]
-                sp = sps[s+1]
-                stop_tmp_ = sp
-                idx1_tmp = f'{("0"*(3-len(str(s+2))))+str(s+2)}'
-
-
-            #get priority
-            #check for a visible transit if primary science target and visible
-            #set flag 0 = non-primary target; 1 = primary target; 2 = in-transit
-            if i_flag:
-                if np.any((tv_st <= sp)*(tv_sp >= st)):
-                    pr=2
-                else:
-                    pr=1
-            else:
-                pr=0
-            ###
-            ###
-            o_seq = ET.SubElement(visit,'Observation_Sequence')
-            obs_seq_id = ET.SubElement(o_seq, "ID")
-            obs_seq_id.text = idx1_tmp
-            ###
-            ### Observational Parameters
-            obs_parameters = ET.SubElement(o_seq, "Observational_Parameters")
-            observational_parameters = {
-                #"ID": idx1_tmp,
-                "Target": t_name,
-                "Priority": f'{pr}',
-                "Timing": ["Start", "Stop", f'{datetime.strftime(st, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(stop_tmp_, "%Y-%m-%dT%H:%M:%SZ")}'], 
-                "Boresight": ["RA", "DEC", f'{float(ra)}', f'{float(dec)}'], 
-            }
-            for ii, jj in zip(observational_parameters.keys(), observational_parameters.values()):
-                if (ii != "Timing") & (ii != "Boresight"):
-                    obs_param_element = ET.SubElement(obs_parameters, ii)
-                    obs_param_element.text = str(jj)
-                else:
-                    obs_param_element = ET.SubElement(obs_parameters, ii)
-                    for kk in range(2):
-                        sub_element_tmp = ET.SubElement(obs_param_element, jj[kk])
-                        sub_element_tmp.text = jj[kk+2]
-            ###
-            ### Payload Parameters
-            payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
-            ### NIRDA Parameters
-            nirda = ET.SubElement(payload_parameters, "NIRDA")
-            for nirda_key, nirda_values in zip(params_NIRDA.keys(), params_NIRDA.values()):
-                nirda_subelement_ = ET.SubElement(nirda, nirda_key)
-                nirda_subelement_.text = nirda_values
-            ### VDA Parameters:
-            vda = ET.SubElement(payload_parameters, "VDA")
-            for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
-                vda_subelement_ = ET.SubElement(vda, vda_key)
-                vda_subelement_.text = str(vda_values)
-
+                pr=1
+        else:
+            pr=0
+        o_seq.set('Priority', f'{pr}')
+        
+        #iterate through sps to schedule the rest of the observing sequences
+        for s in range(len(sps)-1):
+            st=sps[s]
+            sp=sps[s+1]
+            
+            o_seq=ET.SubElement(visit,'Observation_Sequence', ID=f'{("0"*(3-len(str(s+2))))+str(s+2)}', TARGET=t_name)
+            
+            o_seq.append(ET.Element('Timing', START=f'{datetime.strftime(st, "%Y-%m-%dT%H:%M:%SZ")}', STOP=f'{datetime.strftime(sp, "%Y-%m-%dT%H:%M:%SZ")}'))
+            o_seq.append(ET.Element('Boresight', RA=f'{float(ra)}', DEC=f'{float(dec)}'))
+            i_params=ET.SubElement(o_seq, 'Payload_Parameters')
+            i_params.append(ET.Element('VISDA', vparam1='', vparam2=''))
+            i_params.append(ET.Element('NIRDA', irparam1='', irparam2=''))
+            o_seq.set('Priority', f'{pr}')
+            
             pass
     
     else:
@@ -400,21 +325,12 @@ for i in tqdm(range(1)):#len(sch))):
         v_t = v_flag[v_change]
         
         #find an occultation target for this visit that will always be visible
-        #: VK BEGIN: there is no "nearest" in
-        # info, flag = sch_occ(oc_starts, oc_stops, tar_path, sort_key = 'nearest', prev_obs=[ra,dec])
-        info, flag = sch_occ(oc_starts, oc_stops, tar_path, sort_key = 'closest', prev_obs=[ra,dec])
-        if flag:
-            print('Find occultation targets from target_list itself...DONE')
-        # VK END
+        info, flag = sch_occ(oc_starts, oc_stops, tar_path, sort_key = 'nearest', prev_obs=[ra,dec])
         oc_flag=1
         if not flag:
-            #: VK BEGIN: there is no "nearest" in
-            # info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'nearest', prev_obs=[ra,dec])
-            info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'closest', prev_obs=[ra,dec])
-            print('target_list doesnt work, find occultation targets from aux_list instead...DONE')
-            # VK END
+            info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'nearest', prev_obs=[ra,dec])
         if not flag:
-            print("More targets are necessary to cover these occultation times. Neither target_list nor aux_list work.")
+            print("More targets are necessary to cover these occultation times.")
         oc_flag=0
         
         # #add final index of v_time for iteration
