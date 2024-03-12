@@ -209,7 +209,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(21)):#len(sch))):
+for i in tqdm(range(2)):#len(sch))):
     t_name=sch['Target'][i]
     st_name=t_name[:-2]
     
@@ -451,15 +451,6 @@ for i in tqdm(range(21)):#len(sch))):
             "Timing": ["Start", "Stop", start_, stop_], 
             "Boresight": ["RA", "DEC", ra_, dec_], 
         }
-        for ii, jj in zip(observational_parameters.keys(), observational_parameters.values()):
-            if (ii != "Timing") & (ii != "Boresight"):
-                obs_param_element = ET.SubElement(obs_parameters, ii)
-                obs_param_element.text = str(jj)
-            else:
-                obs_param_element = ET.SubElement(obs_parameters, ii)
-                for kk in range(2):
-                    sub_element_tmp = ET.SubElement(obs_param_element, jj[kk])
-                    sub_element_tmp.text = jj[kk+2]
         ###
         ### Payload Parameters
         payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
@@ -518,17 +509,6 @@ for i in tqdm(range(21)):#len(sch))):
                 "Timing": ["Start", "Stop", start_, stop_], 
                 "Boresight": ["RA", "DEC", ra_, dec_], 
             }
-
-            for ii, jj in zip(observational_parameters.keys(), observational_parameters.values()):
-                if (ii != "Timing") & (ii != "Boresight"):
-                    obs_param_element = ET.SubElement(obs_parameters, ii)
-                    obs_param_element.text = str(jj)
-                else:
-                    obs_param_element = ET.SubElement(obs_parameters, ii)
-                    for kk in range(2):
-                        sub_element_tmp = ET.SubElement(obs_param_element, jj[kk])
-                        sub_element_tmp.text = jj[kk+2]
-
             ###
             ### Payload Parameters
             payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
