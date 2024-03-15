@@ -17,9 +17,7 @@ from tqdm import tqdm
 from astropy.coordinates import SkyCoord
 import random
 
-# VK BEGIN:
-import helper_codes
-import importlib
+# VK BEGIN: remove warnings:
 import warnings
 warnings.filterwarnings("ignore")
 # VK END
@@ -196,7 +194,7 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
 
 
 #max time for an observation sequence
-observation_sequence_duration = helper_codes.general_parameters()
+observation_sequence_duration = 90 # minutes
 dt = timedelta(minutes = observation_sequence_duration)
 
 cal=ET.Element('ScienceCalendar', xmlns="/pandora/calendar/")
@@ -211,7 +209,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(10)):#9,15)):#len(sch))):
+for i in tqdm(range(1,2)):#len(sch))):
     t_name=sch['Target'][i]
     st_name=t_name[:-2]
     
@@ -220,8 +218,8 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
     id0 = ET.SubElement(visit, "ID")
     id0.text = f'{("0"*(4-len(str(i))))+str(i)}'
     
-    start = datetime.strptime(sch['Observation Start'][i], "%Y-%m-%d %H:%M:%S")
-    stop = datetime.strptime(sch['Observation Stop'][i], "%Y-%m-%d %H:%M:%S")
+    start=datetime.strptime(sch['Observation Start'][i], "%Y-%m-%d %H:%M:%S")
+    stop=datetime.strptime(sch['Observation Stop'][i], "%Y-%m-%d %H:%M:%S")
     
     #Get visibility data, replace if then with the flag later
     if not t_name.startswith('Gaia'):
@@ -236,6 +234,9 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
         targ_info=a_list.loc[(a_list['Star Name'] == t_name)]
         i_flag=0
     
+    ra=targ_info['RA'].iloc[0]
+    dec=targ_info['DEC'].iloc[0]
+
     # VK BEGIN: the original target_list.csv has incorrect RA & Dec. 
     # Instead of manually fixing these, I'll just get them from SkyCoord
     try:
@@ -243,9 +244,44 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
         ra = star_sc.ra.deg
         dec = star_sc.dec.deg
     except:
-        ra=targ_info['RA'].iloc[0]
-        dec=targ_info['DEC'].iloc[0]
+        pass
     # VK END
+
+    ####
+    params_NIRDA = {
+        "AverageGroups": "1", 
+        "ROI_StartX": "0", 
+        "ROI_StartY": "824", 
+        "ROI_SizeX": "80", 
+        "ROI_SizeY": "400", 
+        "SC_Resets1": "1", 
+        "SC_Resets2": "1", 
+        "SC_DropFrames1": "0", 
+        "SC_DropFrames2": "16", 
+        "SC_DropFrames3": "0", 
+        "SC_ReadFrames": "4", 
+        "TargetID": t_name, 
+        "SC_Groups": "2", 
+        "SC_Integrations": "525", 
+    }
+
+    params_VDA = {
+        "StartRoiDetMethod": 0,
+        "FramesPerCoadd": 50,
+        "NumTotalFramesRequested": 9000,
+        "TargetRA": f'{float(ra)}',
+        "TargetDEC": f'{float(dec)}',
+        "IncludeFieldSolnsInResp": 1,
+        "StarRoiDimension": 50,
+        "MaxNumStarRois": 0,
+        "numPredefinedStarRois": 5,
+        "PredefinedStarRoiRa": [60.1, 60.2, 60.3, 60.4, 60.5], 
+        "PredefinedStarRoiDec": [-30.1, -30.2, -30.3, -30.4, -30.5],
+        "TargetID": t_name,
+        "NumExposuresMax": 1,
+        "ExposureTime_us": 200000,
+        }
+    ####
     
     #get times during this visit
     v_time_all = Time(v_data["Time(MJD_UTC)"], format="mjd", scale="utc").to_value("datetime")
@@ -256,9 +292,8 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
     #visibility flag during those times
     #v_flag=np.asarray(v_data['Visible'])[times][times_]
     v_time = v_time_all[(v_time_all >= start) & (v_time_all <= stop)]
+    v_time_mjd = v_data["Time(MJD_UTC)"][(v_time_all >= start) & (v_time_all <= stop)].values
     v_flag = np.asarray(v_data['Visible'])[(v_time_all >= start) & (v_time_all <= stop)]
-    # target_ = np.asarray([t_name for _ in range(len(v_time))]).astype(str)
-    # target_[v_flag == 0.] = ''
     # VK END
 
     #figure out where the visibility changes (gives final element where the vis is the same)
@@ -278,36 +313,72 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
         
         sps=[st+(dt*(i+1)) for i in range(int(n))]
         if int(n) < n:
-           sps.append(sp)
+            sps.append(sp)
 
-        if sps[-1] == v_time[-1]:
-            sps[-1] = v_time[-2]
+        for s in range(-1, len(sps)-1):
+            if s == -1:
+                st = start
+                sp = v_time[-1]
+                stop_tmp_ = sps[0]
+                idx1_tmp = "001"
+            else:
+                st = sps[s]
+                sp = sps[s+1]
+                stop_tmp_ = sp
+                idx1_tmp = f'{("0"*(3-len(str(s+2))))+str(s+2)}'
 
-        #get priority
-        #check for a visible transit if primary science target and visible
-        #set flag 0 = non-primary target; 1 = primary target; 2 = in-transit
-        if i_flag:
-            pr = 2 if np.any((tv_st <= v_time[-1])*(tv_sp >= st)) else 1
-        else:
-            pr=0
-   
-        sps_all = list(np.hstack((st, sps)))
-        for s in range(len(sps_all)-1):
-            aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(s+1))))+str(s+1)}', \
-                t_name, pr, sps_all[s], sps_all[s+1], ra, dec)
+
+            #get priority
+            #check for a visible transit if primary science target and visible
+            #set flag 0 = non-primary target; 1 = primary target; 2 = in-transit
+            if i_flag:
+                pr = 2 if np.any((tv_st <= sp)*(tv_sp >= st)) else 1
+            else:
+                pr=0
+            ###
+            ###
+            o_seq = ET.SubElement(visit,'Observation_Sequence')
+            obs_seq_id = ET.SubElement(o_seq, "ID")
+            obs_seq_id.text = idx1_tmp
+            ###
+            ### Observational Parameters
+            obs_parameters = ET.SubElement(o_seq, "Observational_Parameters")
+            observational_parameters = {
+                #"ID": idx1_tmp,
+                "Target": t_name,
+                "Priority": f'{pr}',
+                "Timing": ["Start", "Stop", f'{datetime.strftime(st, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(stop_tmp_, "%Y-%m-%dT%H:%M:%SZ")}'], 
+                "Boresight": ["RA", "DEC", f'{float(ra)}', f'{float(dec)}'], 
+            }
+            for ii, jj in zip(observational_parameters.keys(), observational_parameters.values()):
+                if (ii != "Timing") & (ii != "Boresight"):
+                    obs_param_element = ET.SubElement(obs_parameters, ii)
+                    obs_param_element.text = str(jj)
+                else:
+                    obs_param_element = ET.SubElement(obs_parameters, ii)
+                    for kk in range(2):
+                        sub_element_tmp = ET.SubElement(obs_param_element, jj[kk])
+                        sub_element_tmp.text = jj[kk+2]
+            ###
+            ### Payload Parameters
+            payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
+            ### NIRDA Parameters
+            nirda = ET.SubElement(payload_parameters, "NIRDA")
+            for nirda_key, nirda_values in zip(params_NIRDA.keys(), params_NIRDA.values()):
+                nirda_subelement_ = ET.SubElement(nirda, nirda_key)
+                nirda_subelement_.text = nirda_values
+            ### VDA Parameters:
+            vda = ET.SubElement(payload_parameters, "VDA")
+            for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
+                vda_subelement_ = ET.SubElement(vda, vda_key)
+                vda_subelement_.text = str(vda_values)
+
             pass
     
-    #if NOT full visibility
     else:
         #identify occultation times
         oc_starts=[]
         oc_stops=[]
-
-        # if v_change[0] != 0:
-        #     v_change = np.hstack((0, v_change))
-
-        # if v_change[-1] != len(v_time) - 1:
-        #     v_change = np.hstack((v_change, len(v_time) - 1))
 
         if not v_flag[-1]:
             v_change=v_change.tolist()
@@ -326,12 +397,20 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
                 oc_starts.append(v_time[v_change[v]+1])
                 oc_stops.append(v_time[v_change[v+1]])
 
-        # if oc_stops[-1] == v_time[-1]:
-        #     sps[-1] = v_time[-2]
-
-        #oc_times=[pd.date_range(oc_starts[o],oc_stops[o], freq='min') for o in range(len(oc_starts))]
+        oc_times=[pd.date_range(oc_starts[o],oc_stops[o], freq='min') for o in range(len(oc_starts))]
         #visibility change tracker (for convenience)
         v_t = v_flag[v_change]
+        
+        # VK BEGIN: Break up sequences longer than dt into sections of length dt:
+        oc_starts_extend, oc_stops_extend = [], []
+        #oc_starts_bak, oc_stops_bak = oc_starts, oc_stops
+        for ii in range(len(oc_stops)):
+            if oc_stops[ii] - oc_starts[ii] > dt:
+                nn = (oc_stops[ii] - oc_starts[ii])/dt
+                sps = [oc_starts[ii]+(dt*(i+1)) for i in range(int(nn))]
+                oc_starts_extend = list(np.sort(np.hstack((oc_starts, sps))))
+                oc_stops_extend = list(np.sort(np.hstack((oc_stops, sps))))
+        # VK END
 
         #find an occultation target for this visit that will always be visible
         # VK BEGIN: there is no "nearest" in
@@ -351,32 +430,35 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
             print("More targets are necessary to cover these occultation times. Neither target_list nor aux_list work.")
         oc_flag=0
         
-        #add final index of v_time for iteration
+        # #add final index of v_time for iteration
         # v_change.tolist().append(len(v_time)-1)
         # v_change=np.array(v_change)
-        # VK BEGIN:
-        if v_change[-1] != len(v_time)-1:
-            v_change = np.append(v_change, len(v_time)-2)
-
-        #visibility change tracker (for convenience)
-        v_t = v_flag[v_change]
-        # VK END
         
         #schedule first observation sequence
-        #occultation tracker
-        oc_tr = 0
         
-        st = start
-        sp = v_time[v_change[0]]
+        #occultation tracker
+        oc_tr=0
+        
+        st=start
+        sp=v_time[v_change[0]]
 
         #case where the main target isn't visible at first
-        if not v_t[0]:
+        if not v_t[0]:       
+
+            #VBK BEGIN: break sequences longer than dt
+            long_sequence = Time(info['stop'][0]).to_value('datetime') - Time(info['start'][0]).to_value('datetime')
+            if long_sequence > observation_sequence_duration:
+
+            (Time(info['stop'][0]).to_value('datetime') - Time(info['start'][0]).to_value('datetime'))*24*60
+
+
+
+
             target_, start_, stop_, ra_, dec_ = info['Target'][0], \
                 info['start'][0], info['stop'][0], \
                     info['RA'][0], info['DEC'][0]
             priority_ = f'{oc_flag}'
             oc_tr += 1
-
         #case where the main target is visible at first
         else:
             target_, start_, stop_, ra_, dec_ = t_name,\
@@ -387,31 +469,49 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
                     priority_ = '2' if np.any((tv_st <= sp)*(tv_sp >= st)) else '1'
             else:
                 priority_ = '0'
-
-        # VK BEGIN: Create first observation sequence
-        start_format, stop_format = Time(start_).to_value('datetime'), Time(stop_).to_value('datetime')
-        if stop_format - start_format <= dt:
-            aa = helper_codes.observation_sequence(visit, "001", target_, priority_, start_format, stop_format, ra_, dec_)
-            long_sequence = 0
-         # If first sequence longer than dt, break it into sections of length dt:
-        else:
-            nn = (stop_format - start_format)/dt
-            sps = [start_format+(dt*(i+1)) for i in range(int(nn))]
-            oc_starts_dt = list(np.sort(np.hstack((start_format, sps))))
-            oc_stops_dt = list(np.sort(np.hstack((stop_format, sps))))
-            long_sequence = 1
-            for ii, jj in zip(oc_starts_dt, oc_stops_dt):
-                aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(long_sequence))))+str(long_sequence)}', target_, priority_, ii, jj, ra_, dec_)
-                long_sequence += 1
-
-        # print(target_, start_, stop_)
+        ###
+        ###
+        o_seq = ET.SubElement(visit,'Observation_Sequence')
+        obs_seq_id = ET.SubElement(o_seq, "ID")
+        obs_seq_id.text = "001"
+        ###
+        ### Observational Parameters
+        obs_parameters = ET.SubElement(o_seq, "Observational_Parameters")
+        observational_parameters = {
+            "Target": target_,
+            "Priority": priority_,
+            "Timing": ["Start", "Stop", start_, stop_], 
+            "Boresight": ["RA", "DEC", ra_, dec_], 
+        }
+        for ii, jj in zip(observational_parameters.keys(), observational_parameters.values()):
+            if (ii != "Timing") & (ii != "Boresight"):
+                obs_param_element = ET.SubElement(obs_parameters, ii)
+                obs_param_element.text = str(jj)
+            else:
+                obs_param_element = ET.SubElement(obs_parameters, ii)
+                for kk in range(2):
+                    sub_element_tmp = ET.SubElement(obs_param_element, jj[kk])
+                    sub_element_tmp.text = jj[kk+2]
+        ###
+        ### Payload Parameters
+        payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
+        ### NIRDA Parameters
+        nirda = ET.SubElement(payload_parameters, "NIRDA")
+        for nirda_key, nirda_values in zip(params_NIRDA.keys(), params_NIRDA.values()):
+            nirda_subelement_ = ET.SubElement(nirda, nirda_key)
+            nirda_subelement_.text = nirda_values
+        ### VDA Parameters:
+        vda = ET.SubElement(payload_parameters, "VDA")
+        for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
+            vda_subelement_ = ET.SubElement(vda, vda_key)
+            vda_subelement_.text = str(vda_values)
         
         #loop to schedule consecutive observation sequences
         for v in range(len(v_change)-1):
             st=v_time[v_change[v]+1]
             sp=v_time[v_change[v+1]]
 
-            os_i = v + long_sequence if long_sequence > 0 else (v + 2)
+            os_i=v+2
             
             #set elements for the target if target is visible for this sequence
             if v_t[v+1]:
@@ -435,14 +535,46 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
                         info['RA'][oc_tr], info['DEC'][oc_tr]
                 priority_ = f'{oc_flag}'
                 oc_tr+=1
+            
+            ###
+            ###
+            o_seq = ET.SubElement(visit,'Observation_Sequence')
+            obs_seq_id = ET.SubElement(o_seq, "ID")
+            obs_seq_id.text = f'{("0"*(3-len(str(os_i))))+str(os_i)}'
+            ###
+            ### Observational Parameters
+            obs_parameters = ET.SubElement(o_seq, "Observational_Parameters")
+            observational_parameters = {
+                "Target": target_,
+                "Priority": priority_,
+                "Timing": ["Start", "Stop", start_, stop_], 
+                "Boresight": ["RA", "DEC", ra_, dec_], 
+            }
 
-            # Create the rest of the observation sequences
-            start_format, stop_format = Time(start_).to_value('datetime'), Time(stop_).to_value('datetime')
-            aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(os_i))))+str(os_i)}', target_, priority_, start_format, stop_format, ra_, dec_)
+            for ii, jj in zip(observational_parameters.keys(), observational_parameters.values()):
+                if (ii != "Timing") & (ii != "Boresight"):
+                    obs_param_element = ET.SubElement(obs_parameters, ii)
+                    obs_param_element.text = str(jj)
+                else:
+                    obs_param_element = ET.SubElement(obs_parameters, ii)
+                    for kk in range(2):
+                        sub_element_tmp = ET.SubElement(obs_param_element, jj[kk])
+                        sub_element_tmp.text = jj[kk+2]
 
-    #     print(target_, start_, stop_)
-    # print()
-
+            ###
+            ### Payload Parameters
+            payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
+            ### NIRDA Parameters
+            nirda = ET.SubElement(payload_parameters, "NIRDA")
+            for nirda_key, nirda_values in zip(params_NIRDA.keys(), params_NIRDA.values()):
+                nirda_subelement_ = ET.SubElement(nirda, nirda_key)
+                nirda_subelement_.text = nirda_values
+            ### VDA Parameters:
+            vda = ET.SubElement(payload_parameters, "VDA")
+            for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
+                vda_subelement_ = ET.SubElement(vda, vda_key)
+                vda_subelement_.text = str(vda_values)
+                
 etstr=ET.tostring(cal, xml_declaration=True)
 
 from xml.dom import minidom
@@ -450,7 +582,7 @@ dom = minidom.parseString(etstr)
 
 #dom = xml.dom.minidom.parseString(etstr)
 pretty_xml_as_string = dom.toprettyxml()
-f=open(f'{PACKAGEDIR}/data/cal_pretty_test.xml', 'w+')
+f=open(f'{PACKAGEDIR}/data/cal_pretty.xml', 'w+')
 f.write(pretty_xml_as_string)
 f.close()
 
