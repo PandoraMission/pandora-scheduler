@@ -211,7 +211,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(10)):#9,15)):#len(sch))):
+for i in tqdm(range(6,7)):#len(sch))):
     t_name=sch['Target'][i]
     st_name=t_name[:-2]
     
@@ -236,8 +236,7 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
         targ_info=a_list.loc[(a_list['Star Name'] == t_name)]
         i_flag=0
     
-    # VK BEGIN: the original target_list.csv has incorrect RA & Dec. 
-    # Instead of manually fixing these, I'll just get them from SkyCoord
+    # VK BEGIN: try getting RA & Dec from SkyCoord
     try:
         star_sc = SkyCoord.from_name(st_name)
         ra = star_sc.ra.deg
@@ -257,11 +256,9 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
     #v_flag=np.asarray(v_data['Visible'])[times][times_]
     v_time = v_time_all[(v_time_all >= start) & (v_time_all <= stop)]
     v_flag = np.asarray(v_data['Visible'])[(v_time_all >= start) & (v_time_all <= stop)]
-    # target_ = np.asarray([t_name for _ in range(len(v_time))]).astype(str)
-    # target_[v_flag == 0.] = ''
     # VK END
 
-    #figure out where the visibility changes (gives final element where the vis is the same)
+    #figure out where the visibility changes (gives final element where the visibility is the same)
     v_change = np.where(v_flag[:-1] != v_flag[1:])[0]
     
     st=start
@@ -303,12 +300,6 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
         oc_starts=[]
         oc_stops=[]
 
-        # if v_change[0] != 0:
-        #     v_change = np.hstack((0, v_change))
-
-        # if v_change[-1] != len(v_time) - 1:
-        #     v_change = np.hstack((v_change, len(v_time) - 1))
-
         if not v_flag[-1]:
             v_change=v_change.tolist()
             v_change.append(len(v_time)-1)
@@ -326,12 +317,19 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
                 oc_starts.append(v_time[v_change[v]+1])
                 oc_stops.append(v_time[v_change[v+1]])
 
-        # if oc_stops[-1] == v_time[-1]:
-        #     sps[-1] = v_time[-2]
-
-        #oc_times=[pd.date_range(oc_starts[o],oc_stops[o], freq='min') for o in range(len(oc_starts))]
+        #add final index of v_time for iteration
+        # v_change.tolist().append(len(v_time)-1)
+        # v_change=np.array(v_change)
+        # VK BEGIN:
+        if v_change[-1] != len(v_time)-1:
+            v_change = np.append(v_change, len(v_time)-2)
+        else:
+            v_change[-1] = len(v_time)-2
         #visibility change tracker (for convenience)
         v_t = v_flag[v_change]
+        # VK END
+
+        #oc_times=[pd.date_range(oc_starts[o],oc_stops[o], freq='min') for o in range(len(oc_starts))]
 
         #find an occultation target for this visit that will always be visible
         # VK BEGIN: there is no "nearest" in
@@ -350,17 +348,6 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
         if not flag:
             print("More targets are necessary to cover these occultation times. Neither target_list nor aux_list work.")
         oc_flag=0
-        
-        #add final index of v_time for iteration
-        # v_change.tolist().append(len(v_time)-1)
-        # v_change=np.array(v_change)
-        # VK BEGIN:
-        if v_change[-1] != len(v_time)-1:
-            v_change = np.append(v_change, len(v_time)-2)
-
-        #visibility change tracker (for convenience)
-        v_t = v_flag[v_change]
-        # VK END
         
         #schedule first observation sequence
         #occultation tracker
@@ -408,16 +395,13 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
         
         #loop to schedule consecutive observation sequences
         for v in range(len(v_change)-1):
-            st=v_time[v_change[v]+1]
-            sp=v_time[v_change[v+1]]
 
-            os_i = v + long_sequence if long_sequence > 0 else (v + 2)
-            
+            st = v_time[v_change[v]+1]
+            sp = v_time[v_change[v+1]]
+
             #set elements for the target if target is visible for this sequence
-            if v_t[v+1]:
-                target_, start_, stop_, ra_, dec_ = t_name, \
-                    f'{datetime.strftime(st, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(sp, "%Y-%m-%dT%H:%M:%SZ")}', \
-                        f'{float(ra)}', f'{float(dec)}'
+            if v_t[v+1]: 
+                target_, ra_, dec_ = t_name, f'{float(ra)}', f'{float(dec)}'
                 #check for a visible transit if primary science target and visible
                 #set flag 0 = non-primary target; 1 = primary target; 2 = in-transit 
                 if i_flag:
@@ -427,17 +411,13 @@ for i in tqdm(range(10)):#9,15)):#len(sch))):
 
             #otherwise, set elements for an occultation target
             else:
-                st=start
-                sp=v_time[v_change[0]]
-
-                target_, start_, stop_, ra_, dec_ = info['Target'][oc_tr], \
-                    info['start'][oc_tr], info['stop'][oc_tr], \
-                        info['RA'][oc_tr], info['DEC'][oc_tr]
+                target_, ra_, dec_ = info['Target'][oc_tr], info['RA'][oc_tr], info['DEC'][oc_tr]
                 priority_ = f'{oc_flag}'
                 oc_tr+=1
 
             # Create the rest of the observation sequences
-            start_format, stop_format = Time(start_).to_value('datetime'), Time(stop_).to_value('datetime')
+            os_i = v + long_sequence if long_sequence > 0 else (v + 2)
+            start_format, stop_format = f'{datetime.strftime(st, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(sp, "%Y-%m-%dT%H:%M:%SZ")}'#Time(start_).to_value('datetime'), Time(stop_).to_value('datetime')
             aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(os_i))))+str(os_i)}', target_, priority_, start_format, stop_format, ra_, dec_)
 
     #     print(target_, start_, stop_)

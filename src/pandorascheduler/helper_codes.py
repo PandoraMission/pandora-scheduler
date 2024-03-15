@@ -25,18 +25,18 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 sub_element_tmp = ET.SubElement(obs_param_element, jj[kk])
                 sub_element_tmp.text = jj[kk+2]
 
-    # ### Payload Parameters
-    # payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
-    # ### NIRDA Parameters
-    # nirda = ET.SubElement(payload_parameters, "NIRDA")
-    # for nirda_key, nirda_values in zip(params_NIRDA.keys(), params_NIRDA.values()):
-    #     nirda_subelement_ = ET.SubElement(nirda, nirda_key)
-    #     nirda_subelement_.text = nirda_values
-    # ### VDA Parameters:
-    # vda = ET.SubElement(payload_parameters, "VDA")
-    # for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
-    #     vda_subelement_ = ET.SubElement(vda, vda_key)
-    #     vda_subelement_.text = str(vda_values)
+    ### Payload Parameters
+    payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
+    ### NIRDA Parameters
+    nirda = ET.SubElement(payload_parameters, "NIRDA")
+    for nirda_key, nirda_values in zip(params_NIRDA.keys(), params_NIRDA.values()):
+        nirda_subelement_ = ET.SubElement(nirda, nirda_key)
+        nirda_subelement_.text = nirda_values
+    ### VDA Parameters:
+    vda = ET.SubElement(payload_parameters, "VDA")
+    for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
+        vda_subelement_ = ET.SubElement(vda, vda_key)
+        vda_subelement_.text = str(vda_values)
 
     return
 
@@ -45,7 +45,7 @@ def params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec):
     observational_parameters = {
         "Target": t_name,
         "Priority": f'{priority}',
-        "Timing": ["Start", "Stop", f'{datetime.strftime(start, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(stop, "%Y-%m-%dT%H:%M:%SZ")}'], 
+        "Timing": ["Start", "Stop", f'{start}', f'{stop}'],#f'{datetime.strftime(start, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(stop, "%Y-%m-%dT%H:%M:%SZ")}'], 
         "Boresight": ["RA", "DEC", f'{float(ra)}', f'{float(dec)}'], 
         }
 
