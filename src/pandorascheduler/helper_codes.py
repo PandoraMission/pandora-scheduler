@@ -84,3 +84,27 @@ def params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec):
         }
 
     return observational_parameters, params_NIRDA, params_VDA
+
+def remove_short_sequences():
+    A = [1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]
+
+    # Initialize variables to keep track of the start index of a subarray and the positions of qualifying subarrays
+    start_index = None
+    positions = []
+
+    # Iterate through the array, keeping track of the start and end of each subarray of 1s
+    for i in range(len(A)):
+        # Check if we are at the start of a subarray of 1s
+        if A[i] == 1 and start_index is None:
+            start_index = i
+        # Check if we are at the end of a subarray of 1s
+        elif A[i] == 0 and start_index is not None:
+            # Check if the subarray is shorter than 2 elements
+            if i - start_index < 2:
+                positions.append((start_index, i - 1))
+            start_index = None
+    # Check if the last element of A is part of a qualifying subarray
+    if start_index is not None and len(A) - start_index < 2:
+        positions.append((start_index, len(A) - 1))
+
+    return positions

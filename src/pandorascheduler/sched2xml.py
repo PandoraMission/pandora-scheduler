@@ -211,7 +211,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(6,7)):#len(sch))):
+for i in tqdm(range(18,19)):#len(sch))):
     t_name=sch['Target'][i]
     st_name=t_name[:-2]
     
@@ -257,6 +257,12 @@ for i in tqdm(range(6,7)):#len(sch))):
     v_time = v_time_all[(v_time_all >= start) & (v_time_all <= stop)]
     v_flag = np.asarray(v_data['Visible'])[(v_time_all >= start) & (v_time_all <= stop)]
     # VK END
+
+
+    # VK START: REMOVE SEQUENCES THAT ARE TOO SHORT:
+
+    aa = helper_codes.remove_short_sequences()
+    xxxxxx
 
     #figure out where the visibility changes (gives final element where the visibility is the same)
     v_change = np.where(v_flag[:-1] != v_flag[1:])[0]
@@ -424,6 +430,7 @@ for i in tqdm(range(6,7)):#len(sch))):
     # print()
 
 etstr=ET.tostring(cal, xml_declaration=True)
+
 
 from xml.dom import minidom
 dom = minidom.parseString(etstr)
