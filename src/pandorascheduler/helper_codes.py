@@ -42,10 +42,15 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
 
 def params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec):
 
+    try:
+        start_format, stop_format = f'{datetime.strftime(start, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(stop, "%Y-%m-%dT%H:%M:%SZ")}'
+    except:
+        start_format, stop_format = start, stop
+
     observational_parameters = {
         "Target": t_name,
         "Priority": f'{priority}',
-        "Timing": ["Start", "Stop", f'{start}', f'{stop}'],#f'{datetime.strftime(start, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(stop, "%Y-%m-%dT%H:%M:%SZ")}'], 
+        "Timing": ["Start", "Stop", start_format, stop_format],#f'{datetime.strftime(start, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(stop, "%Y-%m-%dT%H:%M:%SZ")}'], #f'{start}', f'{stop}'],#
         "Boresight": ["RA", "DEC", f'{float(ra)}', f'{float(dec)}'], 
         }
 
@@ -85,8 +90,8 @@ def params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec):
 
     return observational_parameters, params_NIRDA, params_VDA
 
-def remove_short_sequences():
-    A = [1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]
+def remove_short_sequences(array, sequence_too_short):
+    A = array#[1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]
 
     # Initialize variables to keep track of the start index of a subarray and the positions of qualifying subarrays
     start_index = None
@@ -100,11 +105,16 @@ def remove_short_sequences():
         # Check if we are at the end of a subarray of 1s
         elif A[i] == 0 and start_index is not None:
             # Check if the subarray is shorter than 2 elements
-            if i - start_index < 2:
+            if i - start_index < sequence_too_short:
                 positions.append((start_index, i - 1))
             start_index = None
     # Check if the last element of A is part of a qualifying subarray
-    if start_index is not None and len(A) - start_index < 2:
+    if start_index is not None and len(A) - start_index < sequence_too_short:
         positions.append((start_index, len(A) - 1))
 
-    return positions
+    A_new = A.copy()
+    if len(positions) != 0:
+        for ii in range(len(positions)):
+            A_new[positions[ii][0]:positions[ii][1]+1] = 0.
+
+    return A_new, positions
