@@ -17,12 +17,12 @@ def Schedule(
     target_list: str,
     obs_window: timedelta,
     transit_coverage_min: float,
+    aux_key: str,#='random',
+    aux_list:str,#="aux_list.csv",
     sched_wts: list,
     commissioning_time: int = 30,
     sched_start: str = None,
     sched_stop: str = None,
-    aux_key='random',
-    aux_list="aux_list.csv",
 ):
     """Determine visibility for target(s) host star with Pandora given avoidance angles
     for Sun, Moon, and Earth limb.
@@ -794,6 +794,8 @@ def Schedule_all_scratch(
         obs_window: timedelta,
         transit_coverage_min: float,
         sched_wts: list,
+        aux_key: str,
+        aux_list: str,
         commissioning_time=30,
         sched_start=None,
         sched_stop=None,
@@ -894,7 +896,8 @@ def Schedule_all_scratch(
     
     
     #Schedule observations for the scheduling period
-    Schedule(pandora_start, pandora_stop, obs_window, transit_coverage_min, sched_wts, commissioning_time=30, aux_key=None)
+    Schedule(pandora_start, pandora_stop, target_list, obs_window, transit_coverage_min, \
+         aux_key, aux_list, sched_wts, commissioning_time=30)#, aux_key=None)
     
 # Need a functional addition to add in auxilliary science to the scheduler
 # Especially need prioritization of aux and to put aux in blank times
@@ -928,8 +931,10 @@ if __name__ == "__main__":
     #         aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
     #
     transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \
-        save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/target_list_top20_16Feb2024.csv')
-    #                  save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/aux_list.csv')
+        save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/target_partner_list.csv')
+        # save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/aux_list.csv')
+        # save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/target_list_top20_16Feb2024.csv')
+    #                  
     #
     # Schedule(pandora_start, pandora_stop, obs_window, transit_coverage_min, sched_wts, \
     #          commissioning_time=30, sched_start=sched_start, sched_stop=sched_stop,
