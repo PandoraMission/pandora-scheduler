@@ -9,7 +9,7 @@ from astropy.time import Time
 from datetime import timedelta
 from progressbar import ProgressBar
 import logging
-import barycorr
+# import barycorr
 from tqdm import tqdm
 # from . import barycorr
 
@@ -22,10 +22,10 @@ print(PACKAGEDIR)
 
 def star_vis(sun_block:float, moon_block:float, earth_block:float, 
                obs_start:str, obs_stop:str, 
-               gmat_file:str = 'GMAT_pandora_450_20230713.csv',
-               obs_name:str = 'Pandora_450km_20230713',
-               save_pth:str = f'{PACKAGEDIR}/data/targets/',
-               targ_list:str = f'{PACKAGEDIR}/data/target_list.csv'):
+               gmat_file:str,# = 'GMAT_pandora_450_20230713.csv',
+               obs_name:str,# = 'Pandora_450km_20230713',
+               save_pth:str,# = f'{PACKAGEDIR}/data/targets/',
+               targ_list:str):# = f'{PACKAGEDIR}/data/target_list.csv'):
     """ Determine visibility for target(s) host star with Pandora given avoidance angles
     for Sun, Moon, and Earth limb.
         
