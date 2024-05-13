@@ -1,0 +1,3933 @@
+<?xml version="1.0" ?>
+<ScienceCalendar xmlns="/pandora/calendar/">
+	<Meta Valid_From="2025-10-01 00:00:00" Expires="2026-08-31 09:00:00" Calendar_Weights="0.0, 0.0, 1.0" Ephemeris="sma=6828.14, ecc=0.0, inc=97.2188, aop=0.0, raan=303.263, ta=0.0" Keepout_Angles="90.0, 40.0, 63.0" Created="2024-05-10 10:32:45.267048" Delivery_Id=""/>
+	<Visit>
+		<ID>0000</ID>
+		<Observation_Sequence>
+			<ID>001</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-01T00:00:00Z</Start>
+					<Stop>2025-10-01T00:45:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>002</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T00:46:59Z</Start>
+					<Stop>2025-10-01T00:57:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>003</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-01T00:58:59Z</Start>
+					<Stop>2025-10-01T02:18:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>004</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T02:19:59Z</Start>
+					<Stop>2025-10-01T02:30:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>005</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-01T02:32:00Z</Start>
+					<Stop>2025-10-01T03:53:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>006</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T03:54:00Z</Start>
+					<Stop>2025-10-01T04:05:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>007</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-01T04:06:00Z</Start>
+					<Stop>2025-10-01T05:26:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>008</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T05:26:59Z</Start>
+					<Stop>2025-10-01T05:37:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>009</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-01T05:38:59Z</Start>
+					<Stop>2025-10-01T06:59:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>010</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T07:00:59Z</Start>
+					<Stop>2025-10-01T07:11:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>011</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-01T07:12:59Z</Start>
+					<Stop>2025-10-01T08:33:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>012</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T08:34:00Z</Start>
+					<Stop>2025-10-01T08:46:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>013</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-01T08:47:00Z</Start>
+					<Stop>2025-10-01T10:07:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>014</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T10:07:59Z</Start>
+					<Stop>2025-10-01T10:18:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>015</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-01T10:19:59Z</Start>
+					<Stop>2025-10-01T11:39:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>016</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T11:40:59Z</Start>
+					<Stop>2025-10-01T11:52:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>017</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-01T11:53:59Z</Start>
+					<Stop>2025-10-01T13:14:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>018</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T13:15:00Z</Start>
+					<Stop>2025-10-01T13:26:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>019</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-01T13:27:00Z</Start>
+					<Stop>2025-10-01T14:47:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>020</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T14:48:00Z</Start>
+					<Stop>2025-10-01T15:00:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>021</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-01T15:00:59Z</Start>
+					<Stop>2025-10-01T16:20:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>022</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T16:21:59Z</Start>
+					<Stop>2025-10-01T16:33:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>023</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-01T16:34:59Z</Start>
+					<Stop>2025-10-01T17:53:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>024</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T17:55:00Z</Start>
+					<Stop>2025-10-01T18:07:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>025</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-01T18:08:00Z</Start>
+					<Stop>2025-10-01T19:28:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>026</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T19:29:00Z</Start>
+					<Stop>2025-10-01T19:41:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>027</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-01T19:41:59Z</Start>
+					<Stop>2025-10-01T21:00:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>028</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T21:01:59Z</Start>
+					<Stop>2025-10-01T21:13:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>029</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-01T21:14:59Z</Start>
+					<Stop>2025-10-01T22:34:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>030</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-01T22:36:00Z</Start>
+					<Stop>2025-10-01T22:48:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>031</ID>
+			<Observational_Parameters>
+				<Target>WASP-52 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-01T22:49:00Z</Start>
+					<Stop>2025-10-01T23:59:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>348.49482337452</RA>
+					<DEC>8.76127008482</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>WASP-52 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>348.49482337452</TargetRA>
+					<TargetDEC>8.76127008482</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>WASP-52 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+	</Visit>
+	<Visit>
+		<ID>0001</ID>
+		<Observation_Sequence>
+			<ID>001</ID>
+			<Observational_Parameters>
+				<Target>GJ 9827 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-02T00:00:00Z</Start>
+					<Stop>2025-10-02T01:30:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>351.77015704489116</RA>
+					<DEC>-1.286272959175</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>GJ 9827 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>351.77015704489116</TargetRA>
+					<TargetDEC>-1.286272959175</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>GJ 9827 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>002</ID>
+			<Observational_Parameters>
+				<Target>GJ 9827 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-02T01:30:00Z</Start>
+					<Stop>2025-10-02T03:00:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>351.77015704489116</RA>
+					<DEC>-1.286272959175</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>GJ 9827 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>351.77015704489116</TargetRA>
+					<TargetDEC>-1.286272959175</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>GJ 9827 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>003</ID>
+			<Observational_Parameters>
+				<Target>GJ 9827 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-02T03:00:00Z</Start>
+					<Stop>2025-10-02T04:30:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>351.77015704489116</RA>
+					<DEC>-1.286272959175</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>GJ 9827 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>351.77015704489116</TargetRA>
+					<TargetDEC>-1.286272959175</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>GJ 9827 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>004</ID>
+			<Observational_Parameters>
+				<Target>GJ 9827 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-02T04:30:00Z</Start>
+					<Stop>2025-10-02T06:00:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>351.77015704489116</RA>
+					<DEC>-1.286272959175</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>GJ 9827 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>351.77015704489116</TargetRA>
+					<TargetDEC>-1.286272959175</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>GJ 9827 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>005</ID>
+			<Observational_Parameters>
+				<Target>GJ 9827 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-02T06:00:00Z</Start>
+					<Stop>2025-10-02T07:30:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>351.77015704489116</RA>
+					<DEC>-1.286272959175</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>GJ 9827 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>351.77015704489116</TargetRA>
+					<TargetDEC>-1.286272959175</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>GJ 9827 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>006</ID>
+			<Observational_Parameters>
+				<Target>GJ 9827 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-02T07:30:00Z</Start>
+					<Stop>2025-10-02T09:00:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>351.77015704489116</RA>
+					<DEC>-1.286272959175</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>GJ 9827 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>351.77015704489116</TargetRA>
+					<TargetDEC>-1.286272959175</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>GJ 9827 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>007</ID>
+			<Observational_Parameters>
+				<Target>GJ 9827 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-02T09:00:00Z</Start>
+					<Stop>2025-10-02T10:30:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>351.77015704489116</RA>
+					<DEC>-1.286272959175</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>GJ 9827 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>351.77015704489116</TargetRA>
+					<TargetDEC>-1.286272959175</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>GJ 9827 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>008</ID>
+			<Observational_Parameters>
+				<Target>GJ 9827 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-02T10:30:00Z</Start>
+					<Stop>2025-10-02T12:00:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>351.77015704489116</RA>
+					<DEC>-1.286272959175</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>GJ 9827 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>351.77015704489116</TargetRA>
+					<TargetDEC>-1.286272959175</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>GJ 9827 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>009</ID>
+			<Observational_Parameters>
+				<Target>GJ 9827 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-02T12:00:00Z</Start>
+					<Stop>2025-10-02T13:30:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>351.77015704489116</RA>
+					<DEC>-1.286272959175</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>GJ 9827 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>351.77015704489116</TargetRA>
+					<TargetDEC>-1.286272959175</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>GJ 9827 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>010</ID>
+			<Observational_Parameters>
+				<Target>GJ 9827 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-02T13:30:00Z</Start>
+					<Stop>2025-10-02T15:00:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>351.77015704489116</RA>
+					<DEC>-1.286272959175</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>GJ 9827 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>351.77015704489116</TargetRA>
+					<TargetDEC>-1.286272959175</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>GJ 9827 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>011</ID>
+			<Observational_Parameters>
+				<Target>GJ 9827 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-02T15:00:00Z</Start>
+					<Stop>2025-10-02T16:30:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>351.77015704489116</RA>
+					<DEC>-1.286272959175</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>GJ 9827 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>351.77015704489116</TargetRA>
+					<TargetDEC>-1.286272959175</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>GJ 9827 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>012</ID>
+			<Observational_Parameters>
+				<Target>GJ 9827 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-02T16:30:00Z</Start>
+					<Stop>2025-10-02T18:00:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>351.77015704489116</RA>
+					<DEC>-1.286272959175</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>GJ 9827 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>351.77015704489116</TargetRA>
+					<TargetDEC>-1.286272959175</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>GJ 9827 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>013</ID>
+			<Observational_Parameters>
+				<Target>GJ 9827 b</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-02T18:00:00Z</Start>
+					<Stop>2025-10-02T18:21:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>351.77015704489116</RA>
+					<DEC>-1.286272959175</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>GJ 9827 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>351.77015704489116</TargetRA>
+					<TargetDEC>-1.286272959175</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>GJ 9827 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>014</ID>
+			<Observational_Parameters>
+				<Target>HD 3167</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-02T18:22:00Z</Start>
+					<Stop>2025-10-02T18:52:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>8.740149</RA>
+					<DEC>4.380722</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HD 3167</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>8.740149</TargetRA>
+					<TargetDEC>4.380722</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HD 3167</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>015</ID>
+			<Observational_Parameters>
+				<Target>GJ 9827 b</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-02T18:53:00Z</Start>
+					<Stop>2025-10-02T19:36:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>351.77015704489116</RA>
+					<DEC>-1.286272959175</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>GJ 9827 b</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>351.77015704489116</TargetRA>
+					<TargetDEC>-1.286272959175</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>GJ 9827 b</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>016</ID>
+			<Observational_Parameters>
+				<Target>HD 3167</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-02T19:37:00Z</Start>
+					<Stop>2025-10-02T23:59:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>8.740149</RA>
+					<DEC>4.380722</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HD 3167</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>8.740149</TargetRA>
+					<TargetDEC>4.380722</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HD 3167</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+	</Visit>
+	<Visit>
+		<ID>0002</ID>
+		<Observation_Sequence>
+			<ID>001</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T00:00:00Z</Start>
+					<Stop>2025-10-03T00:20:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>002</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T00:21:00Z</Start>
+					<Stop>2025-10-03T00:34:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>003</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T00:35:59Z</Start>
+					<Stop>2025-10-03T01:53:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>004</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T01:54:59Z</Start>
+					<Stop>2025-10-03T02:07:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>005</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T02:08:59Z</Start>
+					<Stop>2025-10-03T03:26:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>006</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T03:27:59Z</Start>
+					<Stop>2025-10-03T03:42:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>007</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T03:43:00Z</Start>
+					<Stop>2025-10-03T05:01:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>008</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T05:02:00Z</Start>
+					<Stop>2025-10-03T05:15:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>009</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T05:15:59Z</Start>
+					<Stop>2025-10-03T06:33:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>010</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T06:34:59Z</Start>
+					<Stop>2025-10-03T06:47:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>011</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T06:48:59Z</Start>
+					<Stop>2025-10-03T08:07:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>012</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T08:08:59Z</Start>
+					<Stop>2025-10-03T08:22:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>013</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T08:23:00Z</Start>
+					<Stop>2025-10-03T09:41:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>014</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T09:42:00Z</Start>
+					<Stop>2025-10-03T09:55:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>015</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T09:56:00Z</Start>
+					<Stop>2025-10-03T11:15:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>016</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T11:15:59Z</Start>
+					<Stop>2025-10-03T11:28:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>017</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T11:29:59Z</Start>
+					<Stop>2025-10-03T12:47:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>018</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T12:48:59Z</Start>
+					<Stop>2025-10-03T13:02:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>019</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T13:03:00Z</Start>
+					<Stop>2025-10-03T14:22:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>020</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T14:23:00Z</Start>
+					<Stop>2025-10-03T14:36:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>021</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T14:37:00Z</Start>
+					<Stop>2025-10-03T15:56:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>022</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T15:56:59Z</Start>
+					<Stop>2025-10-03T16:08:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>023</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T16:09:59Z</Start>
+					<Stop>2025-10-03T17:28:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>024</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T17:29:59Z</Start>
+					<Stop>2025-10-03T17:42:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>025</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T17:44:00Z</Start>
+					<Stop>2025-10-03T19:03:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>026</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T19:04:00Z</Start>
+					<Stop>2025-10-03T19:16:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>027</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>2</Priority>
+				<Timing>
+					<Start>2025-10-03T19:17:00Z</Start>
+					<Stop>2025-10-03T20:36:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>028</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T20:37:00Z</Start>
+					<Stop>2025-10-03T20:49:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>029</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T20:50:59Z</Start>
+					<Stop>2025-10-03T22:09:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>030</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T22:10:59Z</Start>
+					<Stop>2025-10-03T22:22:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>031</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T22:23:59Z</Start>
+					<Stop>2025-10-03T23:42:59Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>032</ID>
+			<Observational_Parameters>
+				<Target>HIP 65 A</Target>
+				<Priority>0</Priority>
+				<Timing>
+					<Start>2025-10-03T23:44:00Z</Start>
+					<Stop>2025-10-03T23:56:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>0.185606</RA>
+					<DEC>-54.830823</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>HIP 65 A</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>0.185606</TargetRA>
+					<TargetDEC>-54.830823</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>HIP 65 A</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+		<Observation_Sequence>
+			<ID>033</ID>
+			<Observational_Parameters>
+				<Target>LTT 1445 A c</Target>
+				<Priority>1</Priority>
+				<Timing>
+					<Start>2025-10-03T23:57:00Z</Start>
+					<Stop>2025-10-03T23:59:00Z</Stop>
+				</Timing>
+				<Boresight>
+					<RA>45.46414028</RA>
+					<DEC>-16.59334199</DEC>
+				</Boresight>
+			</Observational_Parameters>
+			<Payload_Parameters>
+				<NIRDA>
+					<AverageGroups>1</AverageGroups>
+					<ROI_StartX>0</ROI_StartX>
+					<ROI_StartY>824</ROI_StartY>
+					<ROI_SizeX>80</ROI_SizeX>
+					<ROI_SizeY>400</ROI_SizeY>
+					<SC_Resets1>1</SC_Resets1>
+					<SC_Resets2>1</SC_Resets2>
+					<SC_DropFrames1>0</SC_DropFrames1>
+					<SC_DropFrames2>16</SC_DropFrames2>
+					<SC_DropFrames3>0</SC_DropFrames3>
+					<SC_ReadFrames>4</SC_ReadFrames>
+					<TargetID>LTT 1445 A c</TargetID>
+					<SC_Groups>2</SC_Groups>
+					<SC_Integrations>525</SC_Integrations>
+				</NIRDA>
+				<VDA>
+					<StartRoiDetMethod>0</StartRoiDetMethod>
+					<FramesPerCoadd>50</FramesPerCoadd>
+					<NumTotalFramesRequested>9000</NumTotalFramesRequested>
+					<TargetRA>45.46414028</TargetRA>
+					<TargetDEC>-16.59334199</TargetDEC>
+					<IncludeFieldSolnsInResp>1</IncludeFieldSolnsInResp>
+					<StarRoiDimension>50</StarRoiDimension>
+					<MaxNumStarRois>0</MaxNumStarRois>
+					<numPredefinedStarRois>5</numPredefinedStarRois>
+					<PredefinedStarRoiRa>[60.1, 60.2, 60.3, 60.4, 60.5]</PredefinedStarRoiRa>
+					<PredefinedStarRoiDec>[-30.1, -30.2, -30.3, -30.4, -30.5]</PredefinedStarRoiDec>
+					<TargetID>LTT 1445 A c</TargetID>
+					<NumExposuresMax>1</NumExposuresMax>
+					<ExposureTime_us>200000</ExposureTime_us>
+				</VDA>
+			</Payload_Parameters>
+		</Observation_Sequence>
+	</Visit>
+</ScienceCalendar>

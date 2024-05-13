@@ -65,8 +65,6 @@ def Schedule(
     """
     assert sum(sched_wts) == 1., "Sum of weights should equal 1"
 
-    
-
     # Convert times to datetime
     pandora_start = datetime.strptime(pandora_start, "%Y-%m-%d %H:%M:%S")
     # Add in commissioning time
@@ -86,7 +84,8 @@ def Schedule(
         sched_stop = datetime.strptime(sched_stop, "%Y-%m-%d %H:%M:%S")
 
     # Import target list
-    target_list = pd.read_csv(f"{PACKAGEDIR}/data/target_list.csv", sep=",")
+    target_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
+    #target_list = pd.read_csv(f"{PACKAGEDIR}/data/target_list.csv", sep=",")
 
     # Import no phase events
     if os.path.exists(f"{PACKAGEDIR}/data/no_phase_list.csv") == True:
@@ -928,7 +927,7 @@ if __name__ == "__main__":
     
     Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
         obs_window, transit_coverage_min, sched_wts, \
-            aux_key=None, aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
+            aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
             # aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
     #
     # transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \

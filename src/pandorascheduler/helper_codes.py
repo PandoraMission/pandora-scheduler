@@ -47,11 +47,16 @@ def params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec):
     except:
         start_format, stop_format = start, stop
 
+    try:
+        ra_tmp, dec_tmp = f'{float(ra)}', f'{float(dec)}'
+    except:
+        ra_tmp, dec_tmp = f'{float(-999)}', f'{float(-999)}'
+
     observational_parameters = {
         "Target": t_name,
         "Priority": f'{priority}',
         "Timing": ["Start", "Stop", start_format, stop_format],#f'{datetime.strftime(start, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(stop, "%Y-%m-%dT%H:%M:%SZ")}'], #f'{start}', f'{stop}'],#
-        "Boresight": ["RA", "DEC", f'{float(ra)}', f'{float(dec)}'], 
+        "Boresight": ["RA", "DEC", ra_tmp, dec_tmp],#f'{float(ra)}', f'{float(dec)}'], 
         }
 
     params_NIRDA = {
@@ -75,8 +80,8 @@ def params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec):
         "StartRoiDetMethod": 0,
         "FramesPerCoadd": 50,
         "NumTotalFramesRequested": 9000,
-        "TargetRA": f'{float(ra)}',
-        "TargetDEC": f'{float(dec)}',
+        "TargetRA": ra_tmp,#f'{float(ra)}',
+        "TargetDEC": dec_tmp,#f'{float(dec)}',
         "IncludeFieldSolnsInResp": 1,
         "StarRoiDimension": 50,
         "MaxNumStarRois": 0,

@@ -25,10 +25,10 @@ warnings.filterwarnings("ignore")
 # VK END
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_0.0_0.0_1.0_2025-10-01_Top20_16Feb2024.csv'#Pandora_Schedule_0.0_0.0_1.0_2025-05-25.csv'
+schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-10-01_top20_16Feb2024.csv'#Pandora_Schedule_0.0_0.0_1.0_2025-05-25.csv'
 tar_vis_path=f'{PACKAGEDIR}/data/targets/'
 aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
-tar_path=f'{PACKAGEDIR}/data/target_list.csv'
+tar_path=f'{PACKAGEDIR}/data/target_list_top20_16Feb2024.csv'
 aux_path=f'{PACKAGEDIR}/data/aux_list.csv'
 t_list=pd.read_csv(tar_path)
 a_list=pd.read_csv(aux_path)
@@ -207,14 +207,14 @@ meta=ET.SubElement(cal, 'Meta',
                    Calendar_Weights='0.0, 0.0, 1.0',
                    Ephemeris='sma=6828.14, ecc=0.0, inc=97.2188, aop=0.0, raan=303.263, ta=0.0',
                    Keepout_Angles='90.0, 40.0, 63.0',
-                #    Observation_Sequence_Duration = dt,
-                #    Removed_Sequences_Shorter_Than = too_short_sequences,
+                   Observation_Sequence_Duration_hrs = f'{dt}',
+                   Removed_Sequences_Shorter_Than_min = f'{too_short_sequences}',
                    Created=f'{str(datetime.now())}',
 #                   Author="P Bonney",
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(2,5)):#len(sch))):#18,19)):#
+for i in tqdm(range(len(sch))):#3)):#len(18,19)):#
     t_name=sch['Target'][i]
     st_name=t_name[:-2]
     
@@ -264,11 +264,13 @@ for i in tqdm(range(2,5)):#len(sch))):#18,19)):#
 
     # VK START: REMOVE SEQUENCES THAT ARE TOO SHORT:
     v_flag_update, positions = helper_codes.remove_short_sequences(v_flag, too_short_sequences)
-    # v_flag = v_flag_update
+    v_flag = v_flag_update
     # VK END
 
     #figure out where the visibility changes (gives final element where the visibility is the same)
     v_change = np.where(v_flag[:-1] != v_flag[1:])[0]
+
+    # print(t_name, v_change[-1], len(v_time)-1, v_flag[-1])
     
     st=start
     sp=v_time[-1]
@@ -311,7 +313,7 @@ for i in tqdm(range(2,5)):#len(sch))):#18,19)):#
 
         if not v_flag[-1]:
             v_change=v_change.tolist()
-            v_change.append(len(v_time)-1)
+            v_change.append(len(v_time)-2)
             v_change=np.array(v_change)
         
         if not v_flag[0]:
@@ -332,6 +334,10 @@ for i in tqdm(range(2,5)):#len(sch))):#18,19)):#
         #
         #
         # VK BEGIN:
+        # print(t_name, v_change[-1], len(v_time)-1, v_flag[-1])
+        if v_flag[-1] == 1:
+            v_change = np.append(v_change, len(v_time)-2)
+        # v_change = np.append(v_change, len(v_time)-2)
         # if v_change[-1] != len(v_time)-1:
         #     v_change = np.append(v_change, len(v_time)-2)
         # else:
@@ -412,6 +418,8 @@ for i in tqdm(range(2,5)):#len(sch))):#18,19)):#
             st = v_time[v_change[v]+1]
             sp = v_time[v_change[v+1]]
 
+            # print(t_name, st, sp)
+
             #set elements for the target if target is visible for this sequence
             if v_t[v+1]: 
                 target_, ra_, dec_ = t_name, f'{float(ra)}', f'{float(dec)}'
@@ -444,6 +452,6 @@ dom = minidom.parseString(etstr)
 
 #dom = xml.dom.minidom.parseString(etstr)
 pretty_xml_as_string = dom.toprettyxml()
-f=open(f'{PACKAGEDIR}/data/cal_pretty_top20.xml','w+')#test.xml', 'w+')
+f=open(f'{PACKAGEDIR}/data/cal_pretty_test.xml','w+')#test.xml', 'w+')
 f.write(pretty_xml_as_string)
 f.close()
