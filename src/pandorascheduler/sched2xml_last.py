@@ -25,10 +25,10 @@ warnings.filterwarnings("ignore")
 # VK END
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-10-01_top20_16Feb2024.csv'#Pandora_Schedule_0.0_0.0_1.0_2025-05-25.csv'
+schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-10-01_top20_14May2024.csv'#Pandora_Schedule_0.0_0.0_1.0_2025-05-25.csv'
 tar_vis_path=f'{PACKAGEDIR}/data/targets/'
 aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
-tar_path=f'{PACKAGEDIR}/data/target_list_top20_16Feb2024.csv'
+tar_path=f'{PACKAGEDIR}/data/Pandora Target List - Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
 aux_path=f'{PACKAGEDIR}/data/aux_list.csv'
 t_list=pd.read_csv(tar_path)
 a_list=pd.read_csv(aux_path)
@@ -214,7 +214,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(10)):#len(sch))):#3)):#len(18,19)):#
     t_name=sch['Target'][i]
     st_name=t_name[:-2]
     
@@ -452,6 +452,6 @@ dom = minidom.parseString(etstr)
 
 #dom = xml.dom.minidom.parseString(etstr)
 pretty_xml_as_string = dom.toprettyxml()
-f=open(f'{PACKAGEDIR}/data/cal_pretty_test.xml','w+')#test.xml', 'w+')
+f=open(f'{PACKAGEDIR}/data/cal_test_top20_14May2024.xml','w+')#test.xml', 'w+')
 f.write(pretty_xml_as_string)
 f.close()
