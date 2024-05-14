@@ -920,18 +920,18 @@ if __name__ == "__main__":
     
     #Mission requirements: >= 91 deg avoidance for Sun, >= 20 deg avoidance for Moon and Earth limbs
     blocks=[91.,40.,63.]
-    target_list='Pandora Target List - Top40_16Feb2024_Top40_SDM'#'target_list_top20_16Feb2024.csv'
+    target_list='Pandora Target List - Top40_16Feb2024_Top40_SDM.csv'#'target_list_top20_16Feb2024.csv'
     target_partner_list='target_partner_list.csv'#'target_list_top5_16Feb2024.csv'#
     gmat_file = 'GMAT_pandora_450_20230713.csv'
     obs_name = 'Pandora_450km_20230713'
     
-    # Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
-    #     obs_window, transit_coverage_min, sched_wts, \
-    #         aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
+    Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
+        obs_window, transit_coverage_min, sched_wts, \
+            aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
             # aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
     #
     # transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \
-    #     save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/target_list_top20_16Feb2024.csv')
+    #     save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/Pandora Target List - Top40_16Feb2024_Top40_SDM.csv')
         # save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/target_partner_list.csv')
         # save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/aux_list.csv')
     #                  
