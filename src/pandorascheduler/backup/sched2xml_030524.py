@@ -205,7 +205,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(1,5)):#len(sch))):
+for i in tqdm(range(10)):#len(sch))):
     t_name=sch['Target'][i]
     st_name=t_name[:-2]
     
@@ -230,12 +230,6 @@ for i in tqdm(range(1,5)):#len(sch))):
     
     ra=targ_info['RA'].iloc[0]
     dec=targ_info['DEC'].iloc[0]
-
-    #VK BEGIN: the original target_list.csv from Paul has incorrect RA & Dec. 
-    # Instead of manually fixing these, I'll just get them from SkyCoord
-    #star_sc = SkyCoord.from_name(st_name)
-    #ra = star_sc.ra.deg
-    #dec = star_sc.dec.deg
     
     #get times during this visit
     v_time=Time(v_data["Time(MJD_UTC)"], format="mjd", scale="utc").to_value("datetime")
