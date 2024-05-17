@@ -28,12 +28,13 @@ PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-10-01_top20_14May2024.csv'#Pandora_Schedule_0.0_0.0_1.0_2025-05-25.csv'
 tar_vis_path=f'{PACKAGEDIR}/data/targets/'
 aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
-tar_path=f'{PACKAGEDIR}/data/Pandora Target List - Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
+tar_path=f'{PACKAGEDIR}/data/Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
 aux_path=f'{PACKAGEDIR}/data/aux_list.csv'
+tar_path_ALL = f'{PACKAGEDIR}/data/Pandora_Target_List_Top40_16Feb2024_Top40_SDM.csv'
 t_list=pd.read_csv(tar_path)
 a_list=pd.read_csv(aux_path)
 sch=pd.read_csv(schedule_path)
-author='Paul Bonney'
+# author='Paul Bonney'
 
 #save a stripped version as csv for LLNL
 save_csv=False
@@ -105,7 +106,7 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
             try:
                 #vis=pd.read_csv(f"{PACKAGEDIR}/data/oc_targets/{v_names[n]}/Visibility for {v_names[n]}.csv")
                 # VK BEGIN: there is no oc_targets directory, trying with targets or aux_targets directories:
-                if list_path == tar_path:
+                if (list_path == tar_path) or (list_path == tar_path_ALL):
                     vis=pd.read_csv(f"{PACKAGEDIR}/data/targets/{v_names[n]}/Visibility for {v_names[n]}.csv")
                 elif list_path == aux_path:
                     vis=pd.read_csv(f"{PACKAGEDIR}/data/aux_targets/{v_names[n]}/Visibility for {v_names[n]}.csv")
@@ -166,9 +167,10 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                     o_df['RA'][:]=str(ras[n])
                     o_df['DEC'][:]=str(decs[n])
                     d_flag=True
+                    # print(st_name, ': ', n, v_names[n], v_names[n], 'Occ target visible ALL')
                     break
                 
-                #print(st_name, ': ', n, v_names[n], ' not visible, try next on the list')
+                # print(st_name, ': ', n, v_names[n], ' not visible, try next on the list')
             
             #If a target(s) on the list don't have visibility data, ignore them!
             except FileNotFoundError:
@@ -190,7 +192,8 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                     d_flag=True
                     print('More than two auxiliary targets were needed to cover the occultation time.')
                     
-        
+    # print(v_df)
+
     return o_df, d_flag
 
 #max time for an observation sequence
@@ -214,7 +217,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(10)):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(len(sch))):#3)):#len(18,19)):#
     t_name=sch['Target'][i]
     st_name=t_name[:-2]
     
@@ -227,7 +230,7 @@ for i in tqdm(range(10)):#len(sch))):#3)):#len(18,19)):#
     stop = datetime.strptime(sch['Observation Stop'][i], "%Y-%m-%d %H:%M:%S")
     
     #Get visibility data, replace if then with the flag later
-    if not t_name.startswith('Gaia'):
+    if not t_name.startswith('Gaia'):# or t_name.startswith('Free'):
         v_data=pd.read_csv(tar_vis_path+f'{st_name}/Visibility for {st_name}.csv')
         targ_info=t_list.loc[(t_list['Planet Name'] == t_name)]
         i_flag=1
@@ -358,6 +361,11 @@ for i in tqdm(range(10)):#len(sch))):#3)):#len(18,19)):#
             print('Find occultation targets from target_list itself...DONE')
         # VK END
         oc_flag=1
+        # if not flag:
+        #     #: VK BEGIN: there is no "nearest" in
+        #     # info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'nearest', prev_obs=[ra,dec])
+        #     info, flag = sch_occ(oc_starts, oc_stops, tar_path_ALL, sort_key = 'closest', prev_obs=[ra,dec])
+        #     print('target_list doesnt work, try all 40 targets...DONE')
         if not flag:
             #: VK BEGIN: there is no "nearest" in
             # info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'nearest', prev_obs=[ra,dec])

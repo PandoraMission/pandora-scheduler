@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
+import pickle
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
 from datetime import datetime, timedelta
@@ -19,11 +20,12 @@ def Schedule(
     transit_coverage_min: float,
     aux_key: str,#='random',
     aux_list:str,#="aux_list.csv",
+    fname_tracker: str,
     sched_wts: list,
     commissioning_time: int = 30,
     sched_start: str = None,
     sched_stop: str = None,
-):
+    ):
     """Determine visibility for target(s) host star with Pandora given avoidance angles
     for Sun, Moon, and Earth limb.
 
@@ -196,7 +198,8 @@ def Schedule(
             "Transit Coverage",
             "SAA Overlap",
             "Schedule Factor",
-            "Transit Factor" "Quality Factor",
+            "Transit Factor",
+            "Quality Factor",
         ],
     )
     
@@ -420,9 +423,8 @@ def Schedule(
             continue
         
         
-#******ADD: functionality to force MTR prioritization and flag if nophase event
-#            causes the minimum schedule to not be met
-        
+            #******ADD: functionality to force MTR prioritization and flag if nophase event causes the minimum schedule to not be met
+       
 
         ### Next look at each planet and determine if transit occurs in window
         for i in range(len(tracker)):
@@ -563,14 +565,12 @@ def Schedule(
 
         ### Check if there's no transits occuring during the observing window
         ### Schedule auxiliary observation if possible
-        
         if len(temp_df) == 0:
             
             aux_df, log_info=Schedule_aux(start, stop, aux_key, aux_list)
             
             sched_df = pd.concat([sched_df, aux_df], axis=0)
             
-    
             logging.info(log_info, start, stop)
             start = stop
             stop = start + obs_window
@@ -601,7 +601,7 @@ def Schedule(
 
             if obs_rng[0] < obs_start:
 
-                aux_df, log_info=Schedule_aux(start, obs_start, aux_key, aux_list)
+                aux_df, log_info = Schedule_aux(start, obs_start, aux_key, aux_list)
                 sched_df = pd.concat([sched_df, aux_df], axis=0)
                 logging.info(log_info, start, obs_start)
 
@@ -668,16 +668,20 @@ def Schedule(
 
     ### Save results
     sched_df = sched_df.sort_values(by=["Observation Start"]).reset_index(drop=True)
-    # save_fname = "Pandora_Schedule.csv"
     save_fname = f"Pandora_Schedule_{sched_wts[0]}_{sched_wts[1]}_{sched_wts[2]}_{pandora_start}.csv"
     sched_df.to_csv((f"{PACKAGEDIR}/data/" + save_fname), sep=",", index=False)
+
+    # Save tracker
+    # save_tracker_fname = f"{PACKAGEDIR}/data/schedule_tracker.pkl"
+    with open(fname_tracker, 'wb') as file:
+        pickle.dump(tracker, file)
+
     return tracker
 
 def Schedule_aux(start, stop, aux_key, aux_list, **kwargs):
     
     obs_rng = pd.date_range(start, stop, freq="min")
 
-    
     if aux_key == None:
         #No aux target scheduling, free time
         free = [["Free Time", start, stop]]
@@ -781,7 +785,6 @@ def Schedule_aux(start, stop, aux_key, aux_list, **kwargs):
             aux_df = pd.DataFrame(free, columns=["Target", "Observation Start", "Observation Stop"])
             log_info = 'Free time, no observation scheduled.'
         
-    
     return aux_df, log_info
 
 def Schedule_all_scratch(
@@ -795,6 +798,7 @@ def Schedule_all_scratch(
         sched_wts: list,
         aux_key: str,
         aux_list: str,
+        fname_tracker: str,
         commissioning_time=30,
         sched_start=None,
         sched_stop=None,
@@ -895,8 +899,8 @@ def Schedule_all_scratch(
     
     
     #Schedule observations for the scheduling period
-    Schedule(pandora_start, pandora_stop, target_list, obs_window, transit_coverage_min, \
-         aux_key, aux_list, sched_wts, commissioning_time=30)#, aux_key=None)
+    tracker = Schedule(pandora_start, pandora_stop, target_list, obs_window, transit_coverage_min, \
+         aux_key, aux_list, fname_tracker, sched_wts, commissioning_time=30); print(tracker)#, aux_key=None)
     
 # Need a functional addition to add in auxilliary science to the scheduler
 # Especially need prioritization of aux and to put aux in blank times
@@ -907,10 +911,9 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-09-01 00:00:00"
-    pandora_stop = "2026-09-01 00:00:00"
-    sched_start="2025-09-01 00:00:00"
-    sched_stop="2026-09-01 00:00:00"
-
+    pandora_stop = "2026-10-01 00:00:00"
+    sched_start= "2025-09-01 00:00:00"
+    sched_stop= "2026-10-01 00:00:00"
 
     # sched_wts[transit coverage, saa overlap, schedule factor]
     # sched_wts = [0.5, 0.25, 0.25]
@@ -920,18 +923,20 @@ if __name__ == "__main__":
     
     #Mission requirements: >= 91 deg avoidance for Sun, >= 20 deg avoidance for Moon and Earth limbs
     blocks=[91.,40.,63.]
-    target_list='Pandora Target List - Top20_14May2024.csv'#'target_list_top20_16Feb2024.csv'
+    target_list_name ='Pandora_Target_List_Top20_14May2024'
+    target_list =  target_list_name + '.csv'#'target_list_top20_16Feb2024.csv'
     target_partner_list='target_partner_list.csv'#'target_list_top5_16Feb2024.csv'#
     gmat_file = 'GMAT_pandora_450_20230713.csv'
     obs_name = 'Pandora_450km_20230713'
+    fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
     
     Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
-        obs_window, transit_coverage_min, sched_wts, \
-            aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
+        obs_window, transit_coverage_min, sched_wts, aux_key=None, aux_list=f"{PACKAGEDIR}/data/aux_list.csv", \
+            fname_tracker = fname_tracker, commissioning_time=30)
             # aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
     #
     # transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \
-    #     save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/Pandora Target List - Top40_16Feb2024_Top40_SDM.csv')
+    #     save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/Pandora_Target_List_Top20_14May2024.csv')
         # save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/target_partner_list.csv')
         # save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/aux_list.csv')
     #                  
