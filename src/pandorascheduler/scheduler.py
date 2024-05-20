@@ -926,17 +926,17 @@ if __name__ == "__main__":
     target_list_name ='Pandora_Target_List_Top20_14May2024'
     target_list =  target_list_name + '.csv'#'target_list_top20_16Feb2024.csv'
     target_partner_list='target_partner_list.csv'#'target_list_top5_16Feb2024.csv'#
-    gmat_file = 'GMAT_pandora_450_20230713.csv'
-    obs_name = 'Pandora_450km_20230713'
+    gmat_file = 'GMAT_pandora_600_20240512.txt'#'GMAT_pandora_450_20230713.csv'
+    obs_name = 'Pandora_600km_20240520'#'Pandora_450km_20230713'
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
     
     Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
-        obs_window, transit_coverage_min, sched_wts, aux_key=None, aux_list=f"{PACKAGEDIR}/data/aux_list.csv", \
+        obs_window, transit_coverage_min, sched_wts, aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", \
             fname_tracker = fname_tracker, commissioning_time=30)
             # aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
     #
     # transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \
-    #     save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/Pandora_Target_List_Top20_14May2024.csv')
+        # save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/Pandora_Target_List_Bottom20_14May2024.csv')
         # save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/target_partner_list.csv')
         # save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/aux_list.csv')
     #                  

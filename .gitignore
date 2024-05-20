@@ -53,3 +53,4 @@ __pycache__/
 # Outputs
 */targets/
 *.csv
+src/pandorascheduler/data/GMAT_pandora_600_20240512.txt

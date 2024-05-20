@@ -25,7 +25,7 @@ warnings.filterwarnings("ignore")
 # VK END
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-10-01_top20_14May2024.csv'#Pandora_Schedule_0.0_0.0_1.0_2025-05-25.csv'
+schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-10-01_top20_18May2024.csv'#Pandora_Schedule_0.0_0.0_1.0_2025-05-25.csv'
 tar_vis_path=f'{PACKAGEDIR}/data/targets/'
 aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
 tar_path=f'{PACKAGEDIR}/data/Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
@@ -81,7 +81,7 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
 
                 dif=[oc_sc[n].separation(po_sc).deg for n in range(len(oc_sc))]
                 o_list['sk_dif']=dif
-                o_list.sort_values(by='sk_dif').reset_index(drop=True)
+                o_list = o_list.sort_values(by='sk_dif').reset_index(drop=True)
                 
             except NameError:
                 print('No previous observation was specified, defaulting to random auxiliary target.')
@@ -115,6 +115,7 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                 
                 #array to hold visibility info for this target
                 v_ar=np.asarray(np.zeros(len(starts)), dtype=bool)
+                v_ar_any = np.asarray(np.zeros(len(starts)), dtype=bool)
                 #iterate through occultation periods and see if v_names[n] is visible for all of them
                 vis_f=False
                 for s in range(len(starts)):
@@ -123,12 +124,18 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                     ast=set(vis.index[vis_ >= starts[s]])
                     bsp=set(vis.index[vis_ <= stops[s]])
                     win=list(ast.intersection(bsp))
-                                      
-                    if np.all(vis['Visible'][win] == 1):
-                        v_ar[s]=True
-                        
+
+                    if len(vis['Visible'][win]) > 0.:
+                        vis_ratio = len(vis['Visible'][win][vis['Visible'][win] == 1])/len(vis['Visible'][win])
+
+                    if np.all(vis['Visible'][win] == 1):# or vis_ratio >= 0.6: 
+                        # UNCOMMENT THE REST OF THE LINE ABOVEFOR TARGETS THAT ARE NOT VISIBLE FOR MANY HOURS AND ALLOW "OCCULTATION"
+                        # TARGET TO BE CONSIDERED AS VISIBLE >= 60% OF 90 MINUTES!!!
+                        v_ar[s] = True               
                     else:
                         vis_f=True
+
+                    # print(v_names[n], "%0.4f" % starts[s], "%0.4f" % stops[s], v_ar[s], np.any(vis['Visible'][win] == 1), "%0.2f" % vis_ratio)
                 
                 #if not visible for all times, check if any entry in v_df and this one cover the 
                 #   total occultation time
@@ -169,7 +176,9 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                     d_flag=True
                     # print(st_name, ': ', n, v_names[n], v_names[n], 'Occ target visible ALL')
                     break
-                
+                    # THIS BREAK DOESNT SEEM TO WORK!!!! REPLACE WITH return o_df, d_flag
+                    # return o_df, d_flag
+
                 # print(st_name, ': ', n, v_names[n], ' not visible, try next on the list')
             
             #If a target(s) on the list don't have visibility data, ignore them!
@@ -179,7 +188,7 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
         #if there were not <=2 occultation targets that covered the time (cya clause)
         if not d_flag:
             #only if considering aux targets, real last ditch effort here
-            if list_path.endswith('aux_list.csv'):
+            if list_path.endswith('aux_list.csv'):# or st_name.startswith('Gaia'):
                 #check one last time to make sure there are no gaps
                 v_arr=np.asarray(v_df)
                 if np.all([np.any(v_arr[i]) for i in range(len(v_arr))]):
@@ -191,8 +200,6 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                         o_df['DEC'][s]=str(decs[n])
                     d_flag=True
                     print('More than two auxiliary targets were needed to cover the occultation time.')
-                    
-    # print(v_df)
 
     return o_df, d_flag
 
@@ -353,22 +360,33 @@ for i in tqdm(range(len(sch))):#3)):#len(18,19)):#
 
         #oc_times=[pd.date_range(oc_starts[o],oc_stops[o], freq='min') for o in range(len(oc_starts))]
 
+        # VK BEGIN: BREAK OCCULTATION SEQUENCES LONGER THAN 90 MINUTES
+        start_tmp, stop_tmp = [], []
+        for ii in range(len(oc_stops)):
+            ranges = helper_codes.break_long_sequences(oc_starts[ii], oc_stops[ii], dt)
+
+            if len(ranges) > 1:
+                for jj in range(len(ranges)):
+                    start_tmp.append(ranges[jj][0])
+                    stop_tmp.append(ranges[jj][1])
+            else:
+                start_tmp.append(oc_starts[ii])
+                stop_tmp.append(oc_stops[ii])
+        oc_starts_bak, oc_stops_bak = oc_starts.copy(), oc_stops.copy()
+        # oc_starts, oc_stops = start_tmp, stop_tmp
+        # VK END
+
         #find an occultation target for this visit that will always be visible
         # VK BEGIN: there is no "nearest" in
         # info, flag = sch_occ(oc_starts, oc_stops, tar_path, sort_key = 'nearest', prev_obs=[ra,dec])
+
         info, flag = sch_occ(oc_starts, oc_stops, tar_path, sort_key = 'closest', prev_obs=[ra,dec])
         if flag:
             print('Find occultation targets from target_list itself...DONE')
         # VK END
         oc_flag=1
-        # if not flag:
-        #     #: VK BEGIN: there is no "nearest" in
-        #     # info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'nearest', prev_obs=[ra,dec])
-        #     info, flag = sch_occ(oc_starts, oc_stops, tar_path_ALL, sort_key = 'closest', prev_obs=[ra,dec])
-        #     print('target_list doesnt work, try all 40 targets...DONE')
         if not flag:
             #: VK BEGIN: there is no "nearest" in
-            # info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'nearest', prev_obs=[ra,dec])
             info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'closest', prev_obs=[ra,dec])
             print('target_list doesnt work, find occultation targets from aux_list instead...DONE')
             # VK END
@@ -388,6 +406,17 @@ for i in tqdm(range(len(sch))):#3)):#len(18,19)):#
             target_, start_, stop_, ra_, dec_ = info['Target'][0], \
                 info['start'][0], info['stop'][0], \
                     info['RA'][0], info['DEC'][0]
+        # THIS IS WIP, FOR THE CASE WHEN THE TARGET IS NOT VISIBLE FOR MANY HOURS IN THE BEGINNING. 
+        # IN THAT CASE, sch_occ WILL ALLOW "OCCULTATION" TARGET TO BE VISIBLE FOR ONLY >=60% OF 90 MIN 
+        # if not v_t[0]:
+        #     if info['stop'][0] != info['start'][1]:
+        #         target_, start_, stop_, ra_, dec_ = info['Target'][0], \
+        #             info['start'][0], info['stop'][0], \
+        #                 info['RA'][0], info['DEC'][0]
+        #     elif info['stop'][0] == info['start'][1]:
+        #         target_, start_, stop_, ra_, dec_ = info['Target'][0], \
+        #             info['start'][0], oc_stops_bak[0], \
+        #                 info['RA'][0], info['DEC'][0]
             priority_ = f'{oc_flag}'
             oc_tr += 1
 
@@ -460,6 +489,6 @@ dom = minidom.parseString(etstr)
 
 #dom = xml.dom.minidom.parseString(etstr)
 pretty_xml_as_string = dom.toprettyxml()
-f=open(f'{PACKAGEDIR}/data/cal_test_top20_14May2024.xml','w+')#test.xml', 'w+')
+f=open(f'{PACKAGEDIR}/data/cal_test_top20_14May2024_new.xml','w+')#test.xml', 'w+')
 f.write(pretty_xml_as_string)
 f.close()

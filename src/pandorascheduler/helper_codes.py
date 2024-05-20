@@ -123,3 +123,13 @@ def remove_short_sequences(array, sequence_too_short):
             A_new[positions[ii][0]:positions[ii][1]+1] = 0.
 
     return A_new, positions
+#
+#
+def break_long_sequences(start, end, step):
+    ranges = []
+    current = start
+    while current < end:
+        next_val = min(current + step, end)
+        ranges.append([current, next_val])
+        current += step
+    return ranges
