@@ -746,9 +746,6 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, **kwargs):
                     print('No previous observation was specified, defaulting to random auxiliary target.')
                     i=np.random.randint(0,len(vis_all_targs))
 
-            elif aux_key == 'max_visibility_any':
-                i = np.asarray(targ_vis).argmax()
-
             #Default to random (amusingly, this will work fine for aux_key == 'random')
             else:
                 i=np.random.randint(0,len(vis_all_targs))
