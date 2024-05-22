@@ -567,7 +567,11 @@ def Schedule(
         ### Schedule auxiliary observation if possible
         if len(temp_df) == 0:
             
-            aux_df, log_info=Schedule_aux(start, stop, aux_key, aux_list)
+            star_sc = SkyCoord.from_name(star_name)
+            ra = star_sc.ra.deg
+            dec = star_sc.dec.deg
+
+            aux_df, log_info = Schedule_aux(start, stop, aux_key, aux_list, prev_obs = [ra, dec])
             
             sched_df = pd.concat([sched_df, aux_df], axis=0)
             
@@ -601,7 +605,11 @@ def Schedule(
 
             if obs_rng[0] < obs_start:
 
-                aux_df, log_info = Schedule_aux(start, obs_start, aux_key, aux_list)
+                star_sc = SkyCoord.from_name(star_name)
+                ra = star_sc.ra.deg
+                dec = star_sc.dec.deg
+
+                aux_df, log_info = Schedule_aux(start, obs_start, aux_key, aux_list, prev_obs = [ra, dec])
                 sched_df = pd.concat([sched_df, aux_df], axis=0)
                 logging.info(log_info, start, obs_start)
 
@@ -678,7 +686,7 @@ def Schedule(
 
     return tracker
 
-def Schedule_aux(start, stop, aux_key, aux_list, **kwargs):
+def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, **kwargs):
     
     obs_rng = pd.date_range(start, stop, freq="min")
 
@@ -737,7 +745,10 @@ def Schedule_aux(start, stop, aux_key, aux_list, **kwargs):
                 except NameError:
                     print('No previous observation was specified, defaulting to random auxiliary target.')
                     i=np.random.randint(0,len(vis_all_targs))
-            
+
+            elif aux_key == 'max_visibility_any':
+                i = np.asarray(targ_vis).argmax()
+
             #Default to random (amusingly, this will work fine for aux_key == 'random')
             else:
                 i=np.random.randint(0,len(vis_all_targs))
@@ -768,8 +779,10 @@ def Schedule_aux(start, stop, aux_key, aux_list, **kwargs):
                     i=np.random.randint(0,len(vis_any_targs))
             
             #Default to random (amusingly, this will work fine for aux_key == 'random')
+            elif aux_key == 'max_visibility_any':
+                i = np.asarray(targ_vis).argmax()
             else:
-                i=np.random.randint(0,len(vis_any_targs))
+                i = np.random.randint(0,len(vis_any_targs))
             
             #Create data frame to schedule
             name=names[vis_any_targs[i]]
@@ -926,13 +939,13 @@ if __name__ == "__main__":
     target_list_name ='Pandora_Target_List_Top20_14May2024'
     target_list =  target_list_name + '.csv'#'target_list_top20_16Feb2024.csv'
     target_partner_list='target_partner_list.csv'#'target_list_top5_16Feb2024.csv'#
-    gmat_file = 'GMAT_pandora_600_20240512.txt'#'GMAT_pandora_450_20230713.csv'
-    obs_name = 'Pandora_600km_20240520'#'Pandora_450km_20230713'
+    gmat_file = 'GMAT_pandora_600_20240512.txt'#'GMAT_pandora_450_20230713.csv'#
+    obs_name = 'Pandora_600km_20240520'#'Pandora_450km_20230713'#
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
     
     Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
-        obs_window, transit_coverage_min, sched_wts, aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", \
-            fname_tracker = fname_tracker, commissioning_time=30)
+        obs_window, transit_coverage_min, sched_wts, aux_key='max_visibility_any', \
+            aux_list=f"{PACKAGEDIR}/data/aux_list.csv", fname_tracker = fname_tracker, commissioning_time=30)
             # aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
     #
     # transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \
