@@ -25,7 +25,7 @@ warnings.filterwarnings("ignore")
 # VK END
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-10-01_top20_21May2024.csv'#Pandora_Schedule_0.0_0.0_1.0_2025-05-25.csv'
+schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-10-01_top20_23May2024.csv'#Pandora_Schedule_0.0_0.0_1.0_2025-05-25.csv'
 tar_vis_path=f'{PACKAGEDIR}/data/targets/'
 aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
 tar_path=f'{PACKAGEDIR}/data/Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
@@ -138,7 +138,7 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                     else:
                         vis_f=True
 
-                    print(v_names[n], "%0.4f" % starts[s], "%0.4f" % stops[s], v_ar[s], np.any(vis['Visible'][win] == 1), "%0.2f" % vis_ratio)
+                    # print(v_names[n], "%0.4f" % starts[s], "%0.4f" % stops[s], v_ar[s], np.any(vis['Visible'][win] == 1), "%0.2f" % vis_ratio)
                 
                 #if not visible for all times, check if any entry in v_df and this one cover the 
                 #   total occultation time
@@ -231,7 +231,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(186, 188)):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(22)):#len(sch))):#3)):#len(18,19)):#
     t_name=sch['Target'][i]
     st_name=t_name[:-2]
     
@@ -498,6 +498,6 @@ dom = minidom.parseString(etstr)
 
 #dom = xml.dom.minidom.parseString(etstr)
 pretty_xml_as_string = dom.toprettyxml()
-f=open(f'{PACKAGEDIR}/data/cal_test_top20_21May2024_new.xml','w+')#test.xml', 'w+')
+f=open(f'{PACKAGEDIR}/data/cal_test_top20_3weeks.xml','w+')#test.xml', 'w+')
 f.write(pretty_xml_as_string)
 f.close()
