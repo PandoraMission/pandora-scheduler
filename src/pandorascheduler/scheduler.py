@@ -920,10 +920,10 @@ if __name__ == "__main__":
 
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
-    pandora_start = "2025-09-01 00:00:00"
-    pandora_stop = "2026-10-01 00:00:00"
-    sched_start= "2025-09-01 00:00:00"
-    sched_stop= "2026-10-01 00:00:00"
+    pandora_start = "2025-08-04 00:00:00"#"2025-09-01 00:00:00"
+    pandora_stop = "2025-10-04 00:00:00"#"2026-10-01 00:00:00"
+    sched_start= "2025-08-04 00:00:00"#"2025-09-01 00:00:00"
+    sched_stop= "2025-10-04 00:00:00"#"2026-10-01 00:00:00"
 
     # sched_wts[transit coverage, saa overlap, schedule factor]
     # sched_wts = [0.5, 0.25, 0.25]
