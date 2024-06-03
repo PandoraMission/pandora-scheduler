@@ -64,13 +64,16 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
 
     ### Read in GMAT results
     logging.info('Importing GMAT data')
-    gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep='\t')
+    # gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep='\t')
+    if gmat_file == 'GMAT_pandora_450_20230713.csv':
+        gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep='\t+', engine = 'python')
+    elif gmat_file == 'GMAT_pandora_600_20240512.txt':
+        gmat_data = pd.read_fwf(f'{PACKAGEDIR}/data/{gmat_file}')
 
     # Trim dataframe to slightly larger than date range of 
     # Pandora science lifetime defined as obs_start and obs_stop
     gmat_data = gmat_data[(gmat_data['Earth.UTCModJulian']>=(t_jd_utc[0]-2430000.0)-0.0007) & 
             (gmat_data['Earth.UTCModJulian']<=(t_jd_utc[-1]-2430000.0)+0.0007)]
-
 
     ### Convert GMAT times into standard MJD_UTC
     # Note: GMAT uses different offset for it's MJD (uses 2,430,000.0 rather than 2,400,000.5)

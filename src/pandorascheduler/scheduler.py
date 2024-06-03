@@ -809,7 +809,7 @@ def Schedule_all_scratch(
         aux_key: str,
         aux_list: str,
         fname_tracker: str,
-        commissioning_time=30,
+        commissioning_time: int,
         sched_start=None,
         sched_stop=None,
         ):
@@ -910,7 +910,7 @@ def Schedule_all_scratch(
     
     #Schedule observations for the scheduling period
     tracker = Schedule(pandora_start, pandora_stop, target_list, obs_window, transit_coverage_min, \
-         aux_key, aux_list, fname_tracker, sched_wts, commissioning_time=30); print(tracker)#, aux_key=None)
+         aux_key, aux_list, fname_tracker, sched_wts, commissioning_time); print(tracker)#, aux_key=None)
     
 # Need a functional addition to add in auxilliary science to the scheduler
 # Especially need prioritization of aux and to put aux in blank times
@@ -921,9 +921,11 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-08-04 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2025-10-04 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2026-08-03 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2025-08-04 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2025-10-04 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2026-08-03 00:00:00"#"2026-10-01 00:00:00"
+
+    commissioning_time_ = 0
 
     # sched_wts[transit coverage, saa overlap, schedule factor]
     # sched_wts = [0.5, 0.25, 0.25]
@@ -937,16 +939,16 @@ if __name__ == "__main__":
     target_list =  target_list_name + '.csv'#'target_list_top20_16Feb2024.csv'
     target_partner_list='target_partner_list.csv'#'target_list_top5_16Feb2024.csv'#
     gmat_file = 'GMAT_pandora_600_20240512.txt'#'GMAT_pandora_450_20230713.csv'#
-    obs_name = 'Pandora_600km_20240520'#'Pandora_450km_20230713'#
+    obs_name = 'Pandora_600km_20240518'#'Pandora_450km_20230713'#
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
     
     Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
         obs_window, transit_coverage_min, sched_wts, aux_key='max_visibility_any', \
-            aux_list=f"{PACKAGEDIR}/data/aux_list.csv", fname_tracker = fname_tracker, commissioning_time=30)
+            aux_list=f"{PACKAGEDIR}/data/aux_list.csv", fname_tracker = fname_tracker, commissioning_time=commissioning_time_)
             # aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
     #
     # transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \
-        # save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/Pandora_Target_List_Bottom20_14May2024.csv')
+        # save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/Pandora_Target_List_Top20_14May2024.csv')
         # save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/target_partner_list.csv')
         # save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/aux_list.csv')
     #                  
