@@ -231,7 +231,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(32)):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(len(sch))):#3)):#len(18,19)):#
     t_name=sch['Target'][i]
     st_name=t_name[:-2]
     
@@ -311,13 +311,19 @@ for i in tqdm(range(32)):#len(sch))):#3)):#len(18,19)):#
         #get priority
         #check for a visible transit if primary science target and visible
         #set flag 0 = non-primary target; 1 = primary target; 2 = in-transit
-        if i_flag:
-            pr = 2 if np.any((tv_st <= v_time[-1])*(tv_sp >= st)) else 1
-        else:
-            pr=0
+        # if i_flag:
+        #     pr = 2 if np.any((tv_st <= v_time[-1])*(tv_sp >= st)) else 1
+        # else:
+        #     pr=0
    
         sps_all = list(np.hstack((st, sps)))
         for s in range(len(sps_all)-1):
+
+            if i_flag:
+                pr = 2 if np.any((tv_st <= sps_all[s+1])*(tv_sp >= sps_all[s])) else 1
+            else:
+                pr=0
+
             aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(s+1))))+str(s+1)}', \
                 t_name, pr, sps_all[s], sps_all[s+1], ra, dec)
             pass
@@ -435,14 +441,20 @@ for i in tqdm(range(32)):#len(sch))):#3)):#len(18,19)):#
                 f'{datetime.strftime(st, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(sp, "%Y-%m-%dT%H:%M:%SZ")}',\
                     f'{float(ra)}', f'{float(dec)}'
             #set flag 0 = non-primary target; 1 = primary target; 2 = in-transit 
+            # if i_flag:
+            #         priority_ = '2' if np.any((tv_st <= sp)*(tv_sp >= st)) else '1'
+            # else:
+            #     priority_ = '0'
+
+        # VK BEGIN: Create first observation sequence
+        start_format, stop_format = Time(start_).to_value('datetime'), Time(stop_).to_value('datetime')
+        if stop_format - start_format <= dt:
+
             if i_flag:
                     priority_ = '2' if np.any((tv_st <= sp)*(tv_sp >= st)) else '1'
             else:
                 priority_ = '0'
 
-        # VK BEGIN: Create first observation sequence
-        start_format, stop_format = Time(start_).to_value('datetime'), Time(stop_).to_value('datetime')
-        if stop_format - start_format <= dt:
             aa = helper_codes.observation_sequence(visit, "001", target_, priority_, start_format, stop_format, ra_, dec_)
             long_sequence = 0
          # If first sequence longer than dt, break it into sections of length dt:
@@ -453,6 +465,12 @@ for i in tqdm(range(32)):#len(sch))):#3)):#len(18,19)):#
             oc_stops_dt = list(np.sort(np.hstack((stop_format, sps))))
             long_sequence = 1
             for ii, jj in zip(oc_starts_dt, oc_stops_dt):
+
+                if i_flag:
+                    priority_ = '2' if np.any((tv_st <= jj)*(tv_sp >= ii)) else '1'
+                else:
+                    priority_ = '0'
+
                 aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(long_sequence))))+str(long_sequence)}', target_, priority_, ii, jj, ra_, dec_)
                 long_sequence += 1
 
@@ -498,6 +516,6 @@ dom = minidom.parseString(etstr)
 
 #dom = xml.dom.minidom.parseString(etstr)
 pretty_xml_as_string = dom.toprettyxml()
-f=open(f'{PACKAGEDIR}/data/calendar_top20_4weeks_start_2025_08_03.xml','w+')#test.xml', 'w+')
+f=open(f'{PACKAGEDIR}/data/calendar_top20_test.xml','w+')#test.xml', 'w+')
 f.write(pretty_xml_as_string)
 f.close()
