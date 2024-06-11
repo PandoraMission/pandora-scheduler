@@ -231,7 +231,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(32)):#len(sch))):#3)):#len(18,19)):#
     t_name=sch['Target'][i]
     st_name=t_name[:-2]
     
