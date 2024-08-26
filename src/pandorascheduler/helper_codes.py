@@ -133,3 +133,7 @@ def break_long_sequences(start, end, step):
         ranges.append([current, next_val])
         current += step
     return ranges
+
+# def no_phase_event():
+#     return
+

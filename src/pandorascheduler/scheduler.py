@@ -18,10 +18,10 @@ def Schedule(
     target_list: str,
     obs_window: timedelta,
     transit_coverage_min: float,
+    sched_wts: list,
     aux_key: str,#='random',
     aux_list:str,#="aux_list.csv",
     fname_tracker: str,
-    sched_wts: list,
     commissioning_time: int = 30,
     sched_start: str = None,
     sched_stop: str = None,
@@ -70,7 +70,7 @@ def Schedule(
     # Convert times to datetime
     pandora_start = datetime.strptime(pandora_start, "%Y-%m-%d %H:%M:%S")
     # Add in commissioning time
-    pandora_start = pandora_start+timedelta(days=commissioning_time)
+    # pandora_start = pandora_start+timedelta(days=commissioning_time)
     pandora_stop = datetime.strptime(pandora_stop, "%Y-%m-%d %H:%M:%S")
 
     if sched_start == None:
@@ -79,7 +79,7 @@ def Schedule(
     #elif datetime.strptime(sched_start) < pandora_start:
     #    sched_start = pandora_start
     else:
-        sched_start = datetime.strptime(sched_start, "%Y-%m-%d %H:%M:%S")
+        sched_start = datetime.strptime(sched_start, "%Y-%m-%d %H:%M:%S")# + timedelta(days=commissioning_time)
     if sched_stop == None:
         sched_stop = pandora_stop
     else:
@@ -212,7 +212,7 @@ def Schedule(
     # cut_i=0
     
     while stop <= sched_stop:
-        
+
         #code to check if losing 10% of days causes us to fail
         # if np.abs((start - dates_to_cut[cut_i]).total_seconds()) < 86400:
         #     #skip the day, update start and stop
@@ -511,7 +511,6 @@ def Schedule(
                     start_rng = pd.date_range(early_start[j], late_start[j], freq="min")
                     overlap_times = obs_rng.intersection(start_rng)
                     if len(overlap_times) > 0:
-
                         # Calc a 'transit factor'
                         t_left = tracker.loc[
                             (tracker["Planet Name"] == planet_name),
@@ -524,7 +523,7 @@ def Schedule(
 
                         # Calc scheduling efficiency factor
                         obs_start = overlap_times[0]
-                        gap_time = obs_start - obs_rng[0]
+                        gap_time = obs_start - obs_rng[0] # THIS IS THE time between the start of the current observation window and the start of the potential observation.
                         s_factor = 1 - (gap_time / obs_window)  # maximize
 
                         # Calc a quality factor (currently based on transit coverage, SAA crossing, scheduling efficiency)
@@ -566,7 +565,7 @@ def Schedule(
         ### Check if there's no transits occuring during the observing window
         ### Schedule auxiliary observation if possible
         if len(temp_df) == 0:
-            
+            print('NO TRANSITS IN', start, stop, 'WHAT TO USE FOR STAR NAME?!')
             star_sc = SkyCoord.from_name(star_name)
             ra = star_sc.ra.deg
             dec = star_sc.dec.deg
@@ -596,6 +595,7 @@ def Schedule(
                 ).reset_index(drop=True)
 
             planet_name = temp_df["Planet Name"][0]
+            star_name = target_list["Star Name"][np.where(target_list["Planet Name"] == planet_name)[0][0]]
             obs_start = temp_df["Obs Start"][0]
             obs_stop = obs_start + timedelta(hours=24)
             trans_cover = temp_df["Transit Coverage"][0]
@@ -604,7 +604,6 @@ def Schedule(
             q_factor = temp_df["Quality Factor"][0]
 
             if obs_rng[0] < obs_start:
-
                 star_sc = SkyCoord.from_name(star_name)
                 ra = star_sc.ra.deg
                 dec = star_sc.dec.deg
@@ -687,7 +686,7 @@ def Schedule(
     return tracker
 
 def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, **kwargs):
-    
+
     obs_rng = pd.date_range(start, stop, freq="min")
 
     if aux_key == None:
@@ -707,22 +706,40 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, **kwargs):
         names=aux_targs['Star Name']
         ras=aux_targs['RA']
         decs=aux_targs['DEC']
-        
+
+        # VK BEGIN
+        # sort aux targets by sky-projected distance to target BEFORE checking for 100% visibility
+        if aux_key == 'closest':
+            po_sc=SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
+            aux_sc=SkyCoord(unit='deg', ra=ras, dec=decs)
+            dif=aux_sc.separation(po_sc).deg
+            i=np.where(dif == np.min(dif))[0][0]
+            aux_sc_sorted_by_distance = dif.argsort()
+            names, ras, decs = names[dif.argsort()], ras[dif.argsort()], decs[dif.argsort()]
+            # names_sorted_by_distance = names[aux_sc_sorted_by_distance]
+        # VK END 
+
         vis_all_targs=[]
         vis_any_targs=[]
         targ_vis=[]
         for n in range(len(names)):
             try:
                 vis=pd.read_csv(f"{PACKAGEDIR}/data/aux_targets/{names[n]}/Visibility for {names[n]}.csv")
-                #Remove times before start and after stop
                 vis=vis.drop(vis.index[Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') < start]).reset_index(drop=True)
                 vis=vis.drop(vis.index[Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') > stop]).reset_index(drop=True)
                 if np.all(vis['Visible'] == 1):
                     vis_all_targs.append(n)
+                    # print()
+                    # print('VK use the 1st aux target that is 100% visible; start = ', start, '; stop = ', stop, n)
+                    # print()
+                    break
                 elif np.any(vis['Visible'] == 1):
                     vis_any_targs.append(n)
                     targ_vis.append(100*(np.sum(vis['Visible'])/len(vis['Visible'])))
+                # else:
+                #     print('No aux target that is 100% visible; start = ', start, '; stop = ', stop, n)
             
+                # print(n)#, 'start = ', start, '; stop = ', stop)#, vis_any_targs)
             #If a target(s) on the list don't have visibility data, ignore them!
             except FileNotFoundError:
                 pass
@@ -921,9 +938,9 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-08-04 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2026-08-03 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2025-10-03 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2025-08-04 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-08-03 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2025-10-03 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0
 
@@ -942,10 +959,10 @@ if __name__ == "__main__":
     obs_name = 'Pandora_600km_20240518'#'Pandora_450km_20230713'#
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
     
-    Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
-        obs_window, transit_coverage_min, sched_wts, aux_key='max_visibility_any', \
-            aux_list=f"{PACKAGEDIR}/data/aux_list.csv", fname_tracker = fname_tracker, commissioning_time=commissioning_time_)
-            # aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
+    # Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
+    #     obs_window, transit_coverage_min, sched_wts, aux_key='max_visibility_any', \
+    #         aux_list=f"{PACKAGEDIR}/data/aux_list.csv", fname_tracker = fname_tracker, commissioning_time=commissioning_time_)
+            # aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
     #
     # transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \
         # save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/Pandora_Target_List_Top20_14May2024.csv')
@@ -953,6 +970,10 @@ if __name__ == "__main__":
         # save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/aux_list.csv')
     #                  
     #
+    Schedule(pandora_start, pandora_stop, target_list, obs_window, transit_coverage_min, sched_wts, \
+        aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", fname_tracker = fname_tracker, commissioning_time=30, \
+            sched_start=sched_start, sched_stop=sched_stop)
+
     # Schedule(pandora_start, pandora_stop, obs_window, transit_coverage_min, sched_wts, \
     #          commissioning_time=30, sched_start=sched_start, sched_stop=sched_stop,
-    #          aux_key='random', aux_list=f"{PACKAGEDIR}/data/aux_list.csv")
+    #          aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list.csv")

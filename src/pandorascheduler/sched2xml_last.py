@@ -25,7 +25,7 @@ warnings.filterwarnings("ignore")
 # VK END
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-08-04.csv'#Pandora_Schedule_0.0_0.0_1.0_2025-05-25.csv'
+schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
 tar_vis_path=f'{PACKAGEDIR}/data/targets/'
 aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
 tar_path=f'{PACKAGEDIR}/data/Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
@@ -231,7 +231,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(32)):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(10)):#len(sch))):#3)):#len(18,19)):#
     t_name=sch['Target'][i]
     st_name=t_name[:-2]
     
@@ -399,7 +399,7 @@ for i in tqdm(range(32)):#len(sch))):#3)):#len(18,19)):#
         oc_flag=1
         if not flag:
             #: VK BEGIN: there is no "nearest" in
-            info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'closest', prev_obs=[ra,dec])
+            info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'closest', prev_obs = [ra,dec])
             print('target_list doesnt work, find occultation targets from aux_list instead...DONE')
             # VK END
         if not flag:
@@ -516,6 +516,6 @@ dom = minidom.parseString(etstr)
 
 #dom = xml.dom.minidom.parseString(etstr)
 pretty_xml_as_string = dom.toprettyxml()
-f=open(f'{PACKAGEDIR}/data/calendar_top20_test.xml','w+')#test.xml', 'w+')
+f=open(f'{PACKAGEDIR}/data/calendar_test_2months.xml','w+')#test.xml', 'w+')
 f.write(pretty_xml_as_string)
 f.close()
