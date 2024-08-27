@@ -772,7 +772,7 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, **kwargs):
         vis_any_targs=[]
         targ_vis=[]
         # for n in range(len(names)):
-        for n in tqdm(range(len(names)), desc="Searching visible aux target for " + str(start) + ' to ' + str(stop)):
+        for n in tqdm(range(len(names)), desc="Finding visible aux target for " + str(start) + ' to ' + str(stop)):
             try:
                 vis=pd.read_csv(f"{PACKAGEDIR}/data/aux_targets/{names[n]}/Visibility for {names[n]}.csv")
                 vis=vis.drop(vis.index[Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') < start]).reset_index(drop=True)
