@@ -638,6 +638,19 @@ def Schedule(
             s_factor = temp_df["Schedule Factor"][0]
             q_factor = temp_df["Quality Factor"][0]
 
+            if obs_start == pandora_start:
+                print(temp_df.head(1).to_string(index=False))
+            else:
+                # Get the string representation of the DataFrame with headers
+                df_string = temp_df.head(1).to_string(index=False)
+                
+                # Split the string into lines
+                lines = df_string.split('\n')
+                
+                # Print only the data line (second line, index 1)
+                if len(lines) > 1:
+                    print(lines[1])
+
             if obs_rng[0] < obs_start:
                 star_sc = SkyCoord.from_name(star_name)
                 ra = star_sc.ra.deg
