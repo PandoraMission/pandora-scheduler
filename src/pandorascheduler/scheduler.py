@@ -580,19 +580,54 @@ def Schedule(
             continue                
 
         else:
-            # Check Transit Factor first for planets running out of available transits
+            # VK BEGIN
+            # COMMENT OUT THE FOLLOWING, REPLACE WITH CODE BELOW
+            # # First, check Transit Factor for planets running out of available transits
+            # # if (temp_df["Transit Factor"] < 1.5).any():
+            # if (temp_df["Transit Factor"] < 2).any():
+            #     temp_df = temp_df.sort_values(by=["Transit Factor"]).reset_index(
+            #         drop=True
+            #     )
+            #     # logging.warning(temp_df["Planet Name"][0], "Transit Factor Warning", temp_df["Transit Factor"][0])
+
+            # # Otherwise sort by Quality Factor and schedule best target
+            # else:
+            #     temp_df = temp_df.sort_values(
+            #         by=["Quality Factor"], ascending=False
+            #     ).reset_index(drop=True)
+            #######
+            # REPLACE WITH THE FOLLOWING SORTING ORDER:
+            # 1) Transit Factor; 2) Quality Factor first and then Transit Factor
+            #######
+            # First, check Transit Factor for planets running out of available transits
             # if (temp_df["Transit Factor"] < 1.5).any():
             if (temp_df["Transit Factor"] < 2).any():
                 temp_df = temp_df.sort_values(by=["Transit Factor"]).reset_index(
                     drop=True
                 )
                 # logging.warning(temp_df["Planet Name"][0], "Transit Factor Warning", temp_df["Transit Factor"][0])
-
-            # Otherwise sort by Quality Factor and schedule best target
             else:
+                # Otherwise, sort by "Quality Factor" (descending) and then by "Transit Factor" (ascending)
                 temp_df = temp_df.sort_values(
-                    by=["Quality Factor"], ascending=False
+                    by=["Quality Factor", "Transit Factor"],
+                    ascending=[False, True]
                 ).reset_index(drop=True)
+
+                # # 3) if more than one planet has Quality Factor = 1, sort by both Quality Factor and Transit Factor.
+                # # Check if there are multiple planets with Quality Factor = 1
+                # if (temp_df["Quality Factor"] == 1).sum() > 1:
+                #     # If yes, re-sort those planets by both "Quality Factor" and "Transit Factor"
+                #     mask = temp_df["Quality Factor"] == 1
+                #     temp_df.loc[mask] = temp_df.loc[mask].sort_values(
+                #         by=["Quality Factor", "Transit Factor"],
+                #         ascending=[False, True]
+                #     )
+
+            # Reset the index after all sorting operations
+            # temp_df = temp_df.reset_index(drop=True)
+            #######
+            #######
+            # VK END
 
             planet_name = temp_df["Planet Name"][0]
             star_name = target_list["Star Name"][np.where(target_list["Planet Name"] == planet_name)[0][0]]
