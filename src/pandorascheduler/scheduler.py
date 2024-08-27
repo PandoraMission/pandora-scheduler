@@ -7,6 +7,7 @@ from astropy.coordinates import SkyCoord
 from datetime import datetime, timedelta
 import logging
 import transits
+from tqdm import tqdm
 
 # from . import PACKAGEDIR
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
@@ -638,18 +639,18 @@ def Schedule(
             s_factor = temp_df["Schedule Factor"][0]
             q_factor = temp_df["Quality Factor"][0]
 
-            if obs_start == pandora_start:
-                print(temp_df.head(1).to_string(index=False))
-            else:
-                # Get the string representation of the DataFrame with headers
-                df_string = temp_df.head(1).to_string(index=False)
-                
-                # Split the string into lines
-                lines = df_string.split('\n')
-                
-                # Print only the data line (second line, index 1)
-                if len(lines) > 1:
-                    print(lines[1])
+            # VK BEGIN
+            print_every_day = True
+            if print_every_day:
+                num_sig_digits_ = 2
+                if obs_start == pandora_start:
+                    print(temp_df.head(1).round(num_sig_digits_).to_string(index=False))
+                else:
+                    df_string = temp_df.head(1).round(num_sig_digits_).to_string(index=False)# Get the string representation of the DataFrame with headers
+                    lines = df_string.split('\n')# Split the string into lines
+                    if len(lines) > 1:# Print only the data line (second line, index 1)
+                        print(lines[1])
+            # VK END
 
             if obs_rng[0] < obs_start:
                 star_sc = SkyCoord.from_name(star_name)
@@ -770,7 +771,8 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, **kwargs):
         vis_all_targs=[]
         vis_any_targs=[]
         targ_vis=[]
-        for n in range(len(names)):
+        # for n in range(len(names)):
+        for n in tqdm(range(len(names)), desc="Searching visible aux target for " + str(start) + ' to ' + str(stop)):
             try:
                 vis=pd.read_csv(f"{PACKAGEDIR}/data/aux_targets/{names[n]}/Visibility for {names[n]}.csv")
                 vis=vis.drop(vis.index[Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') < start]).reset_index(drop=True)
