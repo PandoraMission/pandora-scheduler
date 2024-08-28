@@ -1011,24 +1011,22 @@ if __name__ == "__main__":
     obs_name = 'Pandora_600km_20240518'#'Pandora_450km_20230713'#
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
-
-    targ_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
-
-
-    for pl_name in targ_list["Planet Name"]:
-        fn_tmp = f'{PACKAGEDIR}/data/target_json_files/' + pl_name + '.json'
-        target_list_new = helper_codes.read_json_files(targ_list[targ_list["Planet Name"] == pl_name[0]], fn_tmp)
-        # with open(f'{PACKAGEDIR}/data/target_json_files/' + ll[0] + '.json', 'r') as file:
-        #     data = json.load(file)
-        #     targ_list[targ_list["Planet Name"] == ll[0]]["Transit Duration (hrs)"] = 
-        #     targ_list[targ_list["Planet Name"] == ll[0]]["Period (days)"] = data["pl_orbper"]
-        #     targ_list[targ_list["Planet Name"] == ll[0]]["Period Uncertainty (days)"] = 
-        #     targ_list[targ_list["Planet Name"] == ll[0]]["Transit Epoch (BJD_TDB-2400000.5)"] = 
-        #     targ_list[targ_list["Planet Name"] == ll[0]]["Transit Epoch Uncertainty"] = 
-        #     targ_list[targ_list["Planet Name"] == ll[0]]["RA"] = data["ra"]
-        #     targ_list[targ_list["Planet Name"] == ll[0]]["DEC"] = data["dec"]
-
-
+    update_target_list_as_per_json_files = True
+    if update_target_list_as_per_json_files:
+        targ_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
+        pl_names = ['GJ 9827 b', 'L 98-59 d', 'WASP-69 b']
+        for pl_name in pl_names:#targ_list["Planet Name"]:
+            fn_tmp = f'{PACKAGEDIR}/data/target_json_files/' + pl_name + '.json'
+            if os.path.exists(fn_tmp):
+                import warnings
+                warnings.filterwarnings("ignore", category=FutureWarning)
+                targ_list_copy = targ_list.copy()
+                tmp_arr = helper_codes.read_json_files(targ_list[targ_list["Planet Name"] == pl_name], fn_tmp)
+                print()
+                # print(f"target_list updated for '{pl_name}'")
+            # else:
+            #     print(f"The JSON file for '{pl_name}' does not exist.")
+            print()
 
 
             # st_name = data['hostname']

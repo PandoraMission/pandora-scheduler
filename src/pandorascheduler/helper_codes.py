@@ -139,14 +139,43 @@ def break_long_sequences(start, end, step):
 #     return
 
 def read_json_files(targ_list, fn_tmp):
+    import pandas as pd
+    import numpy as np
+    target_list_copy = targ_list.copy()
     with open(fn_tmp, 'r') as file:
         data = json.load(file)
-        targ_list.loc[0, "Transit Duration (hrs)"] = data["pl_trandur (hrs)"]
-        targ_list.loc[0, "Period (days)"] = data["pl_orbper (days)"]
-        # targ_list[targ_list["Planet Name"] == ll[0]]["Period Uncertainty (days)"] = 
-        targ_list.loc[0, "Transit Epoch (BJD_TDB-2400000.5)"] = data["pl_tranmid (BJD - ZZZ)"]
-        # targ_list[targ_list["Planet Name"] == ll[0]]["Transit Epoch Uncertainty"] = 
-        targ_list.loc[0, "RA"] = data["ra"]
-        targ_list.loc[0, "DEC"] = data["dec"]
-    return targ_list
+
+    # Iterate through the key-value pairs in the JSON data
+        for key, value in data.items():
+            # Convert lists or arrays to strings
+            if isinstance(value, (list, np.ndarray)):
+                value = str(value)
+
+            # Check if the column exists in the DataFrame
+            if key not in target_list_copy.columns:
+                # If it doesn't exist, add it as a new column
+                target_list_copy[key] = np.nan
+            
+            # Check if the value already exists in the column
+            if value not in target_list_copy[key].values:
+                # Find the first NaN value in the column and replace it
+                nan_indices = target_list_copy[key].isna()
+                if nan_indices.any():
+                    nan_index = nan_indices.idxmax()
+                    target_list_copy.at[nan_index, key] = value
+                else:
+                    # If no NaN values, append a new row
+                    new_row = pd.DataFrame({key: [value]})
+                    target_list_copy = pd.concat([target_list_copy, new_row], ignore_index=True)
+            # print()
+
+
+        # targ_list_copy.loc[0, "Transit Duration (hrs)"] = data["pl_trandur (hrs)"]
+        # targ_list_copy.loc[0, "Period (days)"] = data["pl_orbper (days)"]
+        # # targ_list[targ_list["Planet Name"] == ll[0]]["Period Uncertainty (days)"] = 
+        # targ_list_copy.loc[0, "Transit Epoch (BJD_TDB-2400000.5)"] = data["pl_tranmid (BJD - ZZZ)"]
+        # # targ_list[targ_list["Planet Name"] == ll[0]]["Transit Epoch Uncertainty"] = 
+        # targ_list_copy.loc[0, "RA"] = data["ra"]
+        # targ_list_copy.loc[0, "DEC"] = data["dec"]
+    return target_list_copy
 
