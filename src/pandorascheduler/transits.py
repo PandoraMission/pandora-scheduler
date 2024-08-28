@@ -19,8 +19,6 @@ PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 print(PACKAGEDIR)
 # from . import PACKAGEDIR
 
-
-
 def star_vis(sun_block:float, moon_block:float, earth_block:float, 
                obs_start:str, obs_stop:str, 
                gmat_file:str,# = 'GMAT_pandora_450_20230713.csv',

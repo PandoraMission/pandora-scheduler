@@ -138,3 +138,15 @@ def break_long_sequences(start, end, step):
 # def no_phase_event():
 #     return
 
+def read_json_files(targ_list, fn_tmp):
+    with open(fn_tmp, 'r') as file:
+        data = json.load(file)
+        targ_list.loc[0, "Transit Duration (hrs)"] = data["pl_trandur (hrs)"]
+        targ_list.loc[0, "Period (days)"] = data["pl_orbper (days)"]
+        # targ_list[targ_list["Planet Name"] == ll[0]]["Period Uncertainty (days)"] = 
+        targ_list.loc[0, "Transit Epoch (BJD_TDB-2400000.5)"] = data["pl_tranmid (BJD - ZZZ)"]
+        # targ_list[targ_list["Planet Name"] == ll[0]]["Transit Epoch Uncertainty"] = 
+        targ_list.loc[0, "RA"] = data["ra"]
+        targ_list.loc[0, "DEC"] = data["dec"]
+    return targ_list
+

@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import logging
 import transits
 from tqdm import tqdm
+import helper_codes
 import json
 
 # from . import PACKAGEDIR
@@ -1009,6 +1010,29 @@ if __name__ == "__main__":
     gmat_file = 'GMAT_pandora_600_20240512.txt'#'GMAT_pandora_450_20230713.csv'#
     obs_name = 'Pandora_600km_20240518'#'Pandora_450km_20230713'#
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
+
+
+    targ_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
+
+
+    for pl_name in targ_list["Planet Name"]:
+        fn_tmp = f'{PACKAGEDIR}/data/target_json_files/' + pl_name + '.json'
+        target_list_new = helper_codes.read_json_files(targ_list[targ_list["Planet Name"] == pl_name[0]], fn_tmp)
+        # with open(f'{PACKAGEDIR}/data/target_json_files/' + ll[0] + '.json', 'r') as file:
+        #     data = json.load(file)
+        #     targ_list[targ_list["Planet Name"] == ll[0]]["Transit Duration (hrs)"] = 
+        #     targ_list[targ_list["Planet Name"] == ll[0]]["Period (days)"] = data["pl_orbper"]
+        #     targ_list[targ_list["Planet Name"] == ll[0]]["Period Uncertainty (days)"] = 
+        #     targ_list[targ_list["Planet Name"] == ll[0]]["Transit Epoch (BJD_TDB-2400000.5)"] = 
+        #     targ_list[targ_list["Planet Name"] == ll[0]]["Transit Epoch Uncertainty"] = 
+        #     targ_list[targ_list["Planet Name"] == ll[0]]["RA"] = data["ra"]
+        #     targ_list[targ_list["Planet Name"] == ll[0]]["DEC"] = data["dec"]
+
+
+
+
+            # st_name = data['hostname']
+            # t_name = data['hostname'] + ' ' + data['pl_letter']
     
     # Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
     #     obs_window, transit_coverage_min, sched_wts, aux_key='max_visibility_any', \
