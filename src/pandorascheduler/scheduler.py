@@ -1015,18 +1015,29 @@ if __name__ == "__main__":
     if update_target_list_as_per_json_files:
         targ_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
         pl_names = ['GJ 9827 b', 'L 98-59 d', 'WASP-69 b']
+        filtered_targ_list = targ_list[targ_list["Planet Name"].isin(pl_names)]
+        filtered_targ_list_copy = filtered_targ_list.copy()
+
         for pl_name in pl_names:#targ_list["Planet Name"]:
             fn_tmp = f'{PACKAGEDIR}/data/target_json_files/' + pl_name + '.json'
             if os.path.exists(fn_tmp):
                 import warnings
                 warnings.filterwarnings("ignore", category=FutureWarning)
-                targ_list_copy = targ_list.copy()
-                tmp_arr = helper_codes.read_json_files(targ_list[targ_list["Planet Name"] == pl_name], fn_tmp)
+                tmp_arr = helper_codes.read_json_files(filtered_targ_list[filtered_targ_list["Planet Name"] == pl_name], fn_tmp)
+                # filtered_targ_list_copy = filtered_targ_list.copy()
+                # Ensure filtered_targ_list has all columns from tmp_arr
+                for col in tmp_arr.columns:
+                    if col not in filtered_targ_list_copy.columns:
+                        filtered_targ_list_copy[col] = None
+                # Update filtered_targ_list with tmp_arr data
+                filtered_targ_list_copy.update(tmp_arr)
+                # filtered_targ_list = tmp_arr.combine_first(filtered_targ_list)
+                # filtered_targ_list.loc[filtered_targ_list["Planet Name"] == pl_name] = tmp_arr.iloc[0]
                 print()
                 # print(f"target_list updated for '{pl_name}'")
             # else:
-            #     print(f"The JSON file for '{pl_name}' does not exist.")
-            print()
+                # print(f"The JSON file for '{pl_name}' does not exist.")
+        print()
 
 
             # st_name = data['hostname']
