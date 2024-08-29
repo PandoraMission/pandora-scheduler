@@ -89,7 +89,11 @@ def Schedule(
         sched_stop = datetime.strptime(sched_stop, "%Y-%m-%d %H:%M:%S")
 
     # Import target list
-    target_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
+
+    if 'updated_targ_list' in globals():
+        target_list = updated_targ_list.reset_index(drop=True)
+    else:
+        target_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
     #target_list = pd.read_csv(f"{PACKAGEDIR}/data/target_list.csv", sep=",")
 
     # Import no phase events
@@ -989,10 +993,10 @@ if __name__ == "__main__":
 
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
-    pandora_start = "2025-08-04 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2026-08-03 00:00:00"#"2026-10-01 00:00:00"
-    sched_start= "2025-08-04 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-08-03 00:00:00"#"2026-10-01 00:00:00"
+    pandora_start = "2025-08-01 00:00:00"#"2025-09-01 00:00:00"
+    pandora_stop = "2025-11-01 00:00:00"#"2026-10-01 00:00:00"
+    sched_start= "2025-08-01 00:00:00"#"2025-09-01 00:00:00"
+    sched_stop= "2026-11-01 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0
 
@@ -1016,8 +1020,9 @@ if __name__ == "__main__":
         targ_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
         pl_names = ['GJ 9827 b', 'L 98-59 d', 'WASP-69 b']
         updated_targ_list = helper_codes.update_target_list(targ_list, pl_names, PACKAGEDIR)
-        updated_targ_list.to_csv('Pandora_Target_List_Top20_29Aug2024_updated_targ_list.csv', index=False)
-
+        updated_targ_list.reset_index(drop=True)
+        target_list_name = 'Pandora_Target_List_Top20_29Aug2024_updated_targ_list'
+        # updated_targ_list.to_csv(PACKAGEDIR + "/data/Pandora_Target_List_Top20_29Aug2024_updated_targ_list.csv", index=False)
 
     # Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
     #     obs_window, transit_coverage_min, sched_wts, aux_key='max_visibility_any', \
