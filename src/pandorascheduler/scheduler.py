@@ -1004,7 +1004,7 @@ if __name__ == "__main__":
     
     #Mission requirements: >= 91 deg avoidance for Sun, >= 20 deg avoidance for Moon and Earth limbs
     blocks=[91.,40.,63.]
-    target_list_name ='Pandora_Target_List_Top20_14May2024'
+    target_list_name = 'Pandora_Target_List_Top20_29Aug2024_names_only'#'Pandora_Target_List_Top20_14May2024'
     target_list =  target_list_name + '.csv'#'target_list_top20_16Feb2024.csv'
     target_partner_list='target_partner_list.csv'#'target_list_top5_16Feb2024.csv'#
     gmat_file = 'GMAT_pandora_600_20240512.txt'#'GMAT_pandora_450_20230713.csv'#
@@ -1015,34 +1015,10 @@ if __name__ == "__main__":
     if update_target_list_as_per_json_files:
         targ_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
         pl_names = ['GJ 9827 b', 'L 98-59 d', 'WASP-69 b']
-        filtered_targ_list = targ_list[targ_list["Planet Name"].isin(pl_names)]
-        filtered_targ_list_copy = filtered_targ_list.copy()
-
-        for pl_name in pl_names:#targ_list["Planet Name"]:
-            fn_tmp = f'{PACKAGEDIR}/data/target_json_files/' + pl_name + '.json'
-            if os.path.exists(fn_tmp):
-                import warnings
-                warnings.filterwarnings("ignore", category=FutureWarning)
-                tmp_arr = helper_codes.read_json_files(filtered_targ_list[filtered_targ_list["Planet Name"] == pl_name], fn_tmp)
-                # filtered_targ_list_copy = filtered_targ_list.copy()
-                # Ensure filtered_targ_list has all columns from tmp_arr
-                for col in tmp_arr.columns:
-                    if col not in filtered_targ_list_copy.columns:
-                        filtered_targ_list_copy[col] = None
-                # Update filtered_targ_list with tmp_arr data
-                filtered_targ_list_copy.update(tmp_arr)
-                # filtered_targ_list = tmp_arr.combine_first(filtered_targ_list)
-                # filtered_targ_list.loc[filtered_targ_list["Planet Name"] == pl_name] = tmp_arr.iloc[0]
-                print()
-                # print(f"target_list updated for '{pl_name}'")
-            # else:
-                # print(f"The JSON file for '{pl_name}' does not exist.")
-        print()
+        updated_targ_list = helper_codes.update_target_list(targ_list, pl_names, PACKAGEDIR)
+        updated_targ_list.to_csv('Pandora_Target_List_Top20_29Aug2024_updated_targ_list.csv', index=False)
 
 
-            # st_name = data['hostname']
-            # t_name = data['hostname'] + ' ' + data['pl_letter']
-    
     # Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
     #     obs_window, transit_coverage_min, sched_wts, aux_key='max_visibility_any', \
     #         aux_list=f"{PACKAGEDIR}/data/aux_list.csv", fname_tracker = fname_tracker, commissioning_time=commissioning_time_)

@@ -167,15 +167,39 @@ def read_json_files(targ_list, fn_tmp):
                     # If no NaN values, append a new row
                     new_row = pd.DataFrame({key: [value]})
                     target_list_copy = pd.concat([target_list_copy, new_row], ignore_index=True)
-            # print()
 
+        old_column_name = "Transit Epoch (BJD_TDB-ZZZZZ)"
+        column_index = target_list_copy.columns.get_loc(old_column_name)
+        new_column_name = "Transit Epoch (BJD_TDB-2400000.5)"
+        if old_column_name in target_list_copy.columns:
+            target_list_copy[old_column_name] = target_list_copy[old_column_name] - 2400000.5
+            # print(f"Column '{old_column_name}' has been updated.")
+            target_list = target_list_copy.rename(columns={old_column_name: new_column_name})
+        else:
+            target_list = target_list_copy
 
         # targ_list_copy.loc[0, "Transit Duration (hrs)"] = data["pl_trandur (hrs)"]
-        # targ_list_copy.loc[0, "Period (days)"] = data["pl_orbper (days)"]
-        # # targ_list[targ_list["Planet Name"] == ll[0]]["Period Uncertainty (days)"] = 
-        # targ_list_copy.loc[0, "Transit Epoch (BJD_TDB-2400000.5)"] = data["pl_tranmid (BJD - ZZZ)"]
-        # # targ_list[targ_list["Planet Name"] == ll[0]]["Transit Epoch Uncertainty"] = 
-        # targ_list_copy.loc[0, "RA"] = data["ra"]
-        # targ_list_copy.loc[0, "DEC"] = data["dec"]
-    return target_list_copy
+    return target_list
 
+def update_target_list(targ_list, pl_names, PACKAGEDIR):
+    import os
+    import warnings
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    filtered_targ_list = targ_list[targ_list["Planet Name"].isin(pl_names)]
+    updated_targ_list = filtered_targ_list.copy()
+
+    for pl_name in pl_names:#targ_list["Planet Name"]:
+        fn_tmp = f'{PACKAGEDIR}/data/target_json_files/' + pl_name + '.json'
+        if os.path.exists(fn_tmp):
+
+            tmp_arr = read_json_files(filtered_targ_list[filtered_targ_list["Planet Name"] == pl_name], fn_tmp)
+            # filtered_targ_list_copy = filtered_targ_list.copy()
+            # Ensure filtered_targ_list has all columns from tmp_arr
+            for col in tmp_arr.columns:
+                if col not in updated_targ_list.columns:
+                    updated_targ_list[col] = None
+            # Update filtered_targ_list with tmp_arr data
+            updated_targ_list.update(tmp_arr)
+        # else:
+        #     print(f"The JSON file for '{pl_name}' does not exist.")
+    return updated_targ_list
