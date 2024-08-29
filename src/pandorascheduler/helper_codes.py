@@ -1,6 +1,8 @@
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 import json
+import pandas as pd
+from scheduler import PACKAGEDIR
 
 def general_parameters():
     observation_sequence_duration = 90 # minutes
@@ -181,7 +183,7 @@ def read_json_files(targ_list, fn_tmp):
         # targ_list_copy.loc[0, "Transit Duration (hrs)"] = data["pl_trandur (hrs)"]
     return target_list
 
-def update_target_list(targ_list, pl_names, PACKAGEDIR):
+def update_target_list(targ_list, pl_names):
     import os
     import warnings
     warnings.filterwarnings("ignore", category=FutureWarning)
@@ -203,3 +205,84 @@ def update_target_list(targ_list, pl_names, PACKAGEDIR):
         # else:
         #     print(f"The JSON file for '{pl_name}' does not exist.")
     return updated_targ_list
+
+# def load_visibility_data(name):
+#     try:
+#         vis = pd.read_csv(f"{PACKAGEDIR}/data/aux_targets/{name}/Visibility for {name}.csv")
+#         vis['Time(MJD_UTC)'] = pd.to_numeric(vis['Time(MJD_UTC)'])
+#         return name, vis
+#     except FileNotFoundError:
+#         return name, None
+
+# def process_target(data, start, stop):
+#     from astropy.time import Time
+#     name, vis = data
+#     if vis is None:
+#         return None
+    
+#     mask = (vis['Time(MJD_UTC)'] >= Time(start).mjd) & (vis['Time(MJD_UTC)'] <= Time(stop).mjd)
+#     vis_filtered = vis.loc[mask]
+    
+#     if vis_filtered['Visible'].all():
+#         return name, 100, True
+#     elif vis_filtered['Visible'].any():
+#         visibility_percentage = 100 * vis_filtered['Visible'].mean()
+#         return name, visibility_percentage, False
+#     return None
+
+def find_first_visible_target(start, stop, names):
+    from tqdm import tqdm
+    from astropy.time import Time
+    # for n, name in tqdm(enumerate(names), desc=f"Finding visible aux target for {start} to {stop}", total=len(names)):
+    for n in tqdm(range(len(names)), desc="Finding visible aux target for " + str(start) + ' to ' + str(stop)):
+        try:
+            vis_file = f"{PACKAGEDIR}/data/aux_targets/{names[n]}/Visibility for {names[n]}.csv"
+            
+            # Read only the necessary columns
+            vis = pd.read_csv(vis_file, usecols=["Time(MJD_UTC)", "Visible"])
+            
+            # Convert to Time object and filter in one step
+            time_mask = (Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') >= start) & \
+                        (Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') <= stop)
+            
+            vis_filtered = vis[time_mask]
+            
+            if not vis_filtered.empty and vis_filtered['Visible'].all():
+                print(f'VK use the 1st aux target that is 100% visible; start = {start}; stop = {stop}, {n}')
+                return n, 100.0  # Return index and visibility percentage
+            
+            elif not vis_filtered.empty and vis_filtered['Visible'].any():
+                visibility_percentage = 100 * (vis_filtered['Visible'].sum() / len(vis_filtered))
+                return n, visibility_percentage
+            
+        except FileNotFoundError:
+            continue
+    
+    return None, 0.0  # If no suitable target found
+    
+
+def find_visible_targets(names, start, stop):
+    # Load all visibility data
+    with Pool() as pool:
+        all_data = dict(pool.map(helper_codes.load_visibility_data, names))
+    
+    # Process targets
+    process_func = partial(helper_codes.process_target, start=start, stop=stop)
+    with Pool() as pool:
+        results = pool.map(process_func, all_data.items())
+    
+    vis_all_targs = []
+    vis_any_targs = []
+    targ_vis = []
+    
+    for result in results:
+        if result:
+            name, visibility, fully_visible = result
+            if fully_visible:
+                vis_all_targs.append(name)
+                break
+            else:
+                vis_any_targs.append(name)
+                targ_vis.append(visibility)
+    
+    return vis_all_targs, vis_any_targs, targ_vis

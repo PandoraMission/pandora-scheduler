@@ -10,6 +10,8 @@ import transits
 from tqdm import tqdm
 import helper_codes
 import json
+from multiprocessing import Pool
+from functools import partial
 
 # from . import PACKAGEDIR
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
@@ -778,47 +780,60 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, **kwargs):
         vis_any_targs=[]
         targ_vis=[]
         # for n in range(len(names)):
+
+        # target_index, visibility_percentage = helper_codes.find_first_visible_target(start, stop, names)
+
+        # if target_index is not None:
+        #     print(f"Found target at index {target_index} with {visibility_percentage:.2f}% visibility")
+        # else:
+        #     print("No suitable target found")
+
         for n in tqdm(range(len(names)), desc="Finding visible aux target for " + str(start) + ' to ' + str(stop)):
             try:
-                vis=pd.read_csv(f"{PACKAGEDIR}/data/aux_targets/{names[n]}/Visibility for {names[n]}.csv")
-                vis=vis.drop(vis.index[Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') < start]).reset_index(drop=True)
-                vis=vis.drop(vis.index[Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') > stop]).reset_index(drop=True)
-                if np.all(vis['Visible'] == 1):
+                # vis=pd.read_csv(f"{PACKAGEDIR}/data/aux_targets/{names[n]}/Visibility for {names[n]}.csv")
+                vis_file = f"{PACKAGEDIR}/data/aux_targets/{names[n]}/Visibility for {names[n]}.csv"
+                vis = pd.read_csv(vis_file, usecols=["Time(MJD_UTC)", "Visible"])
+
+                time_mask = (Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') >= start) & \
+                    (Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') <= stop)
+            
+                vis_filtered = vis[time_mask]
+
+                # vis=vis.drop(vis.index[Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') < start]).reset_index(drop=True)
+                # vis=vis.drop(vis.index[Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') > stop]).reset_index(drop=True)
+                # if np.all(vis['Visible'] == 1):
+                if not vis_filtered.empty and vis_filtered['Visible'].all():
                     vis_all_targs.append(n)
-                    # print()
-                    # print('VK use the 1st aux target that is 100% visible; start = ', start, '; stop = ', stop, n)
-                    # print()
+                    # print(f'VK use the 1st aux target that is 100% visible; start = {start}; stop = {stop}, {n}')
                     break
-                elif np.any(vis['Visible'] == 1):
+                # elif np.any(vis['Visible'] == 1):
+                elif not vis_filtered.empty and vis_filtered['Visible'].any():
                     vis_any_targs.append(n)
                     targ_vis.append(100*(np.sum(vis['Visible'])/len(vis['Visible'])))
-                # else:
-                #     print('No aux target that is 100% visible; start = ', start, '; stop = ', stop, n)
-            
-                # print(n)#, 'start = ', start, '; stop = ', stop)#, vis_any_targs)
             #If a target(s) on the list don't have visibility data, ignore them!
             except FileNotFoundError:
                 pass
-        
+
+        # vis_all_targs, vis_any_targs, targ_vis = helper_codes.find_visible_targets(names, start, stop)
+
         #If at least one target is visible the entire time, use vis_all_targs
         if len(vis_all_targs) > 0:
             #Will have more aux keys here at some point, closest is the only non-random one right now
             #Defaults to random sort if no standard aux_key is specified (None counts as specified)
             if aux_key == 'closest':
-                try:
-                    #prev_obs must be specified as an array consisting of ra and dec (in degrees) for the previous observation
-                    #e.g. [359.10775132017, -49.28901740485]
-                    #this seeks to minimize slew distance to an aux target
-                    po_sc=SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
-                    aux_sc=SkyCoord(unit='deg', ra=ras.loc[vis_all_targs], dec=decs.loc[vis_all_targs])
-                    
-                    dif=aux_sc.separation(po_sc).deg
-                    i=np.where(dif == np.min(dif))[0][0]
-                    
-                except NameError:
-                    print('No previous observation was specified, defaulting to random auxiliary target.')
-                    i=np.random.randint(0,len(vis_all_targs))
+                i = 0
+                # try:
+                #     #prev_obs must be specified as an array consisting of ra and dec (in degrees) for the previous observation
+                #     #e.g. [359.10775132017, -49.28901740485]
+                #     #this seeks to minimize slew distance to an aux target
+                #     po_sc=SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
+                #     aux_sc=SkyCoord(unit='deg', ra=ras.loc[vis_all_targs], dec=decs.loc[vis_all_targs])
 
+                #     dif=aux_sc.separation(po_sc).deg
+                #     i=np.where(dif == np.min(dif))[0][0]
+                # except NameError:
+                #     print('No previous observation was specified, defaulting to random auxiliary target.')
+                #     i=np.random.randint(0,len(vis_all_targs))
             #Default to random (amusingly, this will work fine for aux_key == 'random')
             else:
                 i=np.random.randint(0,len(vis_all_targs))
@@ -834,19 +849,20 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, **kwargs):
             #Will have more aux keys here at some point, closest is the only non-random one right now
             #Defaults to random sort if no standard aux_key is specified (None counts as specified)
             if aux_key == 'closest':
-                try:
-                    #prev_obs must be specified as an array consisting of ra and dec (in degrees) for the previous observation
-                    #e.g. [359.10775132017, -49.28901740485]
-                    #this seeks to minimize slew distance to an aux target
-                    po_sc=SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
-                    aux_sc=SkyCoord(unit='deg', ra=ras.loc[vis_any_targs], dec=decs.loc[vis_any_targs])
+                i = 0
+                # try:
+                #     #prev_obs must be specified as an array consisting of ra and dec (in degrees) for the previous observation
+                #     #e.g. [359.10775132017, -49.28901740485]
+                #     #this seeks to minimize slew distance to an aux target
+                #     po_sc=SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
+                #     aux_sc=SkyCoord(unit='deg', ra=ras.loc[vis_any_targs], dec=decs.loc[vis_any_targs])
                     
-                    dif=aux_sc.separation(po_sc).deg
-                    i=np.where(dif == np.min(dif))[0][0]
+                #     dif=aux_sc.separation(po_sc).deg
+                #     i=np.where(dif == np.min(dif))[0][0]
                     
-                except NameError:
-                    print('No previous observation was specified, defaulting to random auxiliary target.')
-                    i=np.random.randint(0,len(vis_any_targs))
+                # except NameError:
+                #     print('No previous observation was specified, defaulting to random auxiliary target.')
+                #     i=np.random.randint(0,len(vis_any_targs))
             
             #Default to random (amusingly, this will work fine for aux_key == 'random')
             elif aux_key == 'max_visibility_any':
@@ -993,10 +1009,10 @@ if __name__ == "__main__":
 
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
-    pandora_start = "2025-08-01 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2025-11-01 00:00:00"#"2026-10-01 00:00:00"
-    sched_start= "2025-08-01 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-11-01 00:00:00"#"2026-10-01 00:00:00"
+    pandora_start = "2025-08-04 00:00:00"#"2025-09-01 00:00:00"
+    pandora_stop = "2025-10-01 00:00:00"#"2026-10-01 00:00:00"
+    sched_start= "2025-08-04 00:00:00"#"2025-09-01 00:00:00"
+    sched_stop= "2025-10-01 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0
 
@@ -1019,7 +1035,7 @@ if __name__ == "__main__":
     if update_target_list_as_per_json_files:
         targ_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
         pl_names = ['GJ 9827 b', 'L 98-59 d', 'WASP-69 b']
-        updated_targ_list = helper_codes.update_target_list(targ_list, pl_names, PACKAGEDIR)
+        updated_targ_list = helper_codes.update_target_list(targ_list, pl_names)
         updated_targ_list.reset_index(drop=True)
         target_list_name = 'Pandora_Target_List_Top20_29Aug2024_updated_targ_list'
         # updated_targ_list.to_csv(PACKAGEDIR + "/data/Pandora_Target_List_Top20_29Aug2024_updated_targ_list.csv", index=False)
