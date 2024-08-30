@@ -490,3 +490,54 @@ def schedule_observations(visibility_data, max_targets=3):
 
     return schedule_reset, used_targets
 
+
+def add_all_targets_visibility(schedule_array, vis_df):
+    def get_target_visibility(start_time, target):
+        if target in vis_df.index:
+            mask = (vis_df.loc[target]['Start'] == start_time)
+            if mask.any():
+                return vis_df.loc[target][mask]['Visibility'].values[0]
+        return np.nan  # Return NaN if no matching visibility found
+
+    # Convert schedule array to DataFrame
+    df_schedule = pd.DataFrame(schedule_array, columns=['Start', 'Stop', 'Target'])
+    
+    # Get unique targets from the schedule
+    unique_targets = df_schedule['Target'].unique()
+    
+    # Remove 'No target' if present
+    unique_targets = [target for target in unique_targets if target != 'No target']
+    
+    # Add Visibility columns for each target
+    for target in unique_targets:
+        column_name = f'{target} Visibility'
+        df_schedule[column_name] = df_schedule['Start'].apply(lambda x: get_target_visibility(x, target))
+    
+    # Convert back to numpy array
+    new_schedule_array = df_schedule.values
+    
+    return new_schedule_array, list(df_schedule.columns)
+
+
+    
+
+def add_random_targets_visibility(schedule_array, vis_df, target_names):
+    def get_target_visibility(start_time, target):
+        if target in vis_df.index:
+            mask = (vis_df.loc[target]['Start'] == start_time)
+            if mask.any():
+                return vis_df.loc[target][mask]['Visibility'].values[0]
+        return np.nan  # Return NaN if no matching visibility found
+
+    # Convert schedule array to DataFrame
+    df_schedule = pd.DataFrame(schedule_array, columns=['Start', 'Stop', 'Target'])
+    
+    # Add Visibility columns for each target
+    for target in target_names:
+        column_name = f'{target} Visibility'
+        df_schedule[column_name] = df_schedule['Start'].apply(lambda x: get_target_visibility(x, target))
+    
+    # Convert back to numpy array
+    new_schedule_array = df_schedule.values
+    
+    return new_schedule_array

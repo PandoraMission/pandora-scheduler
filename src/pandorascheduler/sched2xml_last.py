@@ -112,10 +112,14 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
         importlib.reload(helper_codes)
         from helper_codes import schedule_observations
         schedule, num_targets_used = helper_codes.schedule_observations(vis_df, max_targets=3)
-        target_names = vis_df.index.tolist()
-        scheduled_targets = [target_names[int(i)-1] if i > 0 else 'Unscheduled' for i in schedule]
 
-        print("Scheduled targets:", scheduled_targets)
+        new_schedule, column_names = helper_codes.add_all_targets_visibility(schedule, vis_df)
+        print("Column names:", column_names)
+        print(new_schedule)
+
+        targets = ["GJ 1214", "HIP 65 A", "WASP-107"]  # Add all target names you want to include
+        new_schedule = helper_codes.add_random_targets_visibility(schedule, vis_df, targets)
+        print(new_schedule)
 
         #empty dataframe to hold visibility information for multiple targets
         v_ = np.asarray(np.zeros(len(starts)), dtype=bool)
