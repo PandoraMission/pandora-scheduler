@@ -4,9 +4,10 @@ import json
 import pandas as pd
 from scheduler import PACKAGEDIR
 
-def general_parameters():
-    observation_sequence_duration = 90 # minutes
-    return observation_sequence_duration
+def general_parameters(obs_sequence_duration = 90, occ_sequence_limit = 30):
+    observation_sequence_duration = obs_sequence_duration # minutes
+    occultation_sequence_limit = occ_sequence_limit # minutes
+    return observation_sequence_duration, occultation_sequence_limit
 
 def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, dec):
 
@@ -259,7 +260,7 @@ def find_first_visible_target(start, stop, names):
             continue
     
     return None, 0.0  # If no suitable target found
-    
+
 
 def find_visible_targets(names, start, stop):
     # Load all visibility data
