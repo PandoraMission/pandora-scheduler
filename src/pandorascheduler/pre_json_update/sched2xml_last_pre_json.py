@@ -148,10 +148,8 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                         v_arr=np.asarray(v_df)
                         overlap=np.where([np.all((v_arr+np.asarray(v_ar, dtype=bool))[i]) for i in range(len(v_arr))])[0]
                         if len(overlap) > 0:
-                            #at least one entry has visibility that covers the total time along with the
-                            #   current target
-                            #take both and enter them in o_df in their respective times, prefering the 
-                            #   closer one
+                            #at least one entry has visibility that covers the total time along with the current target
+                            #take both and enter them in o_df in their respective times, prefering the closer one
                             m=overlap[0]
                             v1=v_arr[m]
                             for s in range(len(starts)):

@@ -117,13 +117,8 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                 #iterate through occultation periods and see if v_names[n] is visible for all of them
                 vis_f = False
                 for s in range(len(starts)):
-                    
                     #get occultation time window
                     win = vis.index[(vis_ >= starts[s]) & (vis_ <= stops[s])].tolist()
-
-                    # print(v_names[n], Time(starts[s], format="mjd", scale="utc").to_value("datetime").strftime("%H:%M:%S"), \
-                    #     Time(stops[s], format="mjd", scale="utc").to_value("datetime").strftime("%H:%M:%S"), np.asarray(vis['Visible'][win]))
-
                     if np.all(vis['Visible'][win] == 1):# or vis_ratio >= 0.6: 
                         # UNCOMMENT THE REST OF THE LINE ABOVE FOR TARGETS THAT ARE NOT VISIBLE FOR MANY HOURS AND ALLOW "OCCULTATION"
                         # TARGET TO BE CONSIDERED AS VISIBLE >= 60% OF 90 MINUTES!!!
@@ -137,17 +132,22 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                         vis_ratio = len(vis['Visible'][win][vis['Visible'][win] == 1])/len(vis['Visible'][win])
                     # VK END
 
+                    print(v_names[n], Time(starts[s], format="mjd", scale="utc").to_value("datetime").strftime("%H:%M:%S"), \
+                        Time(stops[s], format="mjd", scale="utc").to_value("datetime").strftime("%H:%M:%S"), vis_ratio)
+                            # len(vis['Visible'][win][vis['Visible'][win] == 1]), len(vis['Visible'][win]))#np.asarray(vis['Visible'][win]))
+
                     # print(v_names[n], "%0.4f" % starts[s], "%0.4f" % stops[s], v_ar[s], np.any(vis['Visible'][win] == 1), "%0.2f" % vis_ratio)
+
+                # if n == 44:
+                #     print('AAA')
 
                 #if not visible for all times, check if any entry in v_df and this one cover the total occultation time
                 if vis_f:
-                    v_df_sum = np.sum(np.asarray(v_df), axis = 0)
-                    if np.all(v_df_sum > 0):
-                        print(np.sum(np.asarray(v_df), axis = 0))
-
+                    # v_df_sum = np.sum(np.asarray(v_df.astype(int)), axis = 0)
+                    # if np.all(v_df_sum > 0):
                     if not d_flag:
-                        v_arr = np.asarray(v_df) #np.asarray(v_df).astype(int)
-                        overlap = np.where([np.all((v_arr+np.asarray(v_ar, dtype=bool))[i]) for i in range(len(v_arr))])[0]
+                        v_arr=np.asarray(v_df)
+                        overlap=np.where([np.all((v_arr+np.asarray(v_ar, dtype=bool))[i]) for i in range(len(v_arr))])[0]
                         if len(overlap) > 0:
                             #at least one entry has visibility that covers the total time along with the current target
                             #take both and enter them in o_df in their respective times, prefering the closer one
@@ -168,7 +168,7 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                             v_df.loc[len(v_df.index)] = v_ar
                     else:
                         continue
-                        
+                
                 else:
                     #If we made it here, the target is visible for the entire occultation time
                     #since the list is already sorted, break and use this one!
@@ -237,11 +237,6 @@ meta=ET.SubElement(cal, 'Meta',
 for i in tqdm(range(8,9)):#len(sch))):#3)):#len(18,19)):#
     t_name=sch['Target'][i]
     st_name = t_name if t_name.startswith('Gaia') else t_name[:-2]
-
-    # with open(f'{PACKAGEDIR}/data/target_json_files/' + sch['Target'][i] + '.json', 'r') as file:
-    #     data = json.load(file)
-    #     st_name = data['hostname']
-    #     t_name = data['hostname'] + ' ' + data['pl_letter']
     
     #set visit number and visit element
     visit=ET.SubElement(cal,'Visit')
@@ -407,6 +402,7 @@ for i in tqdm(range(8,9)):#len(sch))):#3)):#len(18,19)):#
         oc_flag=1
         if not flag:
             #: VK BEGIN: there is no "nearest" in
+            print()
             info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'closest', prev_obs = [ra,dec])
             if flag:
                 print('target_list doesnt work, find occultation targets from aux_list instead...DONE')
