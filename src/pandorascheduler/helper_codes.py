@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 import json
 import pandas as pd
 from scheduler import PACKAGEDIR
+import numpy as np
+from astropy.time import Time
 
 def general_parameters(obs_sequence_duration = 90, occ_sequence_limit = 30):
     observation_sequence_duration = obs_sequence_duration # minutes
@@ -287,3 +289,204 @@ def find_visible_targets(names, start, stop):
                 targ_vis.append(visibility)
     
     return vis_all_targs, vis_any_targs, targ_vis
+
+def process_visibility(v_names, starts, stops, PACKAGEDIR, list_path, tar_path, tar_path_ALL, aux_path):
+
+    import numpy as np
+
+    results = []
+    
+    for n, v_name in enumerate(v_names):
+        # Determine the correct path and read the CSV file
+        if (list_path == tar_path) or (list_path == tar_path_ALL):
+            vis = pd.read_csv(f"{PACKAGEDIR}/data/targets/{v_name}/Visibility for {v_name}.csv")
+        elif list_path == aux_path:
+            vis = pd.read_csv(f"{PACKAGEDIR}/data/aux_targets/{v_name}/Visibility for {v_name}.csv")
+        
+        vis_times = vis['Time(MJD_UTC)']
+        visibility = vis['Visible']
+        
+        valid_intervals = []
+        
+        for s, (start, stop) in enumerate(zip(starts, stops)):
+            # Check if the target is visible for the entire interval
+            interval_mask = (vis_times >= start) & (vis_times <= stop)
+            if np.all(visibility[interval_mask] == 1):
+                valid_intervals.append((start, stop, 1))
+            else:
+                valid_intervals.append((start, stop, 0))
+        
+        if valid_intervals:
+            results.append({
+                'v_name': v_name,
+                'valid_intervals': valid_intervals,
+                'visibility': visibility[interval_mask].tolist()
+            })
+    
+    return results
+
+# def create_visibility_dataframe(results):
+#     # Create a dictionary to store data for the DataFrame
+#     data = {}
+
+#     # Iterate through all results
+#     for result in results:
+#         target_name = result['v_name']
+#         visibilities = []
+#         start_times = []
+#         stop_times = []
+        
+#         for start, stop, visibility in result['valid_intervals']:
+#             # Convert to ISO format and remove milliseconds
+#             start_iso = Time(start, format='mjd', scale = 'utc').iso.split('.')[0]
+#             stop_iso = Time(stop, format='mjd', scale = 'utc').iso.split('.')[1]
+#             visibilities.append(visibility)
+#             start_times.append(start_iso)
+#             stop_times.append(stop_iso)
+        
+#         # Add this target's data to the dictionary
+#         data[target_name] = pd.Series(visibilities, index=start_times)
+
+#     # Create the DataFrame
+#     df = pd.DataFrame(data).T  # Transpose to have targets as rows and start times as columns
+
+#     # Sort columns (start times) chronologically
+#     df = df.sort_index(axis=1)
+
+#     df.index.name = 'Targets'
+#     df.columns.name = 'Start'
+
+#     return df
+
+
+def create_visibility_dataframe(results):
+    # Create a dictionary to store data for the DataFrame
+    data = {}
+    # Iterate through all results
+    for result in results:
+        target_name = result['v_name']
+        visibilities = []
+        start_times = []
+        stop_times = []
+        for start, stop, visibility in result['valid_intervals']:
+            # Convert to ISO format and remove milliseconds
+            start_iso = Time(start, format='mjd', scale='utc').iso.split('.')[0]
+            stop_iso = Time(stop, format='mjd', scale='utc').iso.split('.')[0]
+            visibilities.append(visibility)
+            start_times.append(start_iso)
+            stop_times.append(stop_iso)
+        # Add this target's data to the dictionary
+        data[target_name] = {
+            'Start': start_times,
+            'Stop': stop_times,
+            'Visibility': visibilities
+        }
+    
+    # Create the DataFrame
+    df = pd.DataFrame([(target, start, stop, vis) 
+                       for target, d in data.items() 
+                       for start, stop, vis in zip(d['Start'], d['Stop'], d['Visibility'])],
+                      columns=['Target', 'Start', 'Stop', 'Visibility'])
+    
+    # Sort by Start time
+    # df = df.sort_values('Target')
+    
+    # Set Target as index
+    df = df.set_index('Target')
+    
+    return df
+
+
+# def schedule_observations(visibility_data, max_targets=3):
+# # DONT delete this, its nice and simple!
+
+#     if isinstance(visibility_data, pd.DataFrame):
+#         visibility_array = visibility_data.values
+#         target_names = visibility_data.index
+#         time_index = visibility_data.columns
+#     else:
+#         visibility_array = visibility_data.values
+#         target_names = visibility_data.index.tolist()
+#         time_index = visibility_data.columns.tolist()
+
+#     num_targets, num_intervals = visibility_array.shape
+    
+#     # Calculate total visibility for each target
+#     total_visibility = np.sum(visibility_array, axis=1)
+    
+#     # Sort targets by total visibility
+#     sorted_indices = np.argsort(total_visibility)[::-1]
+    
+#     schedule = pd.Series(index=time_index, dtype='object')
+#     used_targets = 0
+    
+#     for target_idx in sorted_indices:
+#         if used_targets >= max_targets:
+#             break
+        
+#         target_visibility = visibility_array[target_idx]
+        
+#         # Schedule this target where it's visible and not already scheduled
+#         new_schedules = schedule.isnull() & (target_visibility == 1)
+#         if new_schedules.any():
+#             schedule[new_schedules] = target_names[target_idx]
+#             used_targets += 1
+        
+#         # Check if all intervals are now scheduled
+#         if not schedule.isnull().any():
+#             break
+    
+#     return schedule, used_targets
+
+def schedule_observations(visibility_data, max_targets=3):
+    if not isinstance(visibility_data, pd.DataFrame):
+        raise ValueError("Input must be a pandas DataFrame")
+
+    # Create a pivot table to get the visibility matrix
+    visibility_matrix = visibility_data.pivot_table(index='Target', 
+                                                    columns='Start', 
+                                                    values='Visibility', 
+                                                    aggfunc='first')
+    visibility_matrix = visibility_matrix.fillna(0)  # Fill NaN with 0 (not visible)
+    
+    visibility_array = visibility_matrix.values
+    target_names = visibility_matrix.index
+    time_index = visibility_matrix.columns
+
+    num_targets, num_intervals = visibility_array.shape
+
+    # Calculate total visibility for each target
+    total_visibility = np.sum(visibility_array, axis=1)
+
+    # Sort targets by total visibility
+    sorted_indices = np.argsort(total_visibility)[::-1]
+
+    schedule = pd.DataFrame(index=time_index, columns=['Stop', 'Target'], dtype='object')
+    used_targets = 0
+
+    for target_idx in sorted_indices:
+        if used_targets >= max_targets:
+            break
+
+        target_visibility = visibility_array[target_idx]
+
+        # Schedule this target where it's visible and not already scheduled
+        new_schedules = schedule['Target'].isnull() & (target_visibility == 1)
+        if new_schedules.any():
+            schedule.loc[new_schedules, 'Target'] = target_names[target_idx]
+            used_targets += 1
+
+        # Check if all intervals are now scheduled
+        if not schedule['Target'].isnull().any():
+            break
+
+    # Fill in the Stop times
+    stop_times = visibility_data.groupby('Start')['Stop'].first()
+    schedule['Stop'] = schedule.index.map(stop_times.to_dict())
+
+    schedule['Target'] = schedule['Target'].fillna('No target')
+
+    schedule_reset = schedule.reset_index()
+
+    return schedule_reset, used_targets
+

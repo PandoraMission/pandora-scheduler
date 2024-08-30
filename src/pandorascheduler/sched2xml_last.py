@@ -99,10 +99,29 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
         ras=o_list['RA']
         decs=o_list['DEC']
         
+        results = helper_codes.process_visibility(v_names, starts, stops, PACKAGEDIR, list_path, tar_path, tar_path_ALL, aux_path)
+        importlib.reload(helper_codes)
+        from helper_codes import create_visibility_dataframe
+        from helper_codes import schedule_observations
+        vis_df = helper_codes.create_visibility_dataframe(results)
+        # print("Targets:", vis_df.index.tolist())
+        # print("Start Times:", vis_df.columns.tolist())
+        # print(vis_df.loc["GJ 1214"])
+        # visibility_array = vis_df.values
+
+        importlib.reload(helper_codes)
+        from helper_codes import schedule_observations
+        schedule, num_targets_used = helper_codes.schedule_observations(vis_df, max_targets=3)
+        target_names = vis_df.index.tolist()
+        scheduled_targets = [target_names[int(i)-1] if i > 0 else 'Unscheduled' for i in schedule]
+
+        print("Scheduled targets:", scheduled_targets)
+
         #empty dataframe to hold visibility information for multiple targets
         v_ = np.asarray(np.zeros(len(starts)), dtype=bool)
         v_df = pd.DataFrame([v_])
-        d_flag=False
+        vis_df = pd.DataFrame(columns=range(len(starts))).astype(bool)
+        d_flag = False
         for n in range(len(v_names)):
             try:
                 if (list_path == tar_path) or (list_path == tar_path_ALL):
@@ -132,20 +151,27 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                         vis_ratio = len(vis['Visible'][win][vis['Visible'][win] == 1])/len(vis['Visible'][win])
                     # VK END
 
-                    print(v_names[n], Time(starts[s], format="mjd", scale="utc").to_value("datetime").strftime("%H:%M:%S"), \
-                        Time(stops[s], format="mjd", scale="utc").to_value("datetime").strftime("%H:%M:%S"), vis_ratio)
+                    # print(v_names[n], Time(starts[s], format="mjd", scale="utc").to_value("datetime").strftime("%H:%M:%S"), \
+                    #     Time(stops[s], format="mjd", scale="utc").to_value("datetime").strftime("%H:%M:%S"), vis_ratio)
                             # len(vis['Visible'][win][vis['Visible'][win] == 1]), len(vis['Visible'][win]))#np.asarray(vis['Visible'][win]))
 
-                    # print(v_names[n], "%0.4f" % starts[s], "%0.4f" % stops[s], v_ar[s], np.any(vis['Visible'][win] == 1), "%0.2f" % vis_ratio)
-
-                # if n == 44:
-                #     print('AAA')
+                vis_df.loc[len(vis_df)] = v_ar
+                vis_df_sum = np.sum(np.asarray(vis_df), axis = 0)
+                print(n, vis_df_sum)
+                if np.all(vis_df_sum > 0):
+                    stop
 
                 #if not visible for all times, check if any entry in v_df and this one cover the total occultation time
                 if vis_f:
-                    # v_df_sum = np.sum(np.asarray(v_df.astype(int)), axis = 0)
-                    # if np.all(v_df_sum > 0):
                     if not d_flag:
+
+                        # vis_df_sum = np.sum(np.asarray(vis_df), axis = 0)
+                        # # print(n, vis_df_sum)
+                        # if np.all(vis_df_sum > 0):
+                        #     d_flag = True
+                        # else:
+                        #     vis_df.loc[len(vis_df)] = v_ar
+
                         v_arr=np.asarray(v_df)
                         overlap=np.where([np.all((v_arr+np.asarray(v_ar, dtype=bool))[i]) for i in range(len(v_arr))])[0]
                         if len(overlap) > 0:
@@ -166,7 +192,9 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                         else:
                             #add the current visibility array to the master list
                             v_df.loc[len(v_df.index)] = v_ar
+                            vis_df.loc[len(vis_df)] = v_ar
                     else:
+                        # break
                         continue
                 
                 else:
@@ -182,7 +210,7 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                     # THIS BREAK DOESNT SEEM TO WORK!!!! REPLACE WITH return o_df, d_flag
                     # return o_df, d_flag
 
-                print(f"{st_name}: {n} ({v_names[n]}) not 100% visible, try next on the list")
+                # print(f"{st_name}: {n} ({v_names[n]}) not 100% visible, try next on the list")
             
             #If a target(s) on the list don't have visibility data, ignore them!
             except FileNotFoundError:
