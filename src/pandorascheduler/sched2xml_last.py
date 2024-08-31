@@ -100,22 +100,19 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
         decs=o_list['DEC']
         
         results = helper_codes.process_visibility(v_names, starts, stops, PACKAGEDIR, list_path, tar_path, tar_path_ALL, aux_path)
-        importlib.reload(helper_codes)
-        from helper_codes import create_visibility_dataframe
-        from helper_codes import schedule_observations
+        # importlib.reload(helper_codes)
+        # from helper_codes import create_visibility_dataframe
         vis_df = helper_codes.create_visibility_dataframe(results)
         # print("Targets:", vis_df.index.tolist())
         # print("Start Times:", vis_df.columns.tolist())
         # print(vis_df.loc["GJ 1214"])
         # visibility_array = vis_df.values
-
-        importlib.reload(helper_codes)
-        from helper_codes import schedule_observations
         schedule, num_targets_used = helper_codes.schedule_observations(vis_df, max_targets=3)
 
         new_schedule, column_names = helper_codes.add_all_targets_visibility(schedule, vis_df)
         print("Column names:", column_names)
         print(new_schedule)
+        print()
 
         targets = ["GJ 1214", "HIP 65 A", "WASP-107"]  # Add all target names you want to include
         new_schedule = helper_codes.add_random_targets_visibility(schedule, vis_df, targets)
