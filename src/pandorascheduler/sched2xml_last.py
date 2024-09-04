@@ -98,26 +98,22 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
         #Reload these
         ras=o_list['RA']
         decs=o_list['DEC']
+
+        multi_target_occultation = True#False
+
+        if multi_target_occultation:
+            if (list_path == tar_path) or (list_path == tar_path_ALL):
+                path_ = f"{PACKAGEDIR}/data/targets"
+            elif list_path == aux_path:
+                path_ = f"{PACKAGEDIR}/data/aux_targets"
+            
+            # importlib.reload(helper_codes)
+            o_df_copy, d_flag_copy= helper_codes.schedule_occultation_targets(v_names, starts, stops, path_, o_df, o_list)
+
+            if d_flag_copy:
+                return o_df_copy.drop(columns=['Visibility']), d_flag_copy
         
-        results = helper_codes.process_visibility(v_names, starts, stops, PACKAGEDIR, list_path, tar_path, tar_path_ALL, aux_path)
-        # importlib.reload(helper_codes)
-        # from helper_codes import create_visibility_dataframe
-        vis_df = helper_codes.create_visibility_dataframe(results)
-        # print("Targets:", vis_df.index.tolist())
-        # print("Start Times:", vis_df.columns.tolist())
-        # print(vis_df.loc["GJ 1214"])
-        # visibility_array = vis_df.values
-        schedule, num_targets_used = helper_codes.schedule_observations(vis_df, max_targets=3)
-
-        new_schedule, column_names = helper_codes.add_all_targets_visibility(schedule, vis_df)
-        print("Column names:", column_names)
-        print(new_schedule)
-        print()
-
-        targets = ["GJ 1214", "HIP 65 A", "WASP-107"]  # Add all target names you want to include
-        new_schedule = helper_codes.add_random_targets_visibility(schedule, vis_df, targets)
-        print(new_schedule)
-
+ 
         #empty dataframe to hold visibility information for multiple targets
         v_ = np.asarray(np.zeros(len(starts)), dtype=bool)
         v_df = pd.DataFrame([v_])
@@ -156,11 +152,11 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                     #     Time(stops[s], format="mjd", scale="utc").to_value("datetime").strftime("%H:%M:%S"), vis_ratio)
                             # len(vis['Visible'][win][vis['Visible'][win] == 1]), len(vis['Visible'][win]))#np.asarray(vis['Visible'][win]))
 
-                vis_df.loc[len(vis_df)] = v_ar
-                vis_df_sum = np.sum(np.asarray(vis_df), axis = 0)
-                print(n, vis_df_sum)
-                if np.all(vis_df_sum > 0):
-                    stop
+                # vis_df.loc[len(vis_df)] = v_ar
+                # vis_df_sum = np.sum(np.asarray(vis_df), axis = 0)
+                # print(n, vis_df_sum)
+                # if np.all(vis_df_sum > 0):
+                #     stop
 
                 #if not visible for all times, check if any entry in v_df and this one cover the total occultation time
                 if vis_f:
@@ -193,7 +189,7 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
                         else:
                             #add the current visibility array to the master list
                             v_df.loc[len(v_df.index)] = v_ar
-                            vis_df.loc[len(vis_df)] = v_ar
+                            # vis_df.loc[len(vis_df)] = v_ar
                     else:
                         # break
                         continue
