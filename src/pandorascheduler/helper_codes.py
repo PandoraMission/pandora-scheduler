@@ -612,7 +612,7 @@ def schedule_occultation_targets_all(v_names, starts, stops, path, o_df, o_list)
 #     return o_df, False
 
 
-def schedule_occultation_targets(v_names, starts, stops, path, o_df, o_list):
+def schedule_occultation_targets(v_names, starts, stops, path, o_df, o_list, try_occ_targets):#, position):
     schedule = pd.DataFrame(index=starts, columns=['Stop', 'Target', 'Visibility'], dtype='object')
     schedule['Stop'] = stops
     schedule['Target'] = np.nan
@@ -622,7 +622,8 @@ def schedule_occultation_targets(v_names, starts, stops, path, o_df, o_list):
     if 'Visibility' not in o_df.columns:
         o_df['Visibility'] = np.nan
 
-    for v_name in tqdm(v_names, desc="Processing targets"):
+    for v_name in tqdm(v_names, desc=f"Finding visible occultation target from {try_occ_targets}", leave = False):#, position=position):#, leave=leave):#, leave=(position != 0)):#desc="Processing targets"):
+    # for v_name in v_names:
         # Process visibility for this target
         vis = pd.read_csv(f"{path}/{v_name}/Visibility for {v_name}.csv")
         vis_times = vis['Time(MJD_UTC)']

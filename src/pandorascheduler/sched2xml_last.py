@@ -48,7 +48,7 @@ save_csv=False
 #def sch_occ(starts, stops, list_path, sort_key=None, **kwargs):
 #
 # VK BEGIN: adding explicit prev_obs keyword
-def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs):
+def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#, position = 0):#**kwargs):
 # VK END
     
     #build empty dataframe except for starts and stops
@@ -104,16 +104,17 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#**kwargs)
         if multi_target_occultation:
             if (list_path == tar_path) or (list_path == tar_path_ALL):
                 path_ = f"{PACKAGEDIR}/data/targets"
+                try_occ_targets = 'target list'
             elif list_path == aux_path:
                 path_ = f"{PACKAGEDIR}/data/aux_targets"
+                try_occ_targets = 'aux list'
             
             # importlib.reload(helper_codes)
-            o_df_copy, d_flag_copy= helper_codes.schedule_occultation_targets(v_names, starts, stops, path_, o_df, o_list)
+            o_df_copy, d_flag_copy= helper_codes.schedule_occultation_targets(v_names, starts, stops, path_, o_df, o_list, try_occ_targets)#, position)
 
             if d_flag_copy:
                 return o_df_copy.drop(columns=['Visibility']), d_flag_copy
         
- 
         #empty dataframe to hold visibility information for multiple targets
         v_ = np.asarray(np.zeros(len(starts)), dtype=bool)
         v_df = pd.DataFrame([v_])
@@ -259,7 +260,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(8,9)):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(5, 15)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
     t_name=sch['Target'][i]
     st_name = t_name if t_name.startswith('Gaia') else t_name[:-2]
     
@@ -325,6 +326,8 @@ for i in tqdm(range(8,9)):#len(sch))):#3)):#len(18,19)):#
     
     #if full visibility
     if len(v_change) == 0:
+
+        print('Target is visible for the entire visit')
         
         #break observation sequence into <= 90 minute blocks
         n=(sp-st)/dt
@@ -420,20 +423,24 @@ for i in tqdm(range(8,9)):#len(sch))):#3)):#len(18,19)):#
         #find an occultation target for this visit that will always be visible
         # VK BEGIN: there is no "nearest" in
         # info, flag = sch_occ(oc_starts, oc_stops, tar_path, sort_key = 'nearest', prev_obs=[ra,dec])
-        info, flag = sch_occ(oc_starts, oc_stops, tar_path, sort_key = 'closest', prev_obs=[ra,dec])
+        info, flag = sch_occ(oc_starts, oc_stops, tar_path, sort_key = 'closest', prev_obs=[ra,dec])#, position = 1)
+        # print()
         if flag:
-            print('Find occultation targets from target_list itself...DONE')
+            # tqdm.write('Find occultation target from target list itself...DONE!')
+            print('\nFind occultation target from target list itself...DONE!')
         # VK END
         oc_flag=1
         if not flag:
             #: VK BEGIN: there is no "nearest" in
-            print()
-            info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'closest', prev_obs = [ra,dec])
+            # tqdm.write('Target list doesnt work, try aux list instead...')
+            print('\nTarget list doesnt work, try aux list instead...') 
+            info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
             if flag:
-                print('target_list doesnt work, find occultation targets from aux_list instead...DONE')
+                # tqdm.write('Find occultation targets from aux list...DONE!')
+                print('\nFind occultation targets from aux list...DONE!')
             # VK END
         if not flag:
-            print("More targets are necessary to cover these occultation times. Neither target_list nor aux_list work.", st, sp)
+            print("\nMore targets are necessary to cover these occultation times. Neither target_list nor aux_list work.", st, sp)
         oc_flag=0
         
         #schedule first observation sequence
