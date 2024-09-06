@@ -45,7 +45,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
         vda_subelement_ = ET.SubElement(vda, vda_key)
         vda_subelement_.text = str(vda_values)
 
-    return
+    return o_seq
 
 def params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec):
 
@@ -495,6 +495,10 @@ def schedule_occultation_targets(v_names, starts, stops, path, o_df, o_list, try
             if pd.isna(schedule.loc[start, 'Target']):
                 # Check if the target is visible for the entire interval
                 interval_mask = (vis_times >= start) & (vis_times <= stop)
+
+                # print(Time(start, format='mjd').datetime.strftime("%Y-%m-%dT%H:%M:%SZ"), \
+                #     Time(stop, format='mjd').datetime.strftime("%Y-%m-%dT%H:%M:%SZ"), v_name, visibility[interval_mask].values.astype(int))
+                
                 if np.all(visibility[interval_mask] == 1):
                     schedule.loc[start, 'Target'] = v_name
                     schedule.loc[start, 'Visibility'] = 1
@@ -511,6 +515,8 @@ def schedule_occultation_targets(v_names, starts, stops, path, o_df, o_list, try
                     if pd.isna(schedule.loc[start, 'Visibility']):
                         schedule.loc[start, 'Visibility'] = 0
                         o_df.loc[s, 'Visibility'] = 0
+
+        # print(v_name, o_df)
 
         # Check if schedule is completely filled
         if not schedule['Target'].isna().any():
@@ -539,3 +545,8 @@ def break_long_visibility_changes(arr, max_sequence = 90):
                 result.append(int(arr[i-1] + j * step))
         result.append(arr[i])
     return np.array(result)
+
+def print_element_from_xml(elem, level=0):
+    print("  " * level + f"{elem.tag}: {elem.text.strip() if elem.text else ''}")
+    for child in elem:
+        print_element_from_xml(child, level + 1)
