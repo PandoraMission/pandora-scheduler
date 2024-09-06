@@ -502,7 +502,7 @@ for i in tqdm(range(8, 9)):#, position = 0, leave = True):#len(sch))):#3)):#len(
         if stop_format - start_format <= dt:
 
             if i_flag:
-                    priority_ = '2' if np.any((tv_st <= sp)*(tv_sp >= st)) else '1'
+                priority_ = '2' if np.any((tv_st <= sp)*(tv_sp >= st)) else '1'
             else:
                 priority_ = '0'
 
