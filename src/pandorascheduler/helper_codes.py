@@ -2,10 +2,12 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 import json
 import pandas as pd
-from scheduler import PACKAGEDIR
 import numpy as np
 from astropy.time import Time
 from tqdm import tqdm
+import os
+
+PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 
 def general_parameters(obs_sequence_duration = 90, occ_sequence_limit = 30):
     observation_sequence_duration = obs_sequence_duration # minutes
