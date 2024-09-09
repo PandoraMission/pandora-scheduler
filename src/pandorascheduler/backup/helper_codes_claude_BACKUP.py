@@ -242,12 +242,6 @@ def print_element_from_xml(elem, level=0):
         print_element_from_xml(child, level + 1)
 
 def sch_occ(starts, stops, list_path, sort_key=None, prev_obs=None, tar_path=None, tar_path_ALL=None, aux_path=None):
-    # Convert single datetime to list if necessary
-    if not isinstance(starts, list):
-        starts = [starts]
-    if not isinstance(stops, list):
-        stops = [stops]
-    
     # Build empty dataframe except for starts and stops
     e_sched = [['', datetime.strftime(starts[s], "%Y-%m-%dT%H:%M:%SZ"), datetime.strftime(stops[s], "%Y-%m-%dT%H:%M:%SZ"), '', ''] for s in range(len(starts))]
     o_df = pd.DataFrame(e_sched, columns=["Target", "start", "stop", "RA", "DEC"])
@@ -306,7 +300,6 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs=None, tar_path=Non
         o_df, d_flag = schedule_occultation_targets(v_names, starts, stops, path_, o_df, o_list, try_occ_targets)
 
     return o_df, d_flag
-
 
 def visualize_schedule(schedule_data, output_dir, filename):
     if not schedule_data:

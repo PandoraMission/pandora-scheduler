@@ -179,6 +179,8 @@ def schedule_observation_sequences(visit, v_change, v_flag, v_time, t_name, ra, 
             st = v_time[v_change[v-1] + 1]
         
         sp = v_time[v_change[v]]
+
+        print(v, st, sp)
         
         # Calculate duration in minutes
         duration = (sp - st).total_seconds() / 60
@@ -239,8 +241,8 @@ def schedule_observation_sequences(visit, v_change, v_flag, v_time, t_name, ra, 
                 oc_tr += 1
 
     # output_dir = "path/to/your/output/directory"
-    filename = f"schedule_visualization_{t_name}"  # You can customize this as needed
-    hcc.visualize_schedule(schedule_data, PACKAGEDIR, filename)
+    # filename = f"schedule_visualization_{t_name}"  # You can customize this as needed
+    # hcc.visualize_schedule(schedule_data, PACKAGEDIR, filename)
 
     return visit
 
