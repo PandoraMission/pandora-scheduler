@@ -381,6 +381,15 @@ def test_visualize_schedule():
     now = datetime.now()
     test
 
+def round_to_nearest_second(dt):
+    if dt.microsecond >= 500000:
+        return dt + timedelta(seconds=1) - timedelta(microseconds=dt.microsecond)
+    else:
+        return dt - timedelta(microseconds=dt.microsecond)
+
+# def round_to_nearest_second(dt):
+#     return dt + timedelta(microseconds=500000) - timedelta(microseconds=dt.microsecond)
+
 
 
 
