@@ -20,7 +20,6 @@ import json
 import logging
 
 # VK BEGIN:
-import helper_codes
 import helper_codes_claude as hcc
 import importlib
 import warnings
@@ -111,15 +110,15 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#, positio
                 path_ = f"{PACKAGEDIR}/data/aux_targets"
                 try_occ_targets = 'aux list'
             
-            # importlib.reload(helper_codes)
-            o_df, d_flag = helper_codes.schedule_occultation_targets(v_names, starts, stops, path_, o_df, o_list, try_occ_targets)#, position)
+            # importlib.reload(helper_codes_claude)
+            o_df, d_flag = hcc.schedule_occultation_targets(v_names, starts, stops, path_, o_df, o_list, try_occ_targets)#, position)
 
         return o_df, d_flag
 
 #max time for an observation sequence
 obs_sequence_duration = 90 # minutes
 occ_sequence_limit = 30 # minutes
-obs_seq_duration, occ_seq_limit = helper_codes.general_parameters(obs_sequence_duration, occ_sequence_limit)
+obs_seq_duration, occ_seq_limit = hcc.general_parameters(obs_sequence_duration, occ_sequence_limit)
 dt = timedelta(minutes = obs_seq_duration)
 occultation_sequence_limit = timedelta(minutes = occ_seq_limit + 1.)
 
@@ -140,7 +139,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(8, 9)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -185,7 +184,7 @@ for i in tqdm(range(8, 9)):#, position = 0, leave = True):#len(sch))):#3)):#len(
     v_flag = np.asarray(v_data['Visible'])[(v_time_all >= start) & (v_time_all <= stop)]
 
     # VK START: REMOVE SEQUENCES THAT ARE TOO SHORT:
-    v_flag_update, positions = helper_codes.remove_short_sequences(v_flag, too_short_sequences)
+    v_flag_update, positions = hcc.remove_short_sequences(v_flag, too_short_sequences)
     # if v_flag_update[-1] == 0.:
     #     v_flag_update[-1] = 1.
     v_flag = v_flag_update.copy()
@@ -202,7 +201,7 @@ for i in tqdm(range(8, 9)):#, position = 0, leave = True):#len(sch))):#3)):#len(
     
     #if full visibility
     def full_visibility():
-        print('Target is visible for the entire visit')
+        print(f'Target is visible for the entire visit ({st} to {sp})')
         
         #break observation sequence into <= 90 minute blocks
         n = (sp - st)/dt
@@ -211,8 +210,8 @@ for i in tqdm(range(8, 9)):#, position = 0, leave = True):#len(sch))):#3)):#len(
         if int(n) < n:
            sps.append(sp)
 
-        if sps[-1] == v_time[-1]:
-            sps[-1] = v_time[-2]
+        # if sps[-1] == v_time[-1]:
+        #     sps[-1] = v_time[-2]
    
         sps_all = list(np.hstack((st, sps)))
         for s in range(len(sps_all)-1):
@@ -222,7 +221,7 @@ for i in tqdm(range(8, 9)):#, position = 0, leave = True):#len(sch))):#3)):#len(
             else:
                 pr=0
 
-            aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(s+1))))+str(s+1)}', \
+            aa = hcc.observation_sequence(visit, f'{("0"*(3-len(str(s+1))))+str(s+1)}', \
                 t_name, pr, sps_all[s], sps_all[s+1], ra, dec)
             pass
     if len(v_change) == 0:
@@ -261,7 +260,7 @@ for i in tqdm(range(8, 9)):#, position = 0, leave = True):#len(sch))):#3)):#len(
         # VK BEGIN: BREAK OCCULTATION SEQUENCES LONGER THAN 90 MINUTES
         start_tmp, stop_tmp = [], []
         for ii in range(len(oc_stops)):
-            ranges = helper_codes.break_long_sequences(oc_starts[ii], oc_stops[ii], occultation_sequence_limit)
+            ranges = hcc.break_long_sequences(oc_starts[ii], oc_stops[ii], occultation_sequence_limit)
             if len(ranges) > 1:
                 for jj in range(len(ranges)):
                     start_tmp.append(ranges[jj][0])
@@ -339,7 +338,7 @@ for i in tqdm(range(8, 9)):#, position = 0, leave = True):#len(sch))):#3)):#len(
                     try:
                         next_val = min(current + dt, sp)
                         priority = get_priority(i_flag, current, next_val)
-                        aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(seq_counter))))+str(seq_counter)}', \
+                        aa = hcc.observation_sequence(visit, f'{("0"*(3-len(str(seq_counter))))+str(seq_counter)}', \
                             t_name, priority, 
                             current.strftime("%Y-%m-%dT%H:%M:%SZ"),
                             next_val.strftime("%Y-%m-%dT%H:%M:%SZ"), 
@@ -357,7 +356,7 @@ for i in tqdm(range(8, 9)):#, position = 0, leave = True):#len(sch))):#3)):#len(
                 while current < sp:
                     next_val = min(current + occultation_sequence_limit, sp)
                     try:
-                        aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(seq_counter))))+str(seq_counter)}',
+                        aa = hcc.observation_sequence(visit, f'{("0"*(3-len(str(seq_counter))))+str(seq_counter)}',
                             info['Target'][oc_tr], '0', 
                             current.strftime("%Y-%m-%dT%H:%M:%SZ"), 
                             next_val.strftime("%Y-%m-%dT%H:%M:%SZ"), 
@@ -370,93 +369,12 @@ for i in tqdm(range(8, 9)):#, position = 0, leave = True):#len(sch))):#3)):#len(
                         logging.error(f"Error adding occultation sequence: {str(e)}")
                     current = next_val
             # logging.info(f"Done with observing sequence {seq_counter}: {hcc.round_to_nearest_second(st)} to {hcc.round_to_nearest_second(sp)}")
+  
+        #                 # hcc.print_element_from_xml(aa)
 
-
-        # #case where the main target isn't visible at first
-        # if not v_t[0]:
-        #     target_, start_, stop_, ra_, dec_ = info['Target'][0], \
-        #         info['start'][0], info['stop'][0], \
-        #             info['RA'][0], info['DEC'][0]
-        #     priority_ = f'{oc_flag}'
-        #     oc_tr += 1
-            
-        # #case where the main target is visible at first
-        # else:
-        #     target_, start_, stop_, ra_, dec_ = t_name,\
-        #         f'{datetime.strftime(st, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(sp, "%Y-%m-%dT%H:%M:%SZ")}',\
-        #             f'{float(ra)}', f'{float(dec)}'
-
-        # # VK BEGIN: Create first observation sequence
-        # start_format, stop_format = Time(start_).to_value('datetime'), Time(stop_).to_value('datetime')
-        # if stop_format - start_format <= dt:
-        #     if i_flag:
-        #         priority_ = '2' if np.any((tv_st <= sp)*(tv_sp >= st)) else '1'
-        #     else:
-        #         priority_ = '0'
-
-        #     aa = helper_codes.observation_sequence(visit, "001", target_, priority_, start_format, stop_format, ra_, dec_)
-        #     long_sequence = 0
-        # # If first sequence longer than dt, break it into sections of length dt:
-        # else:
-        #     nn = (stop_format - start_format)/dt
-        #     sps = [start_format+(dt*(i+1)) for i in range(int(nn))]
-        #     oc_starts_dt = list(np.sort(np.hstack((start_format, sps))))
-        #     oc_stops_dt = list(np.sort(np.hstack((stop_format, sps))))
-        #     long_sequence = 1
-        #     for ii, jj in zip(oc_starts_dt, oc_stops_dt):
-
-        #         if i_flag:
-        #             priority_ = '2' if np.any((tv_st <= jj)*(tv_sp >= ii)) else '1'
-        #         else:
-        #             priority_ = '0'
-
-        #         aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(long_sequence))))+str(long_sequence)}', target_, priority_, ii, jj, ra_, dec_)
-        #         long_sequence += 1
+    print(f"Done with visit {i}")
+    print()
         
-        # # First sequence done! Now loop to schedule consecutive observation sequences
-        # for v in range(len(v_change)-1):
-
-        #     st = v_time[v_change[v]+1]
-        #     sp = v_time[v_change[v+1]]
-        #     start_format, stop_format = f'{datetime.strftime(st, "%Y-%m-%dT%H:%M:%SZ")}', f'{datetime.strftime(sp, "%Y-%m-%dT%H:%M:%SZ")}'
-        #     os_i = v + long_sequence if long_sequence > 0 else (v + 2)
-
-        #     #set elements for the target if target is visible for this sequence
-        #     if v_t[v+1]: 
-        #         target_, ra_, dec_ = t_name, f'{float(ra)}', f'{float(dec)}'
-        #         #check for a visible transit if primary science target and visible
-        #         #set flag 0 = non-primary target; 1 = primary target; 2 = in-transit 
-        #         if i_flag:
-        #             priority_ = '2' if np.any((tv_st <= sp)*(tv_sp >= st)) else '1'
-        #         else:
-        #             priority_ = '0'
-
-        #         aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(os_i))))+str(os_i)}', target_, priority_, start_format, stop_format, ra_, dec_)
-
-        #     # #otherwise, set elements for an occultation target
-        #     else:
-        #         nn = (sp - st)/occultation_sequence_limit
-        #         print('FIX long_sequence, it is slipping!!!!!!!!!')
-        #         if nn <= 1:
-        #             target_, ra_, dec_ = info['Target'][oc_tr], info['RA'][oc_tr], info['DEC'][oc_tr]
-        #             priority_ = f'{oc_flag}'
-        #             oc_tr+=1
-        #             aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(os_i))))+str(os_i)}', target_, priority_, start_format, stop_format, ra_, dec_)
-        #         else:
-        #             sps = [st + (occultation_sequence_limit*(i + 1)) for i in range(int(nn))]
-        #             oc_starts_dt = list(np.sort(np.hstack((st, sps))))
-        #             oc_stops_dt = list(np.sort(np.hstack((sp, sps))))
-        #             long_sequence = 1
-        #             for ii, jj in zip(oc_starts_dt, oc_stops_dt):
-        #                 target_, ra_, dec_ = info['Target'][oc_tr], info['RA'][oc_tr], info['DEC'][oc_tr]
-        #                 priority_ = f'{oc_flag}'
-        #                 aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(os_i + long_sequence))))+str(os_i + long_sequence)}', target_, priority_, ii, jj, ra_, dec_)
-        #                 long_sequence += 1
-        #                 oc_tr+=1
-        #                 # helper_codes.print_element_from_xml(aa)
-        
-
-
 etstr=ET.tostring(cal, xml_declaration=True)
 
 from xml.dom import minidom

@@ -108,74 +108,43 @@ def params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec):
 
     return observational_parameters, params_NIRDA, params_VDA
 
-def remove_short_sequences(v_time, v_flag, sequence_too_short):
-    result_flag = v_flag.copy()
-    result_time = v_time.copy()
-    
-    # Find sequences of 1s and 0s
-    changes = np.diff(np.concatenate(([0], result_flag, [0])))
-    starts = np.where(changes == 1)[0]
-    ends = np.where(changes == -1)[0]
+def remove_short_sequences(array, sequence_too_short):
+    A = array#[1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]
 
-    for start, end in zip(starts, ends):
-        duration = (result_time[end-1] - result_time[start]).total_seconds() / 60
-        if duration < sequence_too_short:
-            result_flag[start:end] = 0
+    # Initialize variables to keep track of the start index of a subarray and the positions of qualifying subarrays
+    start_index = None
+    positions = []
 
-    return result_time, result_flag
+    # Iterate through the array, keeping track of the start and end of each subarray of 1s
+    for i in range(len(A)):
+        # Check if we are at the start of a subarray of 1s
+        if A[i] == 1 and start_index is None:
+            start_index = i
+        # Check if we are at the end of a subarray of 1s
+        elif A[i] == 0 and start_index is not None:
+            # Check if the subarray is shorter than 2 elements
+            if i - start_index < sequence_too_short:
+                positions.append((start_index, i - 1))
+            start_index = None
+    # Check if the last element of A is part of a qualifying subarray
+    if start_index is not None and len(A) - start_index < sequence_too_short:
+        positions.append((start_index, len(A) - 1))
 
-def break_long_sequences(ranges, step):
-    broken_ranges = []
-    for start, stop in ranges:
-        current = start
-        while current < stop:
-            next_val = min(current + step, stop)
-            broken_ranges.append([current, next_val])
-            current += step
-    return broken_ranges
+    A_new = A.copy()
+    if len(positions) != 0:
+        for ii in range(len(positions)):
+            A_new[positions[ii][0]:positions[ii][1]+1] = 0.
 
-def read_json_files(targ_list, fn_tmp):
-    import pandas as pd
-    import numpy as np
-    target_list_copy = targ_list.copy()
-    with open(fn_tmp, 'r') as file:
-        data = json.load(file)
+    return A_new, positions
 
-    # Iterate through the key-value pairs in the JSON data
-        for key, value in data.items():
-            # Convert lists or arrays to strings
-            if isinstance(value, (list, np.ndarray)):
-                value = str(value)
-
-            # Check if the column exists in the DataFrame
-            if key not in target_list_copy.columns:
-                # If it doesn't exist, add it as a new column
-                target_list_copy[key] = np.nan
-            
-            # Check if the value already exists in the column
-            if value not in target_list_copy[key].values:
-                # Find the first NaN value in the column and replace it
-                nan_indices = target_list_copy[key].isna()
-                if nan_indices.any():
-                    nan_index = nan_indices.idxmax()
-                    target_list_copy.at[nan_index, key] = value
-                else:
-                    # If no NaN values, append a new row
-                    new_row = pd.DataFrame({key: [value]})
-                    target_list_copy = pd.concat([target_list_copy, new_row], ignore_index=True)
-
-        old_column_name = "Transit Epoch (BJD_TDB-ZZZZZ)"
-        column_index = target_list_copy.columns.get_loc(old_column_name)
-        new_column_name = "Transit Epoch (BJD_TDB-2400000.5)"
-        if old_column_name in target_list_copy.columns:
-            target_list_copy[old_column_name] = target_list_copy[old_column_name] - 2400000.5
-            # print(f"Column '{old_column_name}' has been updated.")
-            target_list = target_list_copy.rename(columns={old_column_name: new_column_name})
-        else:
-            target_list = target_list_copy
-
-        # targ_list_copy.loc[0, "Transit Duration (hrs)"] = data["pl_trandur (hrs)"]
-    return target_list
+def break_long_sequences(start, end, step):
+    ranges = []
+    current = start
+    while current < end:
+        next_val = min(current + step, end)
+        ranges.append([current, next_val])
+        current += step
+    return ranges
 
 def schedule_occultation_targets(v_names, starts, stops, path, o_df, o_list, try_occ_targets):#, position):
     schedule = pd.DataFrame(index=starts, columns=['Stop', 'Target', 'Visibility'], dtype='object')
@@ -236,150 +205,48 @@ def schedule_occultation_targets(v_names, starts, stops, path, o_df, o_list, try
 
     return o_df, False
 
-def print_element_from_xml(elem, level=0):
-    print("  " * level + f"{elem.tag}: {elem.text.strip() if elem.text else ''}")
-    for child in elem:
-        print_element_from_xml(child, level + 1)
+def read_json_files(targ_list, fn_tmp):
+    import pandas as pd
+    import numpy as np
+    target_list_copy = targ_list.copy()
+    with open(fn_tmp, 'r') as file:
+        data = json.load(file)
 
-def sch_occ(starts, stops, list_path, sort_key=None, prev_obs=None, tar_path=None, tar_path_ALL=None, aux_path=None):
-    # Convert single datetime to list if necessary
-    if not isinstance(starts, list):
-        starts = [starts]
-    if not isinstance(stops, list):
-        stops = [stops]
-    
-    # Build empty dataframe except for starts and stops
-    e_sched = [['', datetime.strftime(starts[s], "%Y-%m-%dT%H:%M:%SZ"), datetime.strftime(stops[s], "%Y-%m-%dT%H:%M:%SZ"), '', ''] for s in range(len(starts))]
-    o_df = pd.DataFrame(e_sched, columns=["Target", "start", "stop", "RA", "DEC"])
+    # Iterate through the key-value pairs in the JSON data
+        for key, value in data.items():
+            # Convert lists or arrays to strings
+            if isinstance(value, (list, np.ndarray)):
+                value = str(value)
 
-    # Convert to mjd to compare with visibility data
-    starts = Time(starts, format='datetime').to_value('mjd')
-    stops = Time(stops, format='datetime').to_value('mjd')
+            # Check if the column exists in the DataFrame
+            if key not in target_list_copy.columns:
+                # If it doesn't exist, add it as a new column
+                target_list_copy[key] = np.nan
+            
+            # Check if the value already exists in the column
+            if value not in target_list_copy[key].values:
+                # Find the first NaN value in the column and replace it
+                nan_indices = target_list_copy[key].isna()
+                if nan_indices.any():
+                    nan_index = nan_indices.idxmax()
+                    target_list_copy.at[nan_index, key] = value
+                else:
+                    # If no NaN values, append a new row
+                    new_row = pd.DataFrame({key: [value]})
+                    target_list_copy = pd.concat([target_list_copy, new_row], ignore_index=True)
 
-    if sort_key is None:
-        # No occluded target scheduling, free time
-        starts = Time(starts, format='mjd').to_value('datetime')
-        stops = Time(stops, format='mjd').to_value('datetime')
-        free = [["Free Time", datetime.strftime(starts[s], "%Y-%m-%dT%H:%M:%SZ"), datetime.strftime(stops[s], "%Y-%m-%d %H:%M:%S"), '', ''] for s in range(len(starts))]
-        o_df = pd.DataFrame(free, columns=["Target", "start", "stop", "RA", "DEC"])
-    else:
-        o_list = pd.read_csv(list_path)
-        ras = o_list['RA']
-        decs = o_list['DEC']
-        if sort_key == 'closest':
-            # Sort name list based on minimized sky distance
-            try:
-                po_sc = SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
-                oc_sc = [SkyCoord(unit='deg', ra=ras[n], dec=decs[n]) for n in range(len(ras))]
-                dif = [oc_sc[n].separation(po_sc).deg for n in range(len(oc_sc))]
-                o_list['sky_dif'] = dif
-                o_list = o_list.sort_values(by='sky_dif').reset_index(drop=True)
-            except NameError:
-                print('No previous observation was specified, defaulting to random auxiliary target.')
-                o_list = o_list.sample(frac=1).reset_index(drop=True)
+        old_column_name = "Transit Epoch (BJD_TDB-ZZZZZ)"
+        column_index = target_list_copy.columns.get_loc(old_column_name)
+        new_column_name = "Transit Epoch (BJD_TDB-2400000.5)"
+        if old_column_name in target_list_copy.columns:
+            target_list_copy[old_column_name] = target_list_copy[old_column_name] - 2400000.5
+            # print(f"Column '{old_column_name}' has been updated.")
+            target_list = target_list_copy.rename(columns={old_column_name: new_column_name})
         else:
-            # Default sort is random
-            o_list = o_list.sample(frac=1).reset_index(drop=True)
+            target_list = target_list_copy
 
-    v_names = o_list['Star Name']
-    v_names = np.array(v_names)
-
-    # For prioritization via flag later
-    o_flag = o_list['Flag']
-
-    # Reload these
-    ras = o_list['RA']
-    decs = o_list['DEC']
-
-    multi_target_occultation = True
-    d_flag = False
-    if multi_target_occultation:
-        if (list_path == tar_path) or (list_path == tar_path_ALL):
-            path_ = f"{PACKAGEDIR}/data/targets"
-            try_occ_targets = 'target list'
-        elif list_path == aux_path:
-            path_ = f"{PACKAGEDIR}/data/aux_targets"
-            try_occ_targets = 'aux list'
-        else:
-            raise ValueError(f"Unrecognized list_path: {list_path}")
-
-        o_df, d_flag = schedule_occultation_targets(v_names, starts, stops, path_, o_df, o_list, try_occ_targets)
-
-    return o_df, d_flag
-
-
-def visualize_schedule(schedule_data, output_dir, filename):
-    if not schedule_data:
-        print("Warning: schedule_data is empty. No visualization will be created.")
-        return
-
-    fig, ax = plt.subplots(figsize=(20, 10))  # Increased figure size
-    
-    targets = []
-    starts = []
-    durations = []
-    colors = []
-    
-    for target, start, stop, is_visible in schedule_data:
-        targets.append(target)
-        starts.append(start)
-        duration = (stop - start).total_seconds() / 3600  # Convert to hours
-        durations.append(duration)
-        colors.append('green' if is_visible else 'red')
-    
-    # Convert starts to numbers for plotting
-    start_nums = mdates.date2num(starts)
-    
-    # Create the Gantt chart
-    unique_targets = list(dict.fromkeys(targets))  # Remove duplicates while preserving order
-    y_positions = range(len(unique_targets))
-    
-    for i, target in enumerate(unique_targets):
-        target_indices = [j for j, t in enumerate(targets) if t == target]
-        ax.barh([i] * len(target_indices), 
-                [durations[j] for j in target_indices], 
-                left=[start_nums[j] for j in target_indices], 
-                height=0.5, align='center', 
-                color=[colors[j] for j in target_indices], 
-                alpha=0.8)
-    
-    # Customize the chart
-    ax.set_yticks(y_positions)
-    ax.set_yticklabels(unique_targets)
-    ax.set_ylabel('Targets')
-    ax.set_xlabel('Time')
-    ax.set_title('Observation Schedule Visualization')
-    
-    # Format x-axis to show dates
-    ax.xaxis_date()
-    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M'))
-    fig.autofmt_xdate()  # Rotate and align the tick labels
-    
-    # Add a legend
-    ax.bar(0, 0, color='green', label='Visible', alpha=0.8)
-    ax.bar(0, 0, color='red', label='Not Visible', alpha=0.8)
-    ax.legend()
-    
-    plt.tight_layout()
-    
-    # Ensure the output directory exists
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Save the figure
-    output_path = os.path.join(output_dir, f"{filename}.png")
-    plt.savefig(output_path, dpi=300, bbox_inches='tight')
-    plt.close(fig)  # Close the figure to free up memory
-    
-    print(f"Schedule visualization saved as {output_path}")
-    print(f"Number of unique targets: {len(unique_targets)}")
-    print(f"X-axis range: {ax.get_xlim()}")
-    print(f"Y-axis range: {ax.get_ylim()}")
-
-
-# Add this function to test the visualization with sample data
-def test_visualize_schedule():
-    now = datetime.now()
-    test
+        # targ_list_copy.loc[0, "Transit Duration (hrs)"] = data["pl_trandur (hrs)"]
+    return target_list
 
 def round_to_nearest_second(dt):
     if dt.microsecond >= 500000:
@@ -387,9 +254,8 @@ def round_to_nearest_second(dt):
     else:
         return dt - timedelta(microseconds=dt.microsecond)
 
-# def round_to_nearest_second(dt):
-#     return dt + timedelta(microseconds=500000) - timedelta(microseconds=dt.microsecond)
-
-
-
+def print_element_from_xml(elem, level=0):
+    print("  " * level + f"{elem.tag}: {elem.text.strip() if elem.text else ''}")
+    for child in elem:
+        print_element_from_xml(child, level + 1)
 

@@ -142,10 +142,8 @@ def break_long_sequences(start, end, step):
         ranges.append([current, next_val])
         current += step
     return ranges
-
-# def no_phase_event():
-#     return
-
+#
+#
 def read_json_files(targ_list, fn_tmp):
     import pandas as pd
     import numpy as np
@@ -188,7 +186,8 @@ def read_json_files(targ_list, fn_tmp):
 
         # targ_list_copy.loc[0, "Transit Duration (hrs)"] = data["pl_trandur (hrs)"]
     return target_list
-
+#
+#
 def update_target_list(targ_list, pl_names):
     import os
     import warnings
