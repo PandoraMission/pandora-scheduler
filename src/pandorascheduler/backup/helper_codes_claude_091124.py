@@ -7,7 +7,6 @@ import numpy as np
 from astropy.time import Time
 from tqdm import tqdm
 import os
-import functools
 
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -147,40 +146,53 @@ def break_long_sequences(start, end, step):
         current += step
     return ranges
 
-@functools.lru_cache(maxsize=None)
-def load_visibility_data(v_name, path):
-    vis = pd.read_csv(f"{path}/{v_name}/Visibility for {v_name}.csv")
-    return vis['Time(MJD_UTC)'], vis['Visible']
+def schedule_occultation_targets(v_names, starts, stops, path, o_df, o_list, try_occ_targets):#, position):
+    schedule = pd.DataFrame(index=starts, columns=['Stop', 'Target', 'Visibility'], dtype='object')
+    schedule['Stop'] = stops
+    schedule['Target'] = np.nan
+    schedule['Visibility'] = np.nan
 
-def schedule_occultation_targets(v_names, starts, stops, path, o_df, o_list, try_occ_targets):
-    schedule = pd.DataFrame({'Stop': stops, 'Target': np.nan, 'Visibility': np.nan}, index=starts)
-    
+    # Add 'Visibility' column to o_df if it doesn't exist
     if 'Visibility' not in o_df.columns:
         o_df['Visibility'] = np.nan
 
-    for v_name in tqdm(v_names, desc=f"Finding visible occultation target from {try_occ_targets}", leave=False):
-        vis_times, visibility = load_visibility_data(v_name, path)
-        
-        mask = schedule['Target'].isna()
-        for start, stop in zip(starts[mask], stops[mask]):
-            interval_mask = (vis_times >= start) & (vis_times <= stop)
-            if np.all(visibility[interval_mask] == 1):
-                schedule.loc[start, ['Target', 'Visibility']] = v_name, 1
-                idx = o_list.index[o_list["Star Name"] == v_name][0]
-                o_df.loc[start, ['Target', 'RA', 'DEC', 'Visibility']] = v_name, o_list.loc[idx, "RA"], o_list.loc[idx, "DEC"], 1
-            elif pd.isna(schedule.loc[start, 'Visibility']):
-                schedule.loc[start, 'Visibility'] = 0
-                o_df.loc[start, 'Visibility'] = 0
+    for v_name in tqdm(v_names, desc=f"Finding visible occultation target from {try_occ_targets}", leave = False):#, position=position):#, leave=leave):#, leave=(position != 0)):#desc="Processing targets"):
+    # for v_name in v_names:
+        # Process visibility for this target
+        vis = pd.read_csv(f"{path}/{v_name}/Visibility for {v_name}.csv")
+        vis_times = vis['Time(MJD_UTC)']
+        visibility = vis['Visible']
 
+        for s, (start, stop) in enumerate(zip(starts, stops)):
+            if pd.isna(schedule.loc[start, 'Target']):
+                # Check if the target is visible for the entire interval
+                interval_mask = (vis_times >= start) & (vis_times <= stop)
+
+                # print(Time(start, format='mjd').datetime.strftime("%Y-%m-%dT%H:%M:%SZ"), \
+                #     Time(stop, format='mjd').datetime.strftime("%Y-%m-%dT%H:%M:%SZ"), v_name, visibility[interval_mask].values.astype(int))
+                
+                if np.all(visibility[interval_mask] == 1):
+                    schedule.loc[start, 'Target'] = v_name
+                    schedule.loc[start, 'Visibility'] = 1
+                    
+                    # Update o_df
+                    idx, = np.where(o_list["Star Name"] == v_name)
+                    if len(idx) > 0:
+                        o_df.loc[s, 'Target'] = v_name
+                        o_df.loc[s, 'RA'] = o_list.loc[idx[0], "RA"]
+                        o_df.loc[s, 'DEC'] = o_list.loc[idx[0], "DEC"]
+                        o_df.loc[s, 'Visibility'] = 1
+                else:
+                    # If the target is not visible for the entire interval, mark it as 0
+                    if pd.isna(schedule.loc[start, 'Visibility']):
+                        schedule.loc[start, 'Visibility'] = 0
+                        o_df.loc[s, 'Visibility'] = 0
+
+        # print(v_name, o_df)
+
+        # Check if schedule is completely filled
         if not schedule['Target'].isna().any():
             return o_df, True
-
-    mask = schedule['Target'].isna()
-    schedule.loc[mask, ['Target', 'Visibility']] = 'No target', 0
-    o_df.loc[o_df['Target'].isna(), 'Target'] = 'No target'
-    o_df.loc[o_df['Visibility'].isna(), 'Visibility'] = 0
-
-    return o_df, False
 
     # If we've gone through all targets and still have empty slots
     # Fill remaining slots with 'No target' and Visibility 0

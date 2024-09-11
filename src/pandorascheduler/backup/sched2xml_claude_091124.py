@@ -46,6 +46,72 @@ save_csv=False
 #list_path is a path to a csv file with target info in it like aux_list.csv
 #visibility data needs to be in oc_targets for now
 #if 'closest' is given as sort_key, prev_obs needs to be given as a kwarg
+def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#, position = 0):#**kwargs):
+    
+    #build empty dataframe except for starts and stops
+    e_sched = [['',datetime.strftime(starts[s], "%Y-%m-%dT%H:%M:%SZ"),datetime.strftime(stops[s], "%Y-%m-%dT%H:%M:%SZ"), '', ''] for s in range(len(starts))]
+    o_df = pd.DataFrame(e_sched,columns=["Target","start","stop", "RA", "DEC"])
+    
+    #convert to mjd to compare with visibility data
+    starts=Time(starts, format='datetime').to_value('mjd')
+    stops=Time(stops, format='datetime').to_value('mjd')
+    
+    if sort_key == None:
+        #No occluded target scheduling, free time
+        starts=starts.to_value('datetime')
+        stops=stops.to_value('datetime')
+        free = [["Free Time",datetime.strftime(starts[s], "%Y-%m-%dT%H:%M:%SZ"),datetime.strftime(stops[s], "%Y/%m/%d, %H:%M:%S"), '', ''] for s in range(len(starts))]
+        o_df = pd.DataFrame(free, columns=["Target", "start", "stop", "RA", "DEC"])
+    
+    else:       
+        o_list = pd.read_csv(list_path)
+        ras=o_list['RA']
+        decs=o_list['DEC']
+        
+        if sort_key == 'closest':
+            #sort name list based on minimized sky distance
+            #prev_obs must be specified as an array consisting of ra and dec (in degrees) for the previous observation
+            #e.g. [359.10775132017, -49.28901740485]
+            #this seeks to minimize slew distance to an occultation target, though actual slew sims are not performed
+            try:
+                po_sc=SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
+                oc_sc=[SkyCoord(unit='deg', ra=ras[n], dec=decs[n]) for n in range(len(ras))]
+
+                dif=[oc_sc[n].separation(po_sc).deg for n in range(len(oc_sc))]
+                o_list['sky_dif'] = dif
+                o_list = o_list.sort_values(by='sky_dif').reset_index(drop=True)
+                
+            except NameError:
+                print('No previous observation was specified, defaulting to random auxiliary target.')
+                o_list.sample(frac=1).reset_index(drop=True)
+        else:
+            #default sort is random
+            o_list.sample(frac=1).reset_index(drop=True)
+        
+        v_names = o_list['Star Name']
+        v_names=np.array(v_names)
+        #For prioritization via flag later
+        o_flag = o_list['Flag']
+        #Reload these
+        ras=o_list['RA']
+        decs=o_list['DEC']
+
+        multi_target_occultation = True#False
+
+        d_flag = False
+
+        if multi_target_occultation:
+            if (list_path == tar_path) or (list_path == tar_path_ALL):
+                path_ = f"{PACKAGEDIR}/data/targets"
+                try_occ_targets = 'target list'
+            elif list_path == aux_path:
+                path_ = f"{PACKAGEDIR}/data/aux_targets"
+                try_occ_targets = 'aux list'
+            
+            # importlib.reload(helper_codes_claude)
+            o_df, d_flag = hcc.schedule_occultation_targets(v_names, starts, stops, path_, o_df, o_list, try_occ_targets)#, position)
+
+        return o_df, d_flag
 
 #max time for an observation sequence
 obs_sequence_duration = 90 # minutes
@@ -71,7 +137,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(6,8), desc=f"Processing visit"):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(7,9), desc=f"Processing visit"):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
