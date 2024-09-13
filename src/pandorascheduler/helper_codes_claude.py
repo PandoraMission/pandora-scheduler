@@ -313,3 +313,18 @@ def sch_occ(starts, stops, list_path, tar_path, tar_path_ALL, aux_path, sort_key
             o_df, d_flag = schedule_occultation_targets(v_names, starts, stops, path_, o_df, o_list, try_occ_targets)#, position)
 
         return o_df, d_flag
+
+
+def check_visibility(target, start_time, stop_time):
+    # Convert ISO time to MJD
+    start_mjd = Time(start_time, format='isot', scale='utc').mjd
+    stop_mjd = Time(stop_time, format='isot', scale='utc').mjd
+    
+    # Read visibility data
+    v_data = pd.read_csv(f'{aux_vis_path}/{target}/Visibility for {target}.csv')
+    
+    # Filter data for the observation period
+    mask = (v_data['Time(MJD_UTC)'] >= start_mjd) & (v_data['Time(MJD_UTC)'] <= stop_mjd)
+    period_data = v_data[mask]
+    
+    return period_data['Visible'].tolist(), period_data['Time(MJD_UTC)'].tolist()
