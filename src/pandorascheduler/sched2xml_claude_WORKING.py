@@ -135,12 +135,12 @@ meta=ET.SubElement(cal, 'Meta',
                    Keepout_Angles='90.0, 40.0, 63.0',
                    Observation_Sequence_Duration_hrs = f'{dt}',
                    Removed_Sequences_Shorter_Than_min = f'{too_short_sequences}',
-                   Created=f'{str(datetime.now())}',
+                   Created=f'{str(hcc.round_to_nearest_second(datetime.now()))}',
 #                   Author="P Bonney",
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(10)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(3)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 

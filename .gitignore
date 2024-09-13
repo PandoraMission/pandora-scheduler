@@ -57,3 +57,4 @@ src/pandorascheduler/data/GMAT_pandora_600_20240512.txt
 *.pkl
 *.xml
 *.xml
+*.png
