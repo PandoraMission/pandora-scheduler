@@ -1034,7 +1034,7 @@ if __name__ == "__main__":
     if update_target_list_as_per_json_files:
         # targ_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
         # pl_names = ['GJ 9827 b', 'L 98-59 d', 'WASP-69 b']
-        which_targets = 'primary-exoplanet'#'secondary-exoplanet'#
+        which_targets = 'secondary-exoplanet'#'primary-exoplanet'#
         targ_list = helper_codes.get_targets_table(which_targets)
         pl_names = targ_list['Planet Name'].values
         updated_targ_list = helper_codes.update_target_list(targ_list, pl_names, which_targets)
