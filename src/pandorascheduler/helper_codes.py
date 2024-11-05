@@ -585,11 +585,10 @@ def print_element_from_xml(elem, level=0):
 
 def get_targets_table(which_targets):
     directory = '/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files/' + which_targets
-    df = pd.DataFrame(read_target_json_files(directory))
+    df = pd.DataFrame(parse_json_files(directory))
     df = df.sort_values('Planet Name')
     df = df.reset_index(drop=True)
     df = df[['Planet Name', 'Planet Simbad Name', 'Star Name', 'Star Simbad Name', 'Number of Transits to Capture', 'Priority', 'Original Filename']]
-
     return df
 
 def read_json_file_new(filename):
@@ -618,7 +617,7 @@ def update_dataframe_with_json(df, json_data):
     
     return df
 
-def read_target_json_files(directory):
+def parse_json_files(directory):
     data = []
     for filename in os.listdir(directory):
         if filename.endswith('_target_definition.json'):
@@ -680,3 +679,19 @@ def format_planet_name(filename):
     
     # If none of the above apply, return the name as is
     return name
+
+
+def read_json_from_github(url):
+    # Convert GitHub URL to raw content URL
+    raw_url = url.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/")
+    
+    # Fetch the content
+    response = requests.get(raw_url)
+    
+    # Check if the request was successful
+    if response.status_code == 200:
+        # Parse JSON content
+        return json.loads(response.text)
+    else:
+        print(f"Failed to fetch file. Status code: {response.status_code}")
+        return None

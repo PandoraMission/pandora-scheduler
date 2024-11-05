@@ -1042,6 +1042,9 @@ if __name__ == "__main__":
         target_list_name = which_targets#'Pandora_Target_List_Top20_29Aug2024_updated_targ_list'
         # updated_targ_list.to_csv(PACKAGEDIR + "/data/Pandora_Target_List_Top20_29Aug2024_updated_targ_list.csv", index=False)
 
+    # url = "https://github.com/PandoraMission/PandoraTargetList/blob/main/target_definition_files/primary-exoplanet/GJ_1214b_target_definition.json"
+    # data = read_json_from_github(url)
+
     print(updated_targ_list)
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
