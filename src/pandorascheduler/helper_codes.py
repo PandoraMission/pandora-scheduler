@@ -211,29 +211,35 @@ def update_target_list(targ_list, pl_names, which_targets):
         # Handle any potential NaN values in the original column
         updated_targ_list['Transit Epoch (BJD_TDB) - 2400000.5'] = updated_targ_list['Transit Epoch (BJD_TDB) - 2400000.5'].fillna(-999)
 
-    # column_order = ['Planet Name', 'Planet Simbad Name', 'Star Name', 'Star Simbad Name', 
-    #             'Number of Transits to Capture', 'Priority', 'Original Filename', 
-    #             'RA', 'DEC', 'coord_epoch', 'pm_RA', 'pm_DEC', 'Jmag', 'Gmag', 'Teff (K)', 'logg', 
-    #             'Period (days)', 'Period Uncertainty (days)', 'Transit Duration (hrs)', 
-    #             'Transit Epoch (BJD_TDB)', 'Transit Epoch Uncertainty (days)', 
-    #             'Additional Planets', 'VDA Setting', 'NIRDA Setting']
+    dir_tmp = '/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files/'
+    with open(dir_tmp + 'nirda_readout_schemes.json', 'r') as file:
+        nirda_settings = json.load(file)['data']
 
-    # # Reorder the columns
-    # updated_targ_list = updated_targ_list.reindex(columns=column_order)
+    with open(dir_tmp + 'vda_readout_schemes.json', 'r') as file:
+        vda_settings = json.load(file)['data']
 
-    # for pl_name in updated_targ_list['Original Filename']:#pl_names:#
-    #     # fn_tmp = f'{PACKAGEDIR}/data/target_json_files/' + pl_name + '.json'
-    #     if os.path.exists(fn_tmp):
-    #         tmp_arr = read_json_files(filtered_targ_list[filtered_targ_list["Planet Name"] == pl_name], fn_tmp)
-    #         filtered_targ_list_copy = filtered_targ_list.copy()
-    #         # Ensure filtered_targ_list has all columns from tmp_arr
-    #         for col in tmp_arr.columns:
-    #             if col not in updated_targ_list.columns:
-    #                 updated_targ_list[col] = None
-    #         # Update filtered_targ_list with tmp_arr data
-    #         updated_targ_list.update(tmp_arr)
-        # else:
-        #     print(f"The JSON file for '{pl_name}' does not exist.")
+    # Function to get NIRDA settings
+    def get_nirda_settings(setting):
+        return nirda_settings.get(setting, {})
+
+    # Function to get VDA settings
+    def get_vda_settings(setting):
+        return vda_settings.get(setting, {})
+
+        # Update the DataFrame
+    for index, row in updated_targ_list.iterrows():
+        # Update NIRDA settings
+        nirda_setting = row['NIRDA Setting']
+        nirda_values = get_nirda_settings(nirda_setting)
+        for key, value in nirda_values.items():
+            updated_targ_list.at[index, f'NIRDA_{key}'] = value
+        
+        # Update VDA settings
+        vda_setting = row['VDA Setting']
+        vda_values = get_vda_settings(vda_setting)
+        for key, value in vda_values.items():
+            updated_targ_list.at[index, f'VDA_{key}'] = value
+
     return updated_targ_list
 
 def find_first_visible_target(start, stop, names):
@@ -579,66 +585,9 @@ def print_element_from_xml(elem, level=0):
 
 def get_targets_table(which_targets):
     directory = '/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files/' + which_targets
-    
     df = pd.DataFrame(read_target_json_files(directory))
-
     df = df.sort_values('Planet Name')
-
-# Reset the index
     df = df.reset_index(drop=True)
-    
-    
-    
-    # names = [os.path.splitext(file)[0].replace('_target_definition', '') 
-    #         for file in os.listdir(directory) 
-    #         if file.endswith('_target_definition.json')]
-    # # names = ['WASP-107b', 'TOI-1685b', 'WASP-52b', 'TOI-1416b', 'HIP_65_Ab', 'K2-198b', 'HD_3167b', 'WASP-80b', 'TOI-3884b', 'LTT_1445_Ac', 'WASP-177b', 'WASP-69b', 'TOI-942b', 'GJ_9827b', 'GJ_1214b', 'TOI-836b', 'TOI-244b', 'TOI-776b', 'TOI-2427b', 'L_98-59d']
-
-    # # Create a DataFrame
-    # def format_names(name):
-
-    #     if name == 'HIP_65_Ab':
-    #         return 'HIP 65 A b', 'HIP 65 A'
-    #     if name == 'LTT_1445_Ac':
-    #         return 'LTT 1445 A c', 'LTT 1445 A'
-    #     if name == 'L_98-59d':
-    #         return 'L 98-59 d', 'L 98-59'
-    #     if name == 'HD_3167b':
-    #         return 'HD 3167 b', 'HD 3167'
-    #     if name == 'GJ_9827b':
-    #         return 'GJ 9827 b', 'GJ 9827'
-    #     if name == 'GJ_1214b':
-    #         return 'GJ 1214 b', 'GJ 1214'
-       
-    #     # For other names, insert a space before the last character
-    #     planet_name = name[:-1] + ' ' + name[-1]
-        
-    #     # Star name is everything before the last character
-    #     star_name = name[:-1].replace('_', ' ')
-        
-    #     return planet_name, star_name
-
-    #     # Create lists for DataFrame
-    # planet_names = []
-    # star_names = []
-
-    # for name in names:
-    #     planet_name, star_name = format_names(name)
-    #     planet_names.append(planet_name)
-    #     star_names.append(star_name)
-
-    # # Create a DataFrame
-    # df = pd.DataFrame({
-    #     'Planet Name': planet_names,
-    #     'Planet Simbad Name': planet_names,
-    #     'Star Name': star_names,
-    #     'Star Simbad Name': star_names,
-    #     'Number of Transits to Capture': [10 for _ in names],  # Placeholder
-    #     'Priority': [1 for _ in names],  # Placeholder
-    #     'Original Filename': names
-    # })
-
-    # Reorder columns to match the desired output
     df = df[['Planet Name', 'Planet Simbad Name', 'Star Name', 'Star Simbad Name', 'Number of Transits to Capture', 'Priority', 'Original Filename']]
 
     return df

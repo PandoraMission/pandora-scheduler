@@ -1043,37 +1043,6 @@ if __name__ == "__main__":
         # updated_targ_list.to_csv(PACKAGEDIR + "/data/Pandora_Target_List_Top20_29Aug2024_updated_targ_list.csv", index=False)
 
     print(updated_targ_list)
-
-
-    dir_tmp = '/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files/'
-    with open(dir_tmp + 'nirda_readout_schemes.json', 'r') as file:
-        nirda_settings = json.load(file)['data']
-
-    with open(dir_tmp + 'vda_readout_schemes.json', 'r') as file:
-        vda_settings = json.load(file)['data']
-
-    # Function to get NIRDA settings
-    def get_nirda_settings(setting):
-        return nirda_settings.get(setting, {})
-
-    # Function to get VDA settings
-    def get_vda_settings(setting):
-        return vda_settings.get(setting, {})
-
-        # Update the DataFrame
-    for index, row in updated_targ_list.iterrows():
-        # Update NIRDA settings
-        nirda_setting = row['NIRDA Setting']
-        nirda_values = get_nirda_settings(nirda_setting)
-        for key, value in nirda_values.items():
-            updated_targ_list.at[index, f'NIRDA_{key}'] = value
-        
-        # Update VDA settings
-        vda_setting = row['VDA Setting']
-        vda_values = get_vda_settings(vda_setting)
-        for key, value in vda_values.items():
-            updated_targ_list.at[index, f'VDA_{key}'] = value
-
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
     # Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
