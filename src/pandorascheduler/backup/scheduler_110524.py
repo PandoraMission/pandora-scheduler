@@ -1045,10 +1045,10 @@ if __name__ == "__main__":
     # url = "https://github.com/PandoraMission/PandoraTargetList/blob/main/target_definition_files/primary-exoplanet/GJ_1214b_target_definition.json"
     # data = read_json_from_github(url)
 
-    print(updated_targ_list)
+    # print(updated_targ_list)
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
-    # Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
+    # Schedule_all_scratch(blocks, pandora_start, pandora_stop, updated_targ_list, target_partner_list, \
     #     obs_window, transit_coverage_min, sched_wts, aux_key='max_visibility_any', \
     #         aux_list=f"{PACKAGEDIR}/data/aux_list.csv", fname_tracker = fname_tracker, commissioning_time=commissioning_time_)
     #         # aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
@@ -1059,7 +1059,7 @@ if __name__ == "__main__":
         # save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/aux_list.csv')
     #                  
     #
-    Schedule(pandora_start, pandora_stop, target_list, obs_window, transit_coverage_min, sched_wts, \
+    Schedule(pandora_start, pandora_stop, updated_targ_list, obs_window, transit_coverage_min, sched_wts, \
         aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", fname_tracker = fname_tracker, commissioning_time=30, \
             sched_start=sched_start, sched_stop=sched_stop)
 
