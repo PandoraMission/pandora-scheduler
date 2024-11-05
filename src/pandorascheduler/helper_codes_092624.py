@@ -147,7 +147,6 @@ def break_long_sequences(start, end, step):
 def read_json_files(targ_list, fn_tmp):
     import pandas as pd
     import numpy as np
-    import json
     target_list_copy = targ_list.copy()
     with open(fn_tmp, 'r') as file:
         data = json.load(file)
@@ -175,8 +174,8 @@ def read_json_files(targ_list, fn_tmp):
                     new_row = pd.DataFrame({key: [value]})
                     target_list_copy = pd.concat([target_list_copy, new_row], ignore_index=True)
 
-        old_column_name = "Transit Epoch (BJD_TDB)"
-        # column_index = target_list_copy.columns.get_loc(old_column_name)
+        old_column_name = "Transit Epoch (BJD_TDB-ZZZZZ)"
+        column_index = target_list_copy.columns.get_loc(old_column_name)
         new_column_name = "Transit Epoch (BJD_TDB-2400000.5)"
         if old_column_name in target_list_copy.columns:
             target_list_copy[old_column_name] = target_list_copy[old_column_name] - 2400000.5
@@ -189,49 +188,25 @@ def read_json_files(targ_list, fn_tmp):
     return target_list
 #
 #
-def update_target_list(targ_list, pl_names, which_targets):
+def update_target_list(targ_list, pl_names):
     import os
     import warnings
-    import glob
     warnings.filterwarnings("ignore", category=FutureWarning)
-    # filtered_targ_list = targ_list[targ_list["Planet Name"].isin(pl_names)]
-    # updated_targ_list = filtered_targ_list.copy()
-    updated_targ_list = targ_list.copy()
+    filtered_targ_list = targ_list[targ_list["Planet Name"].isin(pl_names)]
+    updated_targ_list = filtered_targ_list.copy()
 
-    dir_tmp = '/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files/' + which_targets
-    json_files = glob.glob(f'{dir_tmp}/*.json')
+    for pl_name in pl_names:#targ_list["Planet Name"]:
+        fn_tmp = f'{PACKAGEDIR}/data/target_json_files/' + pl_name + '.json'
+        if os.path.exists(fn_tmp):
 
-    for file in json_files:
-        json_data = read_json_file_new(file)
-        updated_targ_list = update_dataframe_with_json(updated_targ_list, json_data)
-
-    if 'Transit Epoch (BJD_TDB)' in updated_targ_list.columns:
-        # Create the new column
-        updated_targ_list['Transit Epoch (BJD_TDB) - 2400000.5'] = updated_targ_list['Transit Epoch (BJD_TDB)'] - 2400000.5
-        # Handle any potential NaN values in the original column
-        updated_targ_list['Transit Epoch (BJD_TDB) - 2400000.5'] = updated_targ_list['Transit Epoch (BJD_TDB) - 2400000.5'].fillna(-999)
-
-    # column_order = ['Planet Name', 'Planet Simbad Name', 'Star Name', 'Star Simbad Name', 
-    #             'Number of Transits to Capture', 'Priority', 'Original Filename', 
-    #             'RA', 'DEC', 'coord_epoch', 'pm_RA', 'pm_DEC', 'Jmag', 'Gmag', 'Teff (K)', 'logg', 
-    #             'Period (days)', 'Period Uncertainty (days)', 'Transit Duration (hrs)', 
-    #             'Transit Epoch (BJD_TDB)', 'Transit Epoch Uncertainty (days)', 
-    #             'Additional Planets', 'VDA Setting', 'NIRDA Setting']
-
-    # # Reorder the columns
-    # updated_targ_list = updated_targ_list.reindex(columns=column_order)
-
-    # for pl_name in updated_targ_list['Original Filename']:#pl_names:#
-    #     # fn_tmp = f'{PACKAGEDIR}/data/target_json_files/' + pl_name + '.json'
-    #     if os.path.exists(fn_tmp):
-    #         tmp_arr = read_json_files(filtered_targ_list[filtered_targ_list["Planet Name"] == pl_name], fn_tmp)
-    #         filtered_targ_list_copy = filtered_targ_list.copy()
-    #         # Ensure filtered_targ_list has all columns from tmp_arr
-    #         for col in tmp_arr.columns:
-    #             if col not in updated_targ_list.columns:
-    #                 updated_targ_list[col] = None
-    #         # Update filtered_targ_list with tmp_arr data
-    #         updated_targ_list.update(tmp_arr)
+            tmp_arr = read_json_files(filtered_targ_list[filtered_targ_list["Planet Name"] == pl_name], fn_tmp)
+            # filtered_targ_list_copy = filtered_targ_list.copy()
+            # Ensure filtered_targ_list has all columns from tmp_arr
+            for col in tmp_arr.columns:
+                if col not in updated_targ_list.columns:
+                    updated_targ_list[col] = None
+            # Update filtered_targ_list with tmp_arr data
+            updated_targ_list.update(tmp_arr)
         # else:
         #     print(f"The JSON file for '{pl_name}' does not exist.")
     return updated_targ_list
@@ -577,157 +552,57 @@ def print_element_from_xml(elem, level=0):
     for child in elem:
         print_element_from_xml(child, level + 1)
 
-def get_targets_table(which_targets):
-    directory = '/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files/' + which_targets
-    
-    df = pd.DataFrame(read_target_json_files(directory))
+def get_primary_targets_table():
+    directory = '/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files/primary-exoplanet'
+    names = [os.path.splitext(file)[0].replace('_target_definition', '') 
+            for file in os.listdir(directory) 
+            if file.endswith('_target_definition.json')]
+    # names = ['WASP-107b', 'TOI-1685b', 'WASP-52b', 'TOI-1416b', 'HIP_65_Ab', 'K2-198b', 'HD_3167b', 'WASP-80b', 'TOI-3884b', 'LTT_1445_Ac', 'WASP-177b', 'WASP-69b', 'TOI-942b', 'GJ_9827b', 'GJ_1214b', 'TOI-836b', 'TOI-244b', 'TOI-776b', 'TOI-2427b', 'L_98-59d']
 
-    df = df.sort_values('Planet Name')
+    # Create a DataFrame
+    def format_names(name):
 
-# Reset the index
-    df = df.reset_index(drop=True)
-    
-    
-    
-    # names = [os.path.splitext(file)[0].replace('_target_definition', '') 
-    #         for file in os.listdir(directory) 
-    #         if file.endswith('_target_definition.json')]
-    # # names = ['WASP-107b', 'TOI-1685b', 'WASP-52b', 'TOI-1416b', 'HIP_65_Ab', 'K2-198b', 'HD_3167b', 'WASP-80b', 'TOI-3884b', 'LTT_1445_Ac', 'WASP-177b', 'WASP-69b', 'TOI-942b', 'GJ_9827b', 'GJ_1214b', 'TOI-836b', 'TOI-244b', 'TOI-776b', 'TOI-2427b', 'L_98-59d']
-
-    # # Create a DataFrame
-    # def format_names(name):
-
-    #     if name == 'HIP_65_Ab':
-    #         return 'HIP 65 A b', 'HIP 65 A'
-    #     if name == 'LTT_1445_Ac':
-    #         return 'LTT 1445 A c', 'LTT 1445 A'
-    #     if name == 'L_98-59d':
-    #         return 'L 98-59 d', 'L 98-59'
-    #     if name == 'HD_3167b':
-    #         return 'HD 3167 b', 'HD 3167'
-    #     if name == 'GJ_9827b':
-    #         return 'GJ 9827 b', 'GJ 9827'
-    #     if name == 'GJ_1214b':
-    #         return 'GJ 1214 b', 'GJ 1214'
+        if name == 'HIP_65_Ab':
+            return 'HIP 65 A b', 'HIP 65 A'
+        if name == 'LTT_1445_Ac':
+            return 'LTT 1445 A c', 'LTT 1445 A'
+        if name == 'L_98-59d':
+            return 'L 98-59 d', 'L 98-59'
+        if name == 'HD_3167b':
+            return 'HD 3167 b', 'HD 3167'
+        if name == 'GJ_9827b':
+            return 'GJ 9827 b', 'GJ 9827'
+        if name == 'GJ_1214b':
+            return 'GJ 1214 b', 'GJ 1214'
        
-    #     # For other names, insert a space before the last character
-    #     planet_name = name[:-1] + ' ' + name[-1]
+        # For other names, insert a space before the last character
+        planet_name = name[:-1] + ' ' + name[-1]
         
-    #     # Star name is everything before the last character
-    #     star_name = name[:-1].replace('_', ' ')
+        # Star name is everything before the last character
+        star_name = name[:-1].replace('_', ' ')
         
-    #     return planet_name, star_name
+        return planet_name, star_name
 
-    #     # Create lists for DataFrame
-    # planet_names = []
-    # star_names = []
+        # Create lists for DataFrame
+    planet_names = []
+    star_names = []
 
-    # for name in names:
-    #     planet_name, star_name = format_names(name)
-    #     planet_names.append(planet_name)
-    #     star_names.append(star_name)
+    for name in names:
+        planet_name, star_name = format_names(name)
+        planet_names.append(planet_name)
+        star_names.append(star_name)
 
-    # # Create a DataFrame
-    # df = pd.DataFrame({
-    #     'Planet Name': planet_names,
-    #     'Planet Simbad Name': planet_names,
-    #     'Star Name': star_names,
-    #     'Star Simbad Name': star_names,
-    #     'Number of Transits to Capture': [10 for _ in names],  # Placeholder
-    #     'Priority': [1 for _ in names],  # Placeholder
-    #     'Original Filename': names
-    # })
+    # Create a DataFrame
+    df = pd.DataFrame({
+        'Planet Name': planet_names,
+        'Planet Simbad Name': planet_names,
+        'Star Name': star_names,
+        'Star Simbad Name': star_names,
+        'Number of Transits to Capture': [10 for _ in names],  # Placeholder
+        'Priority': [1 for _ in names]  # Placeholder
+    })
 
     # Reorder columns to match the desired output
-    df = df[['Planet Name', 'Planet Simbad Name', 'Star Name', 'Star Simbad Name', 'Number of Transits to Capture', 'Priority', 'Original Filename']]
+    df = df[['Planet Name', 'Planet Simbad Name', 'Star Name', 'Star Simbad Name', 'Number of Transits to Capture', 'Priority']]
 
     return df
-
-def read_json_file_new(filename):
-    with open(filename, 'r') as file:
-        return json.load(file)
-
-def update_dataframe_with_json(df, json_data):
-    planet_name = f"{json_data['Star Name']} {json_data['Planet Letter']}"
-    
-    # Update existing columns
-    df.loc[df['Planet Name'] == planet_name, 'Number of Transits to Capture'] = json_data['Number of Transits to Capture']
-    
-    # Add new columns from JSON data
-    new_columns = ['RA', 'DEC', 'coord_epoch', 'pm_RA', 'pm_DEC', 'Jmag', 'Gmag', 'Teff (K)', 'logg', 
-                   'Period (days)', 'Period Uncertainty (days)', 'Transit Duration (hrs)', 
-                   'Transit Epoch (BJD_TDB)', 'Transit Epoch Uncertainty (days)', 'VDA Setting', 'NIRDA Setting']
-    
-    for column in new_columns:
-        if column in json_data:
-            df.loc[df['Planet Name'] == planet_name, column] = json_data[column]
-    
-    # Handle Additional Planets
-    if 'Additional Planets' in json_data and json_data['Additional Planets']:
-        additional_planets = ', '.join([p['Planet Letter'] for p in json_data['Additional Planets']])
-        df.loc[df['Planet Name'] == planet_name, 'Additional Planets'] = additional_planets
-    
-    return df
-
-def read_target_json_files(directory):
-    data = []
-    for filename in os.listdir(directory):
-        if filename.endswith('_target_definition.json'):
-            with open(os.path.join(directory, filename), 'r') as file:
-                json_data = json.load(file)
-                
-                planet_name = format_planet_name(filename)
-                star_name = planet_name.rsplit(' ', 1)[0]
-                if planet_name == 'HIP 65 A b':
-                    star_name = 'HIP 65 A'
-                
-                row = {
-                    'Planet Name': planet_name,
-                    'Planet Simbad Name': planet_name,
-                    'Star Name': star_name,
-                    'Star Simbad Name': star_name,
-                    'Number of Transits to Capture': json_data.get('Number of Transits to Capture', 10),
-                    'Priority': 1,
-                    'Original Filename': filename.replace('_target_definition.json', '')
-                }
-                data.append(row)
-    return data
-
-
-def format_planet_name(filename):
-    # Remove '_target_definition.json' from the end
-    name = filename.replace('_target_definition.json', '')
-    
-    # Split the name by underscores
-    parts = name.split('_')
-    
-    if name == 'HIP_65_Ab':
-        return f"{parts[0]} {parts[1]} {parts[-1][0]} {parts[-1][-1]}"
-
-    # Handle special cases
-    if name.startswith('L_') or name.startswith('GJ_') or name.startswith('HD_') or name.startswith('HIP_'):
-        return f"{parts[0]} {parts[1][:-1]} {parts[1][-1]}"
-    
-    if name.startswith('LTT_'):
-        return f"LTT {parts[1]} {parts[2][0]} {parts[2][1]}"
-    
-    if len(parts) > 2:  # For other cases with multiple underscores
-        # Join all parts except the last one with spaces
-        base = ' '.join(parts[:-1])
-        last_part = parts[-1]
-        
-        # Separate the last letter from the last part
-        if len(last_part) > 1 and last_part[-1].isalpha() and last_part[-2].isdigit():
-            return f"{base} {last_part[:-1]} {last_part[-1]}"
-        else:
-            return f"{base} {last_part}"
-    
-    elif len(parts) == 2:  # For cases like GJ_1214b
-        return f"{parts[0]} {parts[1][:-1]} {parts[1][-1]}"
-    
-    elif '-' in name:  # For cases like TOI-1416b
-        base, letter = name[:-1], name[-1]
-        return f"{base} {letter}"
-    
-    # If none of the above apply, return the name as is
-    return name

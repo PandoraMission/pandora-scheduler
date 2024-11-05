@@ -1029,17 +1029,52 @@ if __name__ == "__main__":
     target_partner_list='target_partner_list.csv'#'target_list_top5_16Feb2024.csv'#
     gmat_file = 'GMAT_pandora_600_20240512.txt'#'GMAT_pandora_450_20230713.csv'#
     obs_name = 'Pandora_600km_20240518'#'Pandora_450km_20230713'#
-    fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
     update_target_list_as_per_json_files = True
     if update_target_list_as_per_json_files:
         # targ_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
         # pl_names = ['GJ 9827 b', 'L 98-59 d', 'WASP-69 b']
-        targ_list = helper_codes.get_primary_targets_table()
-        updated_targ_list = helper_codes.update_target_list(targ_list, pl_names)
+        which_targets = 'primary-exoplanet'#'secondary-exoplanet'#
+        targ_list = helper_codes.get_targets_table(which_targets)
+        pl_names = targ_list['Planet Name'].values
+        updated_targ_list = helper_codes.update_target_list(targ_list, pl_names, which_targets)
         # updated_targ_list.reset_index(drop=True)
-        target_list_name = 'Pandora_Target_List_Top20_29Aug2024_updated_targ_list'
+        target_list_name = which_targets#'Pandora_Target_List_Top20_29Aug2024_updated_targ_list'
         # updated_targ_list.to_csv(PACKAGEDIR + "/data/Pandora_Target_List_Top20_29Aug2024_updated_targ_list.csv", index=False)
+
+    print(updated_targ_list)
+
+
+    dir_tmp = '/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files/'
+    with open(dir_tmp + 'nirda_readout_schemes.json', 'r') as file:
+        nirda_settings = json.load(file)['data']
+
+    with open(dir_tmp + 'vda_readout_schemes.json', 'r') as file:
+        vda_settings = json.load(file)['data']
+
+    # Function to get NIRDA settings
+    def get_nirda_settings(setting):
+        return nirda_settings.get(setting, {})
+
+    # Function to get VDA settings
+    def get_vda_settings(setting):
+        return vda_settings.get(setting, {})
+
+        # Update the DataFrame
+    for index, row in updated_targ_list.iterrows():
+        # Update NIRDA settings
+        nirda_setting = row['NIRDA Setting']
+        nirda_values = get_nirda_settings(nirda_setting)
+        for key, value in nirda_values.items():
+            updated_targ_list.at[index, f'NIRDA_{key}'] = value
+        
+        # Update VDA settings
+        vda_setting = row['VDA Setting']
+        vda_values = get_vda_settings(vda_setting)
+        for key, value in vda_values.items():
+            updated_targ_list.at[index, f'VDA_{key}'] = value
+
+    fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
     # Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_list, target_partner_list, \
     #     obs_window, transit_coverage_min, sched_wts, aux_key='max_visibility_any', \
