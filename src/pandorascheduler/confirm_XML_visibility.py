@@ -10,7 +10,7 @@ import helper_codes_claude as hcc
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 
 # Parse the XML file
-fname = f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_27Aug2024_Claude.xml'
+fname = f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_08Nov2024_Claude.xml'#calendar_Pandora_Schedule_27Aug2024_Claude.xml'
 tree = ET.parse(fname)
 root = tree.getroot()
 
@@ -26,7 +26,7 @@ def check_visibility(target, start_time, stop_time):
     stop_mjd = Time(stop_time, format='isot', scale='utc').mjd
 
     # Read visibility data
-    st_name = target[:-2] if target.endswith('b') else target
+    st_name = target[:-2] if target.endswith('b') or target.endswith('c') else target
     if not target.startswith('Gaia'):
         v_data = pd.read_csv(tar_vis_path+f'{st_name}/Visibility for {st_name}.csv')
     else:
@@ -100,7 +100,7 @@ for visit in root.findall('ns:Visit', namespace):
         if target != "No target":
             try:
                 visibility, times = check_visibility(target, start_time, stop_time)
-            except Exception as e:
+            except Exception as e: 
                 print(f"Error checking visibility for target {target} in Visit {visit_id}: {str(e)}")
                 visibility, times = [], []
         else:
