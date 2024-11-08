@@ -15,7 +15,7 @@ def general_parameters(obs_sequence_duration = 90, occ_sequence_limit = 30):
     occultation_sequence_limit = occ_sequence_limit # minutes
     return observation_sequence_duration, occultation_sequence_limit
 
-def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, dec):
+def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, dec, targ_info):
 
     o_seq = ET.SubElement(visit,'Observation_Sequence')
     obs_seq_id = ET.SubElement(o_seq, "ID")
@@ -39,12 +39,16 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
     payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
     ### NIRDA Parameters
     nirda = ET.SubElement(payload_parameters, "NIRDA")
-    for nirda_key, nirda_values in zip(params_NIRDA.keys(), params_NIRDA.values()):
+    nirda_columns = targ_info.columns[targ_info.columns.str.startswith('NIRDA_')]
+    # for nirda_key, nirda_values in zip(params_NIRDA.keys(), params_NIRDA.values()):
+    for nirda_key, nirda_values in targ_info[nirda_columns].iloc[0].items():
         nirda_subelement_ = ET.SubElement(nirda, nirda_key)
         nirda_subelement_.text = nirda_values
     ### VDA Parameters:
     vda = ET.SubElement(payload_parameters, "VDA")
-    for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
+    vda_columns = targ_info.columns[targ_info.columns.str.startswith('VDA_')]
+    # for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
+    for vda_key, vda_values in targ_info[vda_columns].iloc[0].items():
         vda_subelement_ = ET.SubElement(vda, vda_key)
         vda_subelement_.text = str(vda_values)
 

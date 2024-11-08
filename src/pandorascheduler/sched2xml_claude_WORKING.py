@@ -28,7 +28,7 @@ warnings.filterwarnings("ignore")
 # VK END
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-08-04_2months_08Aug2024.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
+schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-08-04_3months_08Nov2024.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
 tar_vis_path=f'{PACKAGEDIR}/data/targets/'
 aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
 tar_path=f'{PACKAGEDIR}/data/primary-exoplanet_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
@@ -94,7 +94,7 @@ def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#, positio
         v_names = o_list['Star Name']
         v_names=np.array(v_names)
         #For prioritization via flag later
-        o_flag = o_list['Flag']
+        o_flag = o_list['Priority']#['Flag']
         #Reload these
         ras=o_list['RA']
         decs=o_list['DEC']
@@ -140,11 +140,11 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(0,5)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(0,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
-    t_name=sch['Target'][i]
+    t_name = sch['Target'][i]
     st_name = t_name if t_name.startswith('Gaia') else t_name[:-2]
     
     #set visit number and visit element
@@ -223,7 +223,7 @@ for i in tqdm(range(0,5)):#, position = 0, leave = True):#len(sch))):#3)):#len(1
                 pr=0
 
             aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(s+1))))+str(s+1)}', \
-                t_name, pr, sps_all[s], sps_all[s+1], ra, dec)
+                t_name, pr, sps_all[s], sps_all[s+1], ra, dec, targ_info)
             pass
     if len(v_change) == 0:
         full_visibility_ = full_visibility()
@@ -343,7 +343,7 @@ for i in tqdm(range(0,5)):#, position = 0, leave = True):#len(sch))):#3)):#len(1
                             t_name, priority, 
                             current.strftime("%Y-%m-%dT%H:%M:%SZ"),
                             next_val.strftime("%Y-%m-%dT%H:%M:%SZ"), 
-                            ra, dec)
+                            ra, dec, targ_info)
                         logging.info(f"Vis sequence: {hcc.round_to_nearest_second(current)} to {hcc.round_to_nearest_second(next_val)}......DONE!")
                         # print()
                     except Exception as e:
@@ -361,7 +361,7 @@ for i in tqdm(range(0,5)):#, position = 0, leave = True):#len(sch))):#3)):#len(1
                             info['Target'][oc_tr], '0', 
                             current.strftime("%Y-%m-%dT%H:%M:%SZ"), 
                             next_val.strftime("%Y-%m-%dT%H:%M:%SZ"), 
-                            info['RA'][oc_tr], info['DEC'][oc_tr])
+                            info['RA'][oc_tr], info['DEC'][oc_tr], targ_info)
                         logging.info(f"Occ sequence: {hcc.round_to_nearest_second(current)} to {hcc.round_to_nearest_second(next_val)}...DONE")
                         # print()
                         oc_tr += 1
@@ -456,7 +456,18 @@ for i in tqdm(range(0,5)):#, position = 0, leave = True):#len(sch))):#3)):#len(1
         #                 # helper_codes.print_element_from_xml(aa)
         
 
+# for child in visit:
+#     print(child.tag, child.attrib)
 
+def float_to_str(element):
+    for el in element.iter():
+        for k, v in el.attrib.items():
+            if isinstance(v, float):
+                el.set(k, str(v))
+        if el.text and isinstance(el.text, float):
+            el.text = str(el.text)
+
+float_to_str(cal)
 etstr=ET.tostring(cal, xml_declaration=True)
 
 from xml.dom import minidom
