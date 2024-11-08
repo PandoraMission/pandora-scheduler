@@ -140,7 +140,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -350,7 +350,7 @@ for i in tqdm(range(1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(1
                             current.strftime("%Y-%m-%dT%H:%M:%SZ"),
                             next_val.strftime("%Y-%m-%dT%H:%M:%SZ"), 
                             ra, dec, targ_info)
-                        logging.info(f"Vis sequence: {hcc.round_to_nearest_second(current)} to {hcc.round_to_nearest_second(next_val)}......DONE!")
+                        # logging.info(f"Vis sequence: {hcc.round_to_nearest_second(current)} to {hcc.round_to_nearest_second(next_val)}......DONE!")
                         # print()
                     except Exception as e:
                         logging.error(f"Error adding visible sequence: {str(e)}")
@@ -372,8 +372,7 @@ for i in tqdm(range(1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(1
                                 current.strftime("%Y-%m-%dT%H:%M:%SZ"), 
                                 next_val.strftime("%Y-%m-%dT%H:%M:%SZ"), 
                                 info['RA'][oc_tr], info['DEC'][oc_tr], occ_targ_info)
-                            # XXXX targ_info NEEDS TO BE FIXED HERE, IT NEEDS TO BE THE INFO FOR THE OCC TARGET, NOT THE MAIN TARGET!!!!
-                            logging.info(f"Occ sequence: {hcc.round_to_nearest_second(current)} to {hcc.round_to_nearest_second(next_val)}...DONE")
+                            # logging.info(f"Occ sequence: {hcc.round_to_nearest_second(current)} to {hcc.round_to_nearest_second(next_val)}...DONE")
                             # print()
                             oc_tr += 1
                             seq_counter += 1
@@ -390,7 +389,7 @@ for i in tqdm(range(1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(1
                             st.strftime("%Y-%m-%dT%H:%M:%SZ"), 
                             sp.strftime("%Y-%m-%dT%H:%M:%SZ"), 
                             info['RA'][oc_tr], info['DEC'][oc_tr], occ_targ_info)
-                        logging.info(f"Occ sequence: {hcc.round_to_nearest_second(st)} to {hcc.round_to_nearest_second(sp)}...DONE")
+                        # logging.info(f"Occ sequence: {hcc.round_to_nearest_second(st)} to {hcc.round_to_nearest_second(sp)}...DONE")
                         oc_tr += 1
                         seq_counter += 1
                     except Exception as e:
