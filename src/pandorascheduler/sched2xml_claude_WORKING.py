@@ -28,12 +28,12 @@ warnings.filterwarnings("ignore")
 # VK END
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
+schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-08-04_2months_08Aug2024.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
 tar_vis_path=f'{PACKAGEDIR}/data/targets/'
 aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
-tar_path=f'{PACKAGEDIR}/data/Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
-aux_path=f'{PACKAGEDIR}/data/aux_list.csv'
-tar_path_ALL = f'{PACKAGEDIR}/data/Pandora_Target_List_Top40_16Feb2024_Top40_SDM.csv'
+tar_path=f'{PACKAGEDIR}/data/primary-exoplanet_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
+aux_path=f'{PACKAGEDIR}/data/aux_list_new.csv'
+tar_path_ALL = f'{PACKAGEDIR}/data/primary-exoplanet_targets.csv'#Pandora_Target_List_Top40_16Feb2024_Top40_SDM.csv'
 t_list=pd.read_csv(tar_path)
 a_list=pd.read_csv(aux_path)
 sch=pd.read_csv(schedule_path)
@@ -140,7 +140,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(3,5)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(0,5)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -464,6 +464,6 @@ dom = minidom.parseString(etstr)
 
 #dom = xml.dom.minidom.parseString(etstr)
 pretty_xml_as_string = dom.toprettyxml()
-f=open(f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_27Aug2024_Claude.xml','w+')#test.xml', 'w+')
+f=open(f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_08Nov2024_Claude.xml','w+')#test.xml', 'w+')
 f.write(pretty_xml_as_string)
 f.close()
