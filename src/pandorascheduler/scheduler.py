@@ -92,10 +92,11 @@ def Schedule(
 
     # Import target list
 
-    if 'updated_targ_list' in globals():
-        target_list = updated_targ_list.reset_index(drop=True)
-    else:
-        target_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
+    # if 'updated_targ_list' in globals():
+    #     target_list = updated_targ_list.reset_index(drop=True)
+    # else:
+    #     target_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
+    target_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
     #target_list = pd.read_csv(f"{PACKAGEDIR}/data/target_list.csv", sep=",")
 
     # Import no phase events
@@ -998,8 +999,16 @@ def Schedule_all_scratch(
     
     
     #Schedule observations for the scheduling period
-    tracker = Schedule(pandora_start, pandora_stop, target_list, obs_window, transit_coverage_min, \
-         aux_key, aux_list, fname_tracker, sched_wts, commissioning_time); print(tracker)#, aux_key=None)
+    # tracker = Schedule(pandora_start, pandora_stop, target_list, obs_window, transit_coverage_min, \
+    #      aux_key, aux_list, fname_tracker, sched_wts, commissioning_time); print(tracker)#, aux_key=None)
+
+    tracker = Schedule(pandora_start, pandora_stop, target_list, obs_window, transit_coverage_min, sched_wts, \
+        aux_key='closest', aux_list=aux_list, fname_tracker = fname_tracker, commissioning_time=commissioning_time, \
+            sched_start=sched_start, sched_stop=sched_stop)
+
+
+
+         
     
 # Need a functional addition to add in auxilliary science to the scheduler
 # Especially need prioritization of aux and to put aux in blank times
@@ -1034,18 +1043,21 @@ if __name__ == "__main__":
     if update_target_list_as_per_json_files:
         # targ_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
         # pl_names = ['GJ 9827 b', 'L 98-59 d', 'WASP-69 b']
-        which_targets = 'primary-exoplanet'#'occultation-standard'#'auxiliary-standard'#'auxiliary-exoplanet'#'secondary-exoplanet'#
-
-
+        # which_targets = 'primary-exoplanet'#'occultation-standard'#'auxiliary-standard'#'auxiliary-exoplanet'#'secondary-exoplanet'#
         # Example usage:
         keywords = ['auxiliary-exoplanet', 'primary-exoplanet', 'auxiliary-standard', 
                     'monitoring-standard', 'secondary-exoplanet', 'occultation-standard']
 
         keyword_ = 'primary-exoplanet'
-        df = helper_codes.process_target_files(keyword_); print(df[df.columns[:10]].head())
-        save_df_as_csv = False
+        updated_targ_list = helper_codes.process_target_files(keyword_)#; print(updated_targ_list[updated_targ_list.columns[:10]].head())
+        save_df_as_csv = True
         if save_df_as_csv:
-            df.to_csv(keyword_ + '_targets.csv', index=False)
+            updated_targ_list.to_csv(f"{PACKAGEDIR}/data/" + keyword_ + '_targets.csv', index=False)
+        
+        updated_targ_list = keyword_ + '_targets.csv'
+
+        occ_std = helper_codes.process_target_files('occultation-standard')
+        occ_std.to_csv(f"{PACKAGEDIR}/data/aux_list_new.csv", index=False)
 
     #     targ_list = helper_codes.get_targets_table(which_targets)
     #     pl_names = targ_list['Planet Name'].values
@@ -1056,26 +1068,25 @@ if __name__ == "__main__":
 
     # # url = "https://github.com/PandoraMission/PandoraTargetList/blob/main/target_definition_files/primary-exoplanet/GJ_1214b_target_definition.json"
     # # data = read_json_from_github(url)
-
-    updated_targ_list = df
-
     # print(updated_targ_list)
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
     # Schedule_all_scratch(blocks, pandora_start, pandora_stop, updated_targ_list, target_partner_list, \
-    #     obs_window, transit_coverage_min, sched_wts, aux_key='max_visibility_any', \
-    #         aux_list=f"{PACKAGEDIR}/data/aux_list.csv", fname_tracker = fname_tracker, commissioning_time=commissioning_time_)
+    #     obs_window, transit_coverage_min, sched_wts = sched_wts, aux_key='max_visibility_any', \
+    #         aux_list=f"{PACKAGEDIR}/data/aux_list_new.csv", fname_tracker = fname_tracker, commissioning_time=commissioning_time_, \
+    #             sched_start = sched_start, sched_stop = sched_stop)
     #         # aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
     #
-    # transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \
+    transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \
+        save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f"{PACKAGEDIR}/data/aux_list_new.csv")
         # save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/Pandora_Target_List_Top20_14May2024.csv')
         # save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/target_partner_list.csv')
         # save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/aux_list.csv')
     #                  
     #
-    Schedule(pandora_start, pandora_stop, updated_targ_list, obs_window, transit_coverage_min, sched_wts, \
-        aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", fname_tracker = fname_tracker, commissioning_time=30, \
-            sched_start=sched_start, sched_stop=sched_stop)
+    # Schedule(pandora_start, pandora_stop, updated_targ_list, obs_window, transit_coverage_min, sched_wts, \
+    #     aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", fname_tracker = fname_tracker, commissioning_time=30, \
+    #         sched_start=sched_start, sched_stop=sched_stop)
 
     # Schedule(pandora_start, pandora_stop, obs_window, transit_coverage_min, sched_wts, \
     #          commissioning_time=30, sched_start=sched_start, sched_stop=sched_stop,
