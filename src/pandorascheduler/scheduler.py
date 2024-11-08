@@ -1041,35 +1041,25 @@ if __name__ == "__main__":
         keywords = ['auxiliary-exoplanet', 'primary-exoplanet', 'auxiliary-standard', 
                     'monitoring-standard', 'secondary-exoplanet', 'occultation-standard']
 
-        df = helper_codes.process_target_files('monitoring-standard'); print(df[df.columns[:10]].head())
+        keyword_ = 'primary-exoplanet'
+        df = helper_codes.process_target_files(keyword_); print(df[df.columns[:10]].head())
+        save_df_as_csv = False
+        if save_df_as_csv:
+            df.to_csv(keyword_ + '_targets.csv', index=False)
 
-        # if df is not None:
+    #     targ_list = helper_codes.get_targets_table(which_targets)
+    #     pl_names = targ_list['Planet Name'].values
+    #     updated_targ_list = helper_codes.update_target_list(targ_list, pl_names, which_targets)
+    #     # updated_targ_list.reset_index(drop=True)
+    #     target_list_name = which_targets#'Pandora_Target_List_Top20_29Aug2024_updated_targ_list'
+    #     # updated_targ_list.to_csv(PACKAGEDIR + "/data/Pandora_Target_List_Top20_29Aug2024_updated_targ_list.csv", index=False)
 
-        for keyword in keywords:
-            df = process_target_files(keyword)
-            if df is not None:
-                print(f"\nDataFrame for {keyword}:")
-                print(df)
+    # # url = "https://github.com/PandoraMission/PandoraTargetList/blob/main/target_definition_files/primary-exoplanet/GJ_1214b_target_definition.json"
+    # # data = read_json_from_github(url)
 
-        # To process a specific keyword:
-        df = helper_codes.process_target_files('auxiliary-exoplanet')
-        # if df is not None:
-        #     print(df)
+    updated_targ_list = df
 
-        # targ_list = helper_codes.process_target_files()
-
-
-        targ_list = helper_codes.get_targets_table(which_targets)
-        pl_names = targ_list['Planet Name'].values
-        updated_targ_list = helper_codes.update_target_list(targ_list, pl_names, which_targets)
-        # updated_targ_list.reset_index(drop=True)
-        target_list_name = which_targets#'Pandora_Target_List_Top20_29Aug2024_updated_targ_list'
-        # updated_targ_list.to_csv(PACKAGEDIR + "/data/Pandora_Target_List_Top20_29Aug2024_updated_targ_list.csv", index=False)
-
-    # url = "https://github.com/PandoraMission/PandoraTargetList/blob/main/target_definition_files/primary-exoplanet/GJ_1214b_target_definition.json"
-    # data = read_json_from_github(url)
-
-    print(updated_targ_list)
+    # print(updated_targ_list)
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
     # Schedule_all_scratch(blocks, pandora_start, pandora_stop, updated_targ_list, target_partner_list, \
