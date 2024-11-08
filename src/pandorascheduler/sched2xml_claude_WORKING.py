@@ -258,20 +258,26 @@ for i in tqdm(range(1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(1
         #visibility change tracker (for convenience)
         v_t = v_flag[v_change]
 
+        # for ii, jj in zip(oc_starts, oc_stops):
+        #     print(ii, jj)
+
         # VK BEGIN: BREAK OCCULTATION SEQUENCES LONGER THAN 90 MINUTES
-        start_tmp, stop_tmp = [], []
-        for ii in range(len(oc_stops)):
-            ranges = helper_codes.break_long_sequences(oc_starts[ii], oc_stops[ii], occultation_sequence_limit)
-            if len(ranges) > 1:
-                for jj in range(len(ranges)):
-                    start_tmp.append(ranges[jj][0])
-                    stop_tmp.append(ranges[jj][1] - 0.*timedelta(minutes=1))
-            else:
-                start_tmp.append(oc_starts[ii])
-                stop_tmp.append(oc_stops[ii] - 0*timedelta(minutes=1))
-        oc_starts_bak, oc_stops_bak = oc_starts.copy(), oc_stops.copy()
-        oc_starts, oc_stops = start_tmp, stop_tmp
+        break_occ_seq_longer_than_occultation_sequence_limit = False
+        if break_occ_seq_longer_than_occultation_sequence_limit:
+            start_tmp, stop_tmp = [], []
+            for ii in range(len(oc_stops)):
+                ranges = helper_codes.break_long_sequences(oc_starts[ii], oc_stops[ii], occultation_sequence_limit)
+                if len(ranges) > 1:
+                    for jj in range(len(ranges)):
+                        start_tmp.append(ranges[jj][0])
+                        stop_tmp.append(ranges[jj][1] - 0.*timedelta(minutes=1))
+                else:
+                    start_tmp.append(oc_starts[ii])
+                    stop_tmp.append(oc_stops[ii] - 0*timedelta(minutes=1))
+            oc_starts_bak, oc_stops_bak = oc_starts.copy(), oc_stops.copy()
+            oc_starts, oc_stops = start_tmp, stop_tmp
         # VK END
+
 
         #find an occultation target for this visit that will always be visible
         def find_occultation_target(oc_starts, oc_stops, tar_path, tar_path_ALL, aux_path, ra, dec):
@@ -335,7 +341,7 @@ for i in tqdm(range(1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(1
             if v_flag[v_change[v]]:  # Visible period
                 # logging.info(f"Visible period: {st} to {sp}")
                 current = st
-                while current < sp:
+                while current < sp: # break observation sequences longer than 90 min
                     try:
                         next_val = min(current + dt, sp)
                         priority = get_priority(i_flag, current, next_val)
@@ -352,23 +358,43 @@ for i in tqdm(range(1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(1
                     current = next_val
 
             else:  # Non-visible period (occultation)
-                # logging.info(f"Occultation duration: {hcc.round_to_nearest_second(st)} to {hcc.round_to_nearest_second(sp)}")
-                current = st
-                while current < sp:
-                    next_val = min(current + occultation_sequence_limit, sp)
+                if break_occ_seq_longer_than_occultation_sequence_limit:
+                    # logging.info(f"Occultation duration: {hcc.round_to_nearest_second(st)} to {hcc.round_to_nearest_second(sp)}")
+                    current = st
+                    while current < sp:
+                        next_val = min(current + occultation_sequence_limit, sp)
+                        try:
+                            occ_targ_info = t_list.loc[(t_list['Star Name'] == info['Target'][oc_tr])]
+                            if occ_targ_info.empty:
+                                occ_targ_info = a_list.loc[(a_list['Star Name'] == info['Target'][oc_tr])]
+                            aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(seq_counter))))+str(seq_counter)}',
+                                info['Target'][oc_tr], '0', 
+                                current.strftime("%Y-%m-%dT%H:%M:%SZ"), 
+                                next_val.strftime("%Y-%m-%dT%H:%M:%SZ"), 
+                                info['RA'][oc_tr], info['DEC'][oc_tr], occ_targ_info)
+                            # XXXX targ_info NEEDS TO BE FIXED HERE, IT NEEDS TO BE THE INFO FOR THE OCC TARGET, NOT THE MAIN TARGET!!!!
+                            logging.info(f"Occ sequence: {hcc.round_to_nearest_second(current)} to {hcc.round_to_nearest_second(next_val)}...DONE")
+                            # print()
+                            oc_tr += 1
+                            seq_counter += 1
+                        except Exception as e:
+                            logging.error(f"Error adding occultation sequence: {str(e)}")
+                        current = next_val
+                else:
                     try:
+                        occ_targ_info = t_list.loc[(t_list['Star Name'] == info['Target'][oc_tr])]
+                        if occ_targ_info.empty:
+                            occ_targ_info = a_list.loc[(a_list['Star Name'] == info['Target'][oc_tr])]
                         aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(seq_counter))))+str(seq_counter)}',
                             info['Target'][oc_tr], '0', 
-                            current.strftime("%Y-%m-%dT%H:%M:%SZ"), 
-                            next_val.strftime("%Y-%m-%dT%H:%M:%SZ"), 
-                            info['RA'][oc_tr], info['DEC'][oc_tr], targ_info)
-                        logging.info(f"Occ sequence: {hcc.round_to_nearest_second(current)} to {hcc.round_to_nearest_second(next_val)}...DONE")
-                        # print()
+                            st.strftime("%Y-%m-%dT%H:%M:%SZ"), 
+                            sp.strftime("%Y-%m-%dT%H:%M:%SZ"), 
+                            info['RA'][oc_tr], info['DEC'][oc_tr], occ_targ_info)
+                        logging.info(f"Occ sequence: {hcc.round_to_nearest_second(st)} to {hcc.round_to_nearest_second(sp)}...DONE")
                         oc_tr += 1
                         seq_counter += 1
                     except Exception as e:
                         logging.error(f"Error adding occultation sequence: {str(e)}")
-                    current = next_val
             # logging.info(f"Done with observing sequence {seq_counter}: {hcc.round_to_nearest_second(st)} to {hcc.round_to_nearest_second(sp)}")
 
 
