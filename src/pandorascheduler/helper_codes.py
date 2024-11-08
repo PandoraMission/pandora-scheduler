@@ -6,6 +6,7 @@ import numpy as np
 from astropy.time import Time
 from tqdm import tqdm
 import os
+import re
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -695,3 +696,108 @@ def read_json_from_github(url):
     else:
         print(f"Failed to fetch file. Status code: {response.status_code}")
         return None
+#
+#
+#
+def load_readout_schemes(filename):
+    with open(filename, 'r') as f:
+        data = json.load(f)
+    return data['data']
+#
+#
+#
+def process_target_files(keyword):
+    base_dir = '/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files/'  # Set this to your base directory if needed
+    directory = os.path.join(base_dir, keyword)
+    
+    if not os.path.exists(directory):
+        print(f"Directory not found: {directory}")
+        return None
+
+    # Load readout schemes
+    nirda_schemes = load_readout_schemes(base_dir + 'nirda_readout_schemes.json')
+    vda_schemes = load_readout_schemes(base_dir + 'vda_readout_schemes.json')
+
+    def flatten_dict(d, parent_key='', sep='_'):
+        items = []
+        for k, v in d.items():
+            new_key = f"{parent_key}{sep}{k}" if parent_key else k
+            if isinstance(v, dict):
+                items.extend(flatten_dict(v, new_key, sep=sep).items())
+            elif isinstance(v, list):
+                for i, item in enumerate(v):
+                    items.extend(flatten_dict(item, f"{new_key}{sep}{i}", sep=sep).items())
+            else:
+                items.append((new_key, v))
+        return dict(items)
+
+    data_list = []
+    for filename in os.listdir(directory):
+        if filename.endswith('_target_definition.json'):
+            file_path = os.path.join(directory, filename)
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+            
+            # Remove unwanted keys
+            for key in ['Time Created', 'Version', 'Author']:
+                data.pop(key, None)
+            
+            flat_data = flatten_dict(data)
+            
+            original_filename = filename.replace('_target_definition.json', '')
+            flat_data['Original Filename'] = original_filename
+            flat_data['Priority'] = 1  # Default priority
+            
+            # Add NIRDA and VDA readout scheme data
+            nirda_setting = flat_data.get('NIRDA Setting')
+            vda_setting = flat_data.get('VDA Setting')
+            
+            if nirda_setting in nirda_schemes:
+                for key, value in nirda_schemes[nirda_setting].items():
+                    flat_data[f'NIRDA_{key}'] = value
+            
+            if vda_setting in vda_schemes:
+                for key, value in vda_schemes[vda_setting].items():
+                    flat_data[f'VDA_{key}'] = value
+            
+            if not filename.startswith('Gaia') or keyword != 'monitoring-standard':
+                # Separate the last lowercase letter with a space
+                planet_name = re.sub(r'([a-z])$', r' \1', flat_data.get('Planet Name', ''))
+                flat_data['Planet Name'] = planet_name
+                flat_data['Planet Simbad Name'] = planet_name
+                flat_data['Star Simbad Name'] = flat_data.get('Star Name', '')
+                
+                # Add the new column
+                if 'Transit Epoch (BJD_TDB)' in flat_data:
+                    flat_data['Transit Epoch (BJD_TDB-2400000.5)'] = flat_data['Transit Epoch (BJD_TDB)'] - 2400000.5
+            else:
+                flat_data['Star Simbad Name'] = flat_data.get('Star Name', '')
+            
+            data_list.append(flat_data)
+
+    if not data_list:
+        print(f"No valid JSON files found in {directory}")
+        return None
+
+    df = pd.DataFrame(data_list)
+    
+    # Determine columns based on whether it's a Gaia file or not
+    if df['Original Filename'].str.startswith('Gaia').any() or keyword == 'monitoring-standard':
+        columns_order = ['Star Name', 'Star Simbad Name']
+        columns_order.extend([col for col in df.columns if col not in columns_order and col != 'Priority'])
+        columns_order.append('Priority')
+    else:
+        columns_order = ['Planet Name', 'Planet Simbad Name', 'Star Name', 'Star Simbad Name', 
+                         'Number of Transits to Capture', 'Priority', 'Original Filename']
+        if 'Transit Epoch (BJD_TDB-2400000.5)' in df.columns:
+            columns_order.append('Transit Epoch (BJD_TDB-2400000.5)')
+        columns_order.extend([col for col in df.columns if col not in columns_order])
+    
+    # Move NIRDA and VDA settings and their related columns to the end
+    nirda_vda_columns = [col for col in df.columns if col.startswith(('NIRDA', 'VDA'))]
+    for col in nirda_vda_columns:
+        columns_order.remove(col)
+    columns_order.extend(nirda_vda_columns)
+    
+    return df[columns_order]
+

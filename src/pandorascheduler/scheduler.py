@@ -1034,7 +1034,31 @@ if __name__ == "__main__":
     if update_target_list_as_per_json_files:
         # targ_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
         # pl_names = ['GJ 9827 b', 'L 98-59 d', 'WASP-69 b']
-        which_targets = 'primary-exoplanet'#'secondary-exoplanet'#
+        which_targets = 'primary-exoplanet'#'occultation-standard'#'auxiliary-standard'#'auxiliary-exoplanet'#'secondary-exoplanet'#
+
+
+        # Example usage:
+        keywords = ['auxiliary-exoplanet', 'primary-exoplanet', 'auxiliary-standard', 
+                    'monitoring-standard', 'secondary-exoplanet', 'occultation-standard']
+
+        df = helper_codes.process_target_files('monitoring-standard'); print(df[df.columns[:10]].head())
+
+        # if df is not None:
+
+        for keyword in keywords:
+            df = process_target_files(keyword)
+            if df is not None:
+                print(f"\nDataFrame for {keyword}:")
+                print(df)
+
+        # To process a specific keyword:
+        df = helper_codes.process_target_files('auxiliary-exoplanet')
+        # if df is not None:
+        #     print(df)
+
+        # targ_list = helper_codes.process_target_files()
+
+
         targ_list = helper_codes.get_targets_table(which_targets)
         pl_names = targ_list['Planet Name'].values
         updated_targ_list = helper_codes.update_target_list(targ_list, pl_names, which_targets)
@@ -1045,7 +1069,7 @@ if __name__ == "__main__":
     # url = "https://github.com/PandoraMission/PandoraTargetList/blob/main/target_definition_files/primary-exoplanet/GJ_1214b_target_definition.json"
     # data = read_json_from_github(url)
 
-    # print(updated_targ_list)
+    print(updated_targ_list)
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
     # Schedule_all_scratch(blocks, pandora_start, pandora_stop, updated_targ_list, target_partner_list, \
