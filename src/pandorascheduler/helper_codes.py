@@ -39,7 +39,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
         diff_in_sec = (datetime.strptime(stop, '%Y-%m-%dT%H:%M:%SZ') - datetime.strptime(start, '%Y-%m-%dT%H:%M:%SZ')).total_seconds()
     elif isinstance(stop, datetime):
         diff_in_sec = (stop - start).total_seconds()
-        
+
     ### Payload Parameters
     payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
     ### NIRDA Parameters
@@ -63,6 +63,9 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
         if vda_key not in columns_to_ignore:
             vda_subelement_ = ET.SubElement(vda, vda_key)
             vda_subelement_.text = str(vda_values)
+    vda_subelement_ = ET.SubElement(vda, 'VDA_Integrations')
+    vda_subelement_.text = str(np.round(diff_in_sec/targ_info['VDA_IntegrationTime'].iloc[0]).astype(int))
+
     return o_seq
 
 def params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec):
