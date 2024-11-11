@@ -34,7 +34,12 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
             for kk in range(2):
                 sub_element_tmp = ET.SubElement(obs_param_element, jj[kk])
                 sub_element_tmp.text = jj[kk+2]
-
+    ### Calculate integration duration in seconds, from "Start" to "Stop"
+    if isinstance(stop, str):
+        diff_in_sec = (datetime.strptime(stop, '%Y-%m-%dT%H:%M:%SZ') - datetime.strptime(start, '%Y-%m-%dT%H:%M:%SZ')).total_seconds()
+    elif isinstance(stop, datetime):
+        diff_in_sec = (stop - start).total_seconds()
+        
     ### Payload Parameters
     payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
     ### NIRDA Parameters
@@ -48,8 +53,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
             nirda_subelement_.text = nirda_values
         if nirda_key == 'NIRDA_SC_Integrations':
             nirda_subelement_ = ET.SubElement(nirda, nirda_key)
-            difference = stop - start
-            nirda_subelement_.text = str(np.round(difference.total_seconds()/targ_info['NIRDA_IntegrationTime'].iloc[0]).astype(int))
+            nirda_subelement_.text = str(np.round(diff_in_sec/targ_info['NIRDA_IntegrationTime'].iloc[0]).astype(int))
     ### VDA Parameters:
     vda = ET.SubElement(payload_parameters, "VDA")
     vda_columns = targ_info.columns[targ_info.columns.str.startswith('VDA_')]
@@ -59,7 +63,6 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
         if vda_key not in columns_to_ignore:
             vda_subelement_ = ET.SubElement(vda, vda_key)
             vda_subelement_.text = str(vda_values)
-
     return o_seq
 
 def params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec):
