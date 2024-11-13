@@ -140,7 +140,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(1,3)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(1,2)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -484,15 +484,25 @@ for i in tqdm(range(1,3)):#len(sch))):#1,2)):#, position = 0, leave = True):#len
 # for child in visit:
 #     print(child.tag, child.attrib)
 
-def float_to_str(element):
+# def float_to_str(element):
+#     for el in element.iter():
+#         for k, v in el.attrib.items():
+#             if isinstance(v, float):
+#                 el.set(k, str(v))
+#         if el.text and isinstance(el.text, float):
+#             el.text = str(el.text)
+
+# float_to_str(cal)
+
+def convert_to_string(element):
     for el in element.iter():
         for k, v in el.attrib.items():
-            if isinstance(v, float):
+            if isinstance(v, (int, float, np.int64, np.integer, np.floating)):
                 el.set(k, str(v))
-        if el.text and isinstance(el.text, float):
+        if el.text and isinstance(el.text, (int, float, np.int64, np.integer, np.floating)):
             el.text = str(el.text)
 
-float_to_str(cal)
+convert_to_string(cal)
 etstr=ET.tostring(cal, xml_declaration=True)
 
 from xml.dom import minidom

@@ -44,27 +44,50 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
     payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
     ### NIRDA Parameters
     nirda = ET.SubElement(payload_parameters, "NIRDA")
-    nirda_columns = targ_info.columns[targ_info.columns.str.startswith('NIRDA_')]
-    columns_to_ignore = ['NIRDA_FramesPerIntegration', 'NIRDA_IntegrationTime']
+    
+    # NIRDA AcquireInfCamImages
+    # nirda_subelement_inf = ET.SubElement(nirda, "AcquireInfCamImages")
     # for nirda_key, nirda_values in zip(params_NIRDA.keys(), params_NIRDA.values()):
+    #     nirda_subelement_ = ET.SubElement(nirda_subelement_inf, nirda_key)
+    #     nirda_subelement_.text = nirda_values
+
+    # NIRDA AcquireVisCamScienceData
+    # nirda_subelement_vis = ET.SubElement(nirda, "AcquireVisCamScienceData")
+    nirda_columns = targ_info.columns[targ_info.columns.str.startswith('NIRDA_')]
+    columns_to_ignore = ['IncludeFieldSolnsInResp', 'NIRDA_TargetID', 'NIRDA_SC_Integrations', 'NIRDA_FramesPerIntegration', 'NIRDA_IntegrationTime_s']
     for nirda_key, nirda_values in targ_info[nirda_columns].iloc[0].items():
-        if (nirda_key not in columns_to_ignore) and (nirda_key != 'NIRDA_SC_Integrations'):
+        if (nirda_key not in columns_to_ignore):# and (nirda_key != 'NIRDA_SC_Integrations'):
             nirda_subelement_ = ET.SubElement(nirda, nirda_key)
-            nirda_subelement_.text = nirda_values
+            nirda_subelement_.text = str(nirda_values)
+        if nirda_key == 'NIRDA_TargetID':
+            nirda_subelement_ = ET.SubElement(nirda, nirda_key)
+            nirda_subelement_.text = targ_info['Planet Name'].iloc[0]
         if nirda_key == 'NIRDA_SC_Integrations':
             nirda_subelement_ = ET.SubElement(nirda, nirda_key)
-            nirda_subelement_.text = str(np.round(diff_in_sec/targ_info['NIRDA_IntegrationTime'].iloc[0]).astype(int))
+            nirda_subelement_.text = str(np.round(diff_in_sec/targ_info['NIRDA_IntegrationTime_s'].iloc[0]).astype(int))
     ### VDA Parameters:
     vda = ET.SubElement(payload_parameters, "VDA")
     vda_columns = targ_info.columns[targ_info.columns.str.startswith('VDA_')]
-    columns_to_ignore = ['VDA_IntegrationTime']
+    # columns_to_ignore = ['VDA_IntegrationTime']
+    columns_to_ignore = ['VDA_NumTotalFramesRequested', 'VDA_TargetID', 'VDA_TargetRA', 'VDA_TargetDEC', \
+        'VDA_StarRoiDetMethod', 'VDA_numPredefinedStarRois', 'VDA_PredefinedStarRoiRa', 'VDA_PredefinedStarRoiDec']
     # for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
     for vda_key, vda_values in targ_info[vda_columns].iloc[0].items():
         if vda_key not in columns_to_ignore:
             vda_subelement_ = ET.SubElement(vda, vda_key)
             vda_subelement_.text = str(vda_values)
-    vda_subelement_ = ET.SubElement(vda, 'VDA_Integrations')
-    vda_subelement_.text = str(np.round(diff_in_sec/targ_info['VDA_IntegrationTime'].iloc[0]).astype(int))
+        if vda_key == 'VDA_TargetID':
+            vda_subelement_ = ET.SubElement(vda, vda_key)
+            vda_subelement_.text = targ_info['Planet Name'].iloc[0]
+        if vda_key == 'VDA_TargetRA':
+            vda_subelement_ = ET.SubElement(vda, vda_key)
+            vda_subelement_.text = str(targ_info['RA'].iloc[0])
+        if vda_key == 'VDA_TargetDEC':
+            vda_subelement_ = ET.SubElement(vda, vda_key)
+            vda_subelement_.text = str(targ_info['DEC'].iloc[0])
+        if vda_key == 'VDA_NumTotalFramesRequested':
+            vda_subelement_ = ET.SubElement(vda, vda_key)
+            vda_subelement_.text = str(np.round(diff_in_sec/targ_info['VDA_IntegrationTime_s'].iloc[0]).astype(int))
 
     return o_seq
 
@@ -93,13 +116,13 @@ def params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec):
         "ROI_StartY": "824", 
         "ROI_SizeX": "80", 
         "ROI_SizeY": "400", 
+        "TargetID": t_name, 
         "SC_Resets1": "1", 
         "SC_Resets2": "1", 
         "SC_DropFrames1": "0", 
         "SC_DropFrames2": "16", 
         "SC_DropFrames3": "0", 
         "SC_ReadFrames": "4", 
-        "TargetID": t_name, 
         "SC_Groups": "2", 
         "SC_Integrations": "525", 
         }
@@ -769,6 +792,14 @@ def process_target_files(keyword):
             # Add NIRDA and VDA readout scheme data
             nirda_setting = flat_data.get('NIRDA Setting')
             vda_setting = flat_data.get('VDA Setting')
+
+            # NIRDA fixed parameters
+            for key, value in nirda_schemes["FixedParameters"].items():
+                flat_data[f'NIRDA_{key}'] = value
+
+            # VDA fixed parameters
+            for key, value in vda_schemes["FixedParameters"].items():
+                flat_data[f'VDA_{key}'] = value
             
             if nirda_setting in nirda_schemes:
                 for key, value in nirda_schemes[nirda_setting].items():
