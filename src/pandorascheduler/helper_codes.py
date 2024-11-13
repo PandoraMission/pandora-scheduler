@@ -44,18 +44,10 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
     payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
     ### NIRDA Parameters
     nirda = ET.SubElement(payload_parameters, "NIRDA")
-    
-    # NIRDA AcquireInfCamImages
-    # nirda_subelement_inf = ET.SubElement(nirda, "AcquireInfCamImages")
-    # for nirda_key, nirda_values in zip(params_NIRDA.keys(), params_NIRDA.values()):
-    #     nirda_subelement_ = ET.SubElement(nirda_subelement_inf, nirda_key)
-    #     nirda_subelement_.text = nirda_values
-
-    # NIRDA AcquireVisCamScienceData
-    # nirda_subelement_vis = ET.SubElement(nirda, "AcquireVisCamScienceData")
     nirda_columns = targ_info.columns[targ_info.columns.str.startswith('NIRDA_')]
     columns_to_ignore = ['IncludeFieldSolnsInResp', 'NIRDA_TargetID', 'NIRDA_SC_Integrations', 'NIRDA_FramesPerIntegration', 'NIRDA_IntegrationTime_s']
     for nirda_key, nirda_values in targ_info[nirda_columns].iloc[0].items():
+    # for nirda_key, nirda_values in zip(params_NIRDA.keys(), params_NIRDA.values()):
         xml_key = nirda_key.replace('NIRDA_', '')
         if (nirda_key not in columns_to_ignore):# and (nirda_key != 'NIRDA_SC_Integrations'):
             nirda_subelement_ = ET.SubElement(nirda, xml_key)
