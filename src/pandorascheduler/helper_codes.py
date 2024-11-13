@@ -56,37 +56,39 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
     nirda_columns = targ_info.columns[targ_info.columns.str.startswith('NIRDA_')]
     columns_to_ignore = ['IncludeFieldSolnsInResp', 'NIRDA_TargetID', 'NIRDA_SC_Integrations', 'NIRDA_FramesPerIntegration', 'NIRDA_IntegrationTime_s']
     for nirda_key, nirda_values in targ_info[nirda_columns].iloc[0].items():
+        xml_key = nirda_key.replace('NIRDA_', '')
         if (nirda_key not in columns_to_ignore):# and (nirda_key != 'NIRDA_SC_Integrations'):
-            nirda_subelement_ = ET.SubElement(nirda, nirda_key)
+            nirda_subelement_ = ET.SubElement(nirda, xml_key)
             nirda_subelement_.text = str(nirda_values)
         if nirda_key == 'NIRDA_TargetID':
-            nirda_subelement_ = ET.SubElement(nirda, nirda_key)
+            nirda_subelement_ = ET.SubElement(nirda, xml_key)
             nirda_subelement_.text = targ_info['Planet Name'].iloc[0]
         if nirda_key == 'NIRDA_SC_Integrations':
-            nirda_subelement_ = ET.SubElement(nirda, nirda_key)
+            nirda_subelement_ = ET.SubElement(nirda, xml_key)
             nirda_subelement_.text = str(np.round(diff_in_sec/targ_info['NIRDA_IntegrationTime_s'].iloc[0]).astype(int))
     ### VDA Parameters:
     vda = ET.SubElement(payload_parameters, "VDA")
     vda_columns = targ_info.columns[targ_info.columns.str.startswith('VDA_')]
     # columns_to_ignore = ['VDA_IntegrationTime']
-    columns_to_ignore = ['VDA_NumTotalFramesRequested', 'VDA_TargetID', 'VDA_TargetRA', 'VDA_TargetDEC', \
-        'VDA_StarRoiDetMethod', 'VDA_numPredefinedStarRois', 'VDA_PredefinedStarRoiRa', 'VDA_PredefinedStarRoiDec']
+    columns_to_ignore = ['VDA_NumTotalFramesRequested', 'VDA_TargetID', 'VDA_TargetRA', 'VDA_TargetDEC']#, \
+        # 'VDA_StarRoiDetMethod', 'VDA_numPredefinedStarRois', 'VDA_PredefinedStarRoiRa', 'VDA_PredefinedStarRoiDec']
     # for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
     for vda_key, vda_values in targ_info[vda_columns].iloc[0].items():
+        xml_key = vda_key.replace('VDA_', '')
         if vda_key not in columns_to_ignore:
-            vda_subelement_ = ET.SubElement(vda, vda_key)
+            vda_subelement_ = ET.SubElement(vda, xml_key)
             vda_subelement_.text = str(vda_values)
         if vda_key == 'VDA_TargetID':
-            vda_subelement_ = ET.SubElement(vda, vda_key)
+            vda_subelement_ = ET.SubElement(vda, xml_key)
             vda_subelement_.text = targ_info['Planet Name'].iloc[0]
         if vda_key == 'VDA_TargetRA':
-            vda_subelement_ = ET.SubElement(vda, vda_key)
+            vda_subelement_ = ET.SubElement(vda, xml_key)
             vda_subelement_.text = str(targ_info['RA'].iloc[0])
         if vda_key == 'VDA_TargetDEC':
-            vda_subelement_ = ET.SubElement(vda, vda_key)
+            vda_subelement_ = ET.SubElement(vda, xml_key)
             vda_subelement_.text = str(targ_info['DEC'].iloc[0])
         if vda_key == 'VDA_NumTotalFramesRequested':
-            vda_subelement_ = ET.SubElement(vda, vda_key)
+            vda_subelement_ = ET.SubElement(vda, xml_key)
             vda_subelement_.text = str(np.round(diff_in_sec/targ_info['VDA_IntegrationTime_s'].iloc[0]).astype(int))
 
     return o_seq
