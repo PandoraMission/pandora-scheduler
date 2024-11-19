@@ -208,6 +208,7 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
             'Visible','Earth_Sep','Moon_Sep','Sun_Sep'])
         
         vis_df.to_csv((save_name), sep=',', index=False)
+        # vis_df.to_csv(save_name, sep=',', index=False, float_format='%.nf')
 
 
 def transit_timing(target_list:str, planet_name:str, star_name:str):
