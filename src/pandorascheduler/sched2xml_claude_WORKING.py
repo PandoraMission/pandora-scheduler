@@ -140,7 +140,7 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(5,10)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(23,len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -148,7 +148,7 @@ for i in tqdm(range(5,10)):#len(sch))):#1,2)):#, position = 0, leave = True):#le
 
     # st_name = t_name if t_name.startswith('Gaia') else t_name[:-2]
     
-    if t_name.endswith('b'):
+    if t_name.endswith('b') or t_name.endswith('c') or t_name.endswith('d'):
         st_name = t_name[:-2]
     else:
         st_name = t_name
@@ -163,7 +163,7 @@ for i in tqdm(range(5,10)):#len(sch))):#1,2)):#, position = 0, leave = True):#le
     
     #Get visibility data, replace if then with the flag later
     # if not t_name.startswith('Gaia'):# or t_name.startswith('Free'):
-    if t_name.endswith('b'):
+    if t_name.endswith('b') or t_name.endswith('c') or t_name.endswith('d'):
         v_data=pd.read_csv(tar_vis_path+f'{st_name}/Visibility for {st_name}.csv')
         targ_info=t_list.loc[(t_list['Planet Name'] == t_name)]
         i_flag=1
