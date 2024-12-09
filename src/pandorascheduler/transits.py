@@ -207,8 +207,19 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         vis_df = pd.DataFrame(data, columns = ['Time(MJD_UTC)', 'SAA_Crossing', \
             'Visible','Earth_Sep','Moon_Sep','Sun_Sep'])
         
+        # def custom_float_format(df):
+        #     formatters = {}
+        #     for col in df.columns:
+        #         if col in [0, 3, 4, 5]:
+        #             formatters[col] = lambda x: f'{x:.6f}'
+        #         elif col in [1, 2]:
+        #             formatters[col] = lambda x: f'{x:.1f}'
+        #     return formatters
+
+        # formatters = custom_float_format(vis_df)
+        # vis_df.to_csv(save_name, sep=',', index=False, float_format=custom_float_format)
+        ## vis_df.to_csv(save_name, sep=',', index=False, float_format='%.nf')
         vis_df.to_csv((save_name), sep=',', index=False)
-        # vis_df.to_csv(save_name, sep=',', index=False, float_format='%.nf')
 
 
 def transit_timing(target_list:str, planet_name:str, star_name:str):

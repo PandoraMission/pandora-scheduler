@@ -1085,8 +1085,8 @@ if __name__ == "__main__":
             if save_df_as_csv:
                 updated_targ_list_df.to_csv(f"{PACKAGEDIR}/data/" + keyword_ + '_targets.csv', index=False)
         
-        updated_targ_list = keyword_ + '_targets.csv'
-        primary_targ_list = target_definition_files[0] + '_targets.csv'
+        # updated_targ_list = keyword_ + '_targets.csv'
+        # primary_targ_list = target_definition_files[0] + '_targets.csv'
 
         # occ_std_df = helper_codes.process_target_files(target_definition_files[3])
         # occ_std_df.to_csv(f"{PACKAGEDIR}/data/aux_list_new.csv", index=False)
@@ -1103,13 +1103,13 @@ if __name__ == "__main__":
     # print(updated_targ_list)
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
-    # Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_definition_files, \
-    #     #updated_targ_list, target_partner_list, \
-    #     obs_window, transit_coverage_min, sched_wts = sched_wts, aux_key='max_visibility_any', \
-    #         # aux_list=f"{PACKAGEDIR}/data/aux_list_new.csv", 
-    #         fname_tracker = fname_tracker, commissioning_time=commissioning_time_, \
-    #             sched_start = sched_start, sched_stop = sched_stop)
-    #         # aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
+    Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_definition_files, \
+        #updated_targ_list, target_partner_list, \
+        obs_window, transit_coverage_min, sched_wts = sched_wts, aux_key='max_visibility_any', \
+            # aux_list=f"{PACKAGEDIR}/data/aux_list_new.csv", 
+            fname_tracker = fname_tracker, commissioning_time=commissioning_time_, \
+                sched_start = sched_start, sched_stop = sched_stop)
+            # aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
     #
     # transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \
     #     save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f"{PACKAGEDIR}/data/aux_list_new.csv")
@@ -1119,9 +1119,9 @@ if __name__ == "__main__":
         # save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/aux_list.csv')
     # #                  
     #
-    Schedule(pandora_start, pandora_stop, primary_targ_list, obs_window, transit_coverage_min, sched_wts, \
-        aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list_new.csv", fname_tracker = fname_tracker, commissioning_time=30, \
-            sched_start=sched_start, sched_stop=sched_stop)
+    # Schedule(pandora_start, pandora_stop, updated_targ_list, obs_window, transit_coverage_min, sched_wts, \
+    #     aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list_new.csv", fname_tracker = fname_tracker, commissioning_time=30, \
+    #         sched_start=sched_start, sched_stop=sched_stop)
 
     # Schedule(pandora_start, pandora_stop, obs_window, transit_coverage_min, sched_wts, \
     #          commissioning_time=30, sched_start=sched_start, sched_stop=sched_stop,
