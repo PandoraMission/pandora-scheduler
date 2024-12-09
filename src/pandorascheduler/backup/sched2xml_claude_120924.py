@@ -32,8 +32,8 @@ schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-08-04_to_2026-08-03.csv'
 tar_vis_path=f'{PACKAGEDIR}/data/targets/'
 aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
 tar_path=f'{PACKAGEDIR}/data/primary-exoplanet_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
-tar_path_ALL = f'{PACKAGEDIR}/data/primary-exoplanet_targets.csv'#Pandora_Target_List_Top40_16Feb2024_Top40_SDM.csv'
 aux_path=f'{PACKAGEDIR}/data/aux_list_new.csv'
+tar_path_ALL = f'{PACKAGEDIR}/data/primary-exoplanet_targets.csv'#Pandora_Target_List_Top40_16Feb2024_Top40_SDM.csv'
 t_list=pd.read_csv(tar_path)
 a_list=pd.read_csv(aux_path)
 sch=pd.read_csv(schedule_path)
@@ -130,9 +130,9 @@ cal=ET.Element('ScienceCalendar', xmlns="/pandora/calendar/")
 meta=ET.SubElement(cal, 'Meta', 
                    Valid_From=f"{sch['Observation Start'][0]}",
                    Expires=f"{sch['Observation Stop'][len(sch)-1]}",
-                   Calendar_Weights='0.8, 0.0, 0.2',
+                   Calendar_Weights='0.0, 0.0, 1.0',
                    Ephemeris='sma=6828.14, ecc=0.0, inc=97.2188, aop=0.0, raan=303.263, ta=0.0',
-                   Keepout_Angles='90.0, 25.0, 63.0',
+                   Keepout_Angles='90.0, 40.0, 63.0',
                    Observation_Sequence_Duration_hrs = f'{dt}',
                    Removed_Sequences_Shorter_Than_min = f'{too_short_sequences}',
                    Created=f'{str(hcc.round_to_nearest_second(datetime.now()))}',
@@ -140,18 +140,12 @@ meta=ET.SubElement(cal, 'Meta',
                    Delivery_Id='',
                    )
 
-for i in tqdm(range(5,10)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(5)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
     t_name = sch['Target'][i]
-
-    # st_name = t_name if t_name.startswith('Gaia') else t_name[:-2]
-    
-    if t_name.endswith('b'):
-        st_name = t_name[:-2]
-    else:
-        st_name = t_name
+    st_name = t_name if t_name.startswith('Gaia') else t_name[:-2]
     
     #set visit number and visit element
     visit=ET.SubElement(cal,'Visit')
@@ -162,8 +156,7 @@ for i in tqdm(range(5,10)):#len(sch))):#1,2)):#, position = 0, leave = True):#le
     stop = datetime.strptime(sch['Observation Stop'][i], "%Y-%m-%d %H:%M:%S")
     
     #Get visibility data, replace if then with the flag later
-    # if not t_name.startswith('Gaia'):# or t_name.startswith('Free'):
-    if t_name.endswith('b'):
+    if not t_name.startswith('Gaia'):# or t_name.startswith('Free'):
         v_data=pd.read_csv(tar_vis_path+f'{st_name}/Visibility for {st_name}.csv')
         targ_info=t_list.loc[(t_list['Planet Name'] == t_name)]
         i_flag=1
