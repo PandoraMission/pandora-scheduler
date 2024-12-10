@@ -992,7 +992,6 @@ def Schedule_all_scratch(
                 if not os.path.exists(f'{PACKAGEDIR}/data/targets/{tmp_star_name_lst[s]}/{tmp_planet_name_lst[s]}'):
                     transits.transit_timing(f'{fn_}_targets.csv', tmp_planet_name_lst[s], tmp_star_name_lst[s])
 
-
     # vis_done=[]
     # for s in range(len(prim_star_name_list)):
     #     vis_done.append(os.path.exists(f'{PACKAGEDIR}/data/targets/{prim_star_name_list[s]}/Visibility for {prim_star_name_list[s]}.csv'))
@@ -1055,9 +1054,9 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-08-04 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2026-08-03 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2025-09-03 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2025-08-04 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-08-03 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2025-09-03 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0
 
@@ -1096,8 +1095,8 @@ if __name__ == "__main__":
         updated_targ_list = keyword_ + '_targets.csv'
         primary_targ_list = target_definition_files[0] + '_targets.csv'
 
-        # occ_std_df = helper_codes.process_target_files(target_definition_files[3])
-        # occ_std_df.to_csv(f"{PACKAGEDIR}/data/aux_list_new.csv", index=False)
+        occ_std_df = helper_codes.process_target_files(target_definition_files[3])
+        occ_std_df.to_csv(f"{PACKAGEDIR}/data/aux_list_new.csv", index=False)
 
     #     targ_list = helper_codes.get_targets_table(which_targets)
     #     pl_names = targ_list['Planet Name'].values
@@ -1120,16 +1119,16 @@ if __name__ == "__main__":
     #         # aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list.csv", commissioning_time=30)
     #
     # transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \
-    #     save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f"{PACKAGEDIR}/data/aux_list_new.csv")
-        # save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/{updated_targ_list}')
-        # save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/Pandora_Target_List_Top20_14May2024.csv')
+    # #     # save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f"{PACKAGEDIR}/data/aux_list_new.csv")
+    # #     save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/{primary_targ_list}')
+    #     save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/{target_definition_files[2]}_targets.csv')
         # save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/target_partner_list.csv')
         # save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/aux_list.csv')
     # #                  
     #
-    Schedule(pandora_start, pandora_stop, primary_targ_list, obs_window, transit_coverage_min, sched_wts, \
-        aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list_new.csv", fname_tracker = fname_tracker, commissioning_time=30, \
-            sched_start=sched_start, sched_stop=sched_stop)
+    # Schedule(pandora_start, pandora_stop, primary_targ_list, obs_window, transit_coverage_min, sched_wts, \
+    #     aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list_new.csv", fname_tracker = fname_tracker, commissioning_time=30, \
+    #         sched_start=sched_start, sched_stop=sched_stop)
 
     # Schedule(pandora_start, pandora_stop, obs_window, transit_coverage_min, sched_wts, \
     #          commissioning_time=30, sched_start=sched_start, sched_stop=sched_stop,
