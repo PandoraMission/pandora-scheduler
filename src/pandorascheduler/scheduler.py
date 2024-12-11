@@ -1126,9 +1126,9 @@ if __name__ == "__main__":
         # save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/aux_list.csv')
     # #                  
     #
-    # Schedule(pandora_start, pandora_stop, primary_targ_list, obs_window, transit_coverage_min, sched_wts, \
-    #     aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list_new.csv", fname_tracker = fname_tracker, commissioning_time=30, \
-    #         sched_start=sched_start, sched_stop=sched_stop)
+    Schedule(pandora_start, pandora_stop, primary_targ_list, obs_window, transit_coverage_min, sched_wts, \
+        aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list_new.csv", fname_tracker = fname_tracker, commissioning_time=30, \
+            sched_start=sched_start, sched_stop=sched_stop)
 
     # Schedule(pandora_start, pandora_stop, obs_window, transit_coverage_min, sched_wts, \
     #          commissioning_time=30, sched_start=sched_start, sched_stop=sched_stop,

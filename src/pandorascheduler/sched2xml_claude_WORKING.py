@@ -37,7 +37,7 @@ aux_path=f'{PACKAGEDIR}/data/aux_list_new.csv'
 t_list=pd.read_csv(tar_path)
 a_list=pd.read_csv(aux_path)
 sch=pd.read_csv(schedule_path)
-# author='Paul Bonney'
+# author='VK'
 
 #save a stripped version as csv for LLNL
 save_csv=False
@@ -165,15 +165,15 @@ for i in tqdm(range(3)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(s
     # if not t_name.startswith('Gaia'):# or t_name.startswith('Free'):
     if t_name.endswith(('b', 'c', 'd')):
         v_data = pd.read_csv(tar_vis_path+f'{st_name}/Visibility for {st_name}.csv')
-        targ_info=t_list.loc[(t_list['Planet Name'] == t_name)]
-        i_flag=1
-        tv_data=pd.read_csv(tar_vis_path+f'{st_name}/{t_name}/Visibility for {t_name}.csv')
-        tv_st=Time(tv_data['Transit_Start'], format='mjd', scale='utc').to_value('datetime')
-        tv_sp=Time(tv_data['Transit_Stop'], format='mjd', scale='utc').to_value('datetime')
+        targ_info = t_list.loc[(t_list['Planet Name'] == t_name)]
+        i_flag = 1
+        tv_data = pd.read_csv(tar_vis_path+f'{st_name}/{t_name}/Visibility for {t_name}.csv')
+        tv_st = Time(tv_data['Transit_Start'], format='mjd', scale='utc').to_value('datetime')
+        tv_sp = Time(tv_data['Transit_Stop'], format='mjd', scale='utc').to_value('datetime')
     else:
-        v_data=pd.read_csv(aux_vis_path+f'{t_name}/Visibility for {t_name}.csv')
-        targ_info=a_list.loc[(a_list['Star Name'] == t_name)]
-        i_flag=0
+        v_data = pd.read_csv(aux_vis_path+f'{t_name}/Visibility for {t_name}.csv')
+        targ_info = a_list.loc[(a_list['Star Name'] == t_name)]
+        i_flag = 0
     
     # VK BEGIN: try getting RA & Dec from SkyCoord
     try:
