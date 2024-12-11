@@ -63,29 +63,29 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
     vda_columns = targ_info.columns[targ_info.columns.str.startswith('VDA_')]
     # columns_to_ignore = ['VDA_IntegrationTime']
     columns_to_ignore = ['VDA_NumTotalFramesRequested', 'VDA_TargetID', 'VDA_TargetRA', 'VDA_TargetDEC', \
-        'VDA_StarRoiDetMethod', 'VDA_numPredefinedStarRois']#, 'VDA_PredefinedStarRoiRa', 'VDA_PredefinedStarRoiDec']
+        'VDA_StarRoiDetMethod', 'VDA_numPredefinedStarRois', 'VDA_PredefinedStarRoiRa', 'VDA_PredefinedStarRoiDec']
     # for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
     for vda_key, vda_values in targ_info[vda_columns].iloc[0].items():
         xml_key = vda_key.replace('VDA_', '')
         if vda_key not in columns_to_ignore:
             vda_subelement_ = ET.SubElement(vda, xml_key)
             vda_subelement_.text = str(vda_values)
-        if vda_key == 'VDA_TargetID':
+        elif vda_key == 'VDA_TargetID':
             vda_subelement_ = ET.SubElement(vda, xml_key)
             vda_subelement_.text = targ_info['Planet Name'].iloc[0]
-        if vda_key == 'VDA_TargetRA':
+        elif vda_key == 'VDA_TargetRA':
             vda_subelement_ = ET.SubElement(vda, xml_key)
             vda_subelement_.text = str(targ_info['RA'].iloc[0])
-        if vda_key == 'VDA_TargetDEC':
+        elif vda_key == 'VDA_TargetDEC':
             vda_subelement_ = ET.SubElement(vda, xml_key)
             vda_subelement_.text = str(targ_info['DEC'].iloc[0])
-        if vda_key == 'VDA_StarRoiDetMethod':
+        elif vda_key == 'VDA_StarRoiDetMethod':
             vda_subelement_ = ET.SubElement(vda, xml_key)
             vda_subelement_.text = str(targ_info['StarRoiDetMethod'].iloc[0])
-        if vda_key == 'VDA_numPredefinedStarRois':
+        elif vda_key == 'VDA_numPredefinedStarRois':
             vda_subelement_ = ET.SubElement(vda, xml_key)
             vda_subelement_.text = str(targ_info['numPredefinedStarRois'].iloc[0])
-        if vda_key == 'VDA_StarRoiDetMethod':
+        elif vda_key == 'VDA_StarRoiDetMethod':
             vda_subelement_ = ET.SubElement(vda, xml_key)
             vda_subelement_.text = str(np.round(diff_in_sec/targ_info['VDA_IntegrationTime_s'].iloc[0]).astype(int))
 
