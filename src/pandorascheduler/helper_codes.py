@@ -85,7 +85,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
         elif vda_key == 'VDA_numPredefinedStarRois':
             vda_subelement_ = ET.SubElement(vda, xml_key)
             vda_subelement_.text = str(targ_info['numPredefinedStarRois'].iloc[0])
-        elif vda_key == 'VDA_StarRoiDetMethod':
+        elif vda_key == 'VDA_NumTotalFramesRequested':
             vda_subelement_ = ET.SubElement(vda, xml_key)
             vda_subelement_.text = str(np.round(diff_in_sec/targ_info['VDA_IntegrationTime_s'].iloc[0]).astype(int))
 
