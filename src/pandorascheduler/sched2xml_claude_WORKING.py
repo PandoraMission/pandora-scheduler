@@ -231,6 +231,7 @@ for i in tqdm(range(3)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(s
 
             aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(s+1))))+str(s+1)}', \
                 t_name, pr, sps_all[s], sps_all[s+1], ra, dec, targ_info)
+            # print('xxx')
             pass
     if len(v_change) == 0:
         full_visibility_ = full_visibility()
@@ -360,7 +361,12 @@ for i in tqdm(range(3)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(s
                         # logging.info(f"Vis sequence: {hcc.round_to_nearest_second(current)} to {hcc.round_to_nearest_second(next_val)}......DONE!")
                         # print()
                     except Exception as e:
+                        # logging.info(f"current: {current}, next_val: {next_val}, priority: {priority}")
+                        # logging.info(f"ra: {ra}, dec: {dec}")
+                        # logging.info(f"t_name: {t_name}, seq_counter: {seq_counter}")
+                        # logging.info(f"targ_info: {targ_info}")
                         logging.error(f"Error adding visible sequence: {str(e)}")
+                        # print('xxx')
                     seq_counter += 1
                     current = next_val
 
@@ -385,6 +391,7 @@ for i in tqdm(range(3)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(s
                             seq_counter += 1
                         except Exception as e:
                             logging.error(f"Error adding occultation sequence: {str(e)}")
+                            # print('xxx')
                         current = next_val
                 else:
                     try:
@@ -401,6 +408,7 @@ for i in tqdm(range(3)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(s
                         seq_counter += 1
                     except Exception as e:
                         logging.error(f"Error adding occultation sequence: {str(e)}")
+                        # print('xxx')
             # logging.info(f"Done with observing sequence {seq_counter}: {hcc.round_to_nearest_second(st)} to {hcc.round_to_nearest_second(sp)}")
 
 
