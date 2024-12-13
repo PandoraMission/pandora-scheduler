@@ -1054,9 +1054,9 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-08-04 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2025-09-03 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2026-08-03 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2025-08-04 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2025-09-03 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2026-08-03 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0
 
