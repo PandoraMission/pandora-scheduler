@@ -576,7 +576,13 @@ def Schedule(
         ### Schedule auxiliary observation if possible
         if len(temp_df) == 0:
             print(f'NO TRANSITS IN {start}, {stop}, WHAT TO USE FOR STAR NAME?!')
-            star_sc = SkyCoord.from_name(star_name)
+
+            if sched_df['Target'].iloc[-1].endswith(('b', 'c', 'd')):
+                star_name_tmp = sched_df['Target'].iloc[-1][0:-2]
+            else:
+                star_name_tmp = sched_df['Target'].iloc[-1]
+                
+            star_sc = SkyCoord.from_name(star_name_tmp)#star_name)
             ra = star_sc.ra.deg
             dec = star_sc.dec.deg
 
