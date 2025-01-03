@@ -575,7 +575,7 @@ def Schedule(
         ### Check if there's no transits occuring during the observing window
         ### Schedule auxiliary observation if possible
         if len(temp_df) == 0:
-            print(f'NO TRANSITS IN {start}, {stop}, WHAT TO USE FOR STAR NAME?!')
+            # print(f'NO TRANSITS IN {start}, {stop}, WHAT TO USE FOR STAR NAME?!')
 
             if sched_df['Target'].iloc[-1].endswith(('b', 'c', 'd')):
                 star_name_tmp = sched_df['Target'].iloc[-1][0:-2]
