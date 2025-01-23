@@ -28,7 +28,7 @@ warnings.filterwarnings("ignore")
 # VK END
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-08-04_to_2025-09-03.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
+schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
 tar_vis_path=f'{PACKAGEDIR}/data/targets/'
 aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
 tar_path=f'{PACKAGEDIR}/data/primary-exoplanet_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
@@ -525,6 +525,6 @@ dom = minidom.parseString(etstr)
 
 #dom = xml.dom.minidom.parseString(etstr)
 pretty_xml_as_string = dom.toprettyxml()
-f=open(f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_08Nov2024_Claude.xml','w+')#test.xml', 'w+')
+f=open(f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_Jan_08_2024.xml','w+')#test.xml', 'w+')
 f.write(pretty_xml_as_string)
 f.close()
