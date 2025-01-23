@@ -46,7 +46,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
     ### Payload Parameters
     payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
     ### NIRDA Parameters
-    nirda = ET.SubElement(payload_parameters, "NIRDA")
+    nirda = ET.SubElement(payload_parameters, "AcquireVisCamScienceData")
     nirda_columns = targ_info.columns[targ_info.columns.str.startswith('NIRDA_')]
     columns_to_ignore = ['IncludeFieldSolnsInResp', 'NIRDA_TargetID', 'NIRDA_SC_Integrations', 'NIRDA_FramesPerIntegration', 'NIRDA_IntegrationTime_s']
     for nirda_key, nirda_values in targ_info[nirda_columns].iloc[0].items():
@@ -68,11 +68,12 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
         #     logging.info(f"Searching for occultation targets from {st} to {sp}")
 
     ### VDA Parameters:
-    vda = ET.SubElement(payload_parameters, "VDA")
+    vda = ET.SubElement(payload_parameters, "AcquireInfCamImages")
     vda_columns = targ_info.columns[targ_info.columns.str.startswith('VDA_')]
     # columns_to_ignore = ['VDA_IntegrationTime']
     columns_to_ignore = ['VDA_NumTotalFramesRequested', 'VDA_TargetID', 'VDA_TargetRA', 'VDA_TargetDEC', \
-        'VDA_StarRoiDetMethod', 'VDA_numPredefinedStarRois', 'VDA_PredefinedStarRoiRa', 'VDA_PredefinedStarRoiDec']
+        'VDA_StarRoiDetMethod', 'VDA_numPredefinedStarRois', 'VDA_PredefinedStarRoiRa', 'VDA_PredefinedStarRoiDec', \
+            'VDA_IntegrationTime_s']
     # for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
     for vda_key, vda_values in targ_info[vda_columns].iloc[0].items():
         if pd.notna(vda_values):  # This condition checks if the value is not NaN
@@ -102,16 +103,20 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 import ast
                 all_columns = np.asarray([ast.literal_eval(item) for item in roi_coord_values.values[0]])
                 vda_subelement_ = ET.SubElement(vda, xml_key)
-                vda_subelement_.text = str(all_columns[:,0])
+                # vda_subelement_.text = str(all_columns[:,0])
+                for jj in range(all_columns.shape[0]):
+                    vda_subelement_tmp = ET.SubElement(vda_subelement_, f'RA{jj+1}')
+                    vda_subelement_tmp.text = f'{all_columns[jj,0]:.6f}'
             elif vda_key == 'VDA_PredefinedStarRoiDec' and targ_info['StarRoiDetMethod'].iloc[0] != 1:
                 roi_coord_columns = [col for col in targ_info.columns if col.startswith('ROI_coord_') and col != 'ROI_coord_epoch']
                 roi_coord_values = targ_info[roi_coord_columns].dropna(axis = 1)
                 import ast
                 all_columns = np.asarray([ast.literal_eval(item) for item in roi_coord_values.values[0]])
                 vda_subelement_ = ET.SubElement(vda, xml_key)
-                vda_subelement_.text = str(all_columns[:,1])
-
-
+                # vda_subelement_.text = str(all_columns[:,1])
+                for jj in range(all_columns.shape[0]):
+                    vda_subelement_tmp = ET.SubElement(vda_subelement_, f'Dec{jj+1}')
+                    vda_subelement_tmp.text = f'{all_columns[jj,1]:.6f}'
             elif vda_key == 'VDA_NumTotalFramesRequested':
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 vda_subelement_.text = str(np.round(diff_in_sec/targ_info['VDA_IntegrationTime_s'].iloc[0]).astype(int))

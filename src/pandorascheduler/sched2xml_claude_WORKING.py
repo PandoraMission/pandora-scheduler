@@ -139,8 +139,12 @@ meta=ET.SubElement(cal, 'Meta',
 #                   Author="P Bonney",
                    Delivery_Id='',
                    )
-
-for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+#
+#
+#
+# XXXXX
+#
+for i in tqdm(range(1)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -525,6 +529,6 @@ dom = minidom.parseString(etstr)
 
 #dom = xml.dom.minidom.parseString(etstr)
 pretty_xml_as_string = dom.toprettyxml()
-f=open(f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_Jan_08_2024.xml','w+')#test.xml', 'w+')
+f=open(f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_Jan_23_2025_TEST.xml','w+')#test.xml', 'w+')
 f.write(pretty_xml_as_string)
 f.close()
