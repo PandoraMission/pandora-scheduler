@@ -28,7 +28,7 @@ warnings.filterwarnings("ignore")
 # VK END
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
+schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_TEST.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
 tar_vis_path=f'{PACKAGEDIR}/data/targets/'
 aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
 tar_path=f'{PACKAGEDIR}/data/primary-exoplanet_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
@@ -48,6 +48,7 @@ save_csv=False
 #visibility data needs to be in oc_targets for now
 #if 'closest' is given as sort_key, prev_obs needs to be given as a kwarg
 #def sch_occ(starts, stops, list_path, sort_key=None, **kwargs):
+
 #
 def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#, position = 0):#**kwargs):
     
@@ -521,6 +522,7 @@ def convert_to_string(element):
         if el.text and isinstance(el.text, (int, float, np.int64, np.integer, np.floating)):
             el.text = str(el.text)
 
+
 convert_to_string(cal)
 etstr=ET.tostring(cal, xml_declaration=True)
 
@@ -532,3 +534,8 @@ pretty_xml_as_string = dom.toprettyxml()
 f=open(f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_Jan_23_2025_TEST.xml','w+')#test.xml', 'w+')
 f.write(pretty_xml_as_string)
 f.close()
+
+# # After the main loop, add a summary of occultation target times
+# logging.info("Summary of occultation target observation times:")
+# for target, time in occ_target_times.items():
+#     logging.info(f"{target}: {time}")

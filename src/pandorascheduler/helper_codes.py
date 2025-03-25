@@ -902,3 +902,16 @@ def process_target_files(keyword):
     
     return df[columns_order]
 
+
+def check_and_update_target(info, flag):
+    if flag:
+        for i, target in enumerate(info['Target']):
+            current_time = occ_target_times.get(target, timedelta())
+            new_time = current_time + (oc_stops[i] - oc_starts[i])
+            if new_time <= occ_limit:
+                occ_target_times[target] = new_time
+                return info.iloc[[i]], True
+            else:
+                logging.info(f"Skipping target {target} as it has reached the time limit.")
+    return None, False
+
