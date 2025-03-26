@@ -824,10 +824,10 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, \
         vis_any_targs = []
         targ_vis = []
 
-        for n in tqdm(range(len(names))):#, desc="Finding visible non-primary target for " + str(start) + ' to ' + str(stop)):
+        for n in tqdm(range(len(names)), desc="Finding visible non-primary target for " + str(start) + ' to ' + str(stop)):
 
             current_obs_time = non_primary_obs_time.get(names[n], timedelta())
-            if current_obs_time >= timedelta(hours=96):
+            if current_obs_time >= timedelta(hours=4800):
                 continue
 
             try:
@@ -876,7 +876,7 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, \
         obs_duration = stop - start
         new_obs_time = non_primary_obs_time.get(name, timedelta()) + obs_duration
 
-        if new_obs_time > timedelta(hours=96):
+        if new_obs_time > timedelta(hours=4800):
             deprioritized_targets.add(name)
             # print('Remove target, ', names[n])
             # print()
@@ -1042,10 +1042,6 @@ def Schedule_all_scratch(
     tracker = Schedule(pandora_start, pandora_stop, target_list, obs_window, transit_coverage_min, sched_wts, \
         aux_key='closest', aux_list=aux_list, fname_tracker = fname_tracker, commissioning_time=commissioning_time, \
             sched_start=sched_start, sched_stop=sched_stop)
-
-
-# Need a functional addition to add in auxilliary science to the scheduler
-# Especially need prioritization of aux and to put aux in blank times
     
 #Default values for parameters used
 if __name__ == "__main__":
@@ -1053,9 +1049,9 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-10-15 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2025-11-14 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2026-01-15 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2025-10-15 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2025-11-14 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2026-01-15 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0
 
@@ -1069,9 +1065,9 @@ if __name__ == "__main__":
     #Mission requirements: >= 91 deg avoidance for Sun, >= 20 deg avoidance for Moon and Earth limbs
     # blocks = [91., 40., 63.]
     blocks = [91., 25., 63.]
-    target_list_name = 'Pandora_Target_List_Top20_29Aug2024_names_only'#'Pandora_Target_List_Top20_14May2024'
-    target_list =  target_list_name + '.csv'#'target_list_top20_16Feb2024.csv'
-    target_partner_list='target_partner_list.csv'#'target_list_top5_16Feb2024.csv'#
+    # target_list_name = 'Pandora_Target_List_Top20_29Aug2024_names_only'#'Pandora_Target_List_Top20_14May2024'
+    # target_list =  target_list_name + '.csv'#'target_list_top20_16Feb2024.csv'
+    # target_partner_list='target_partner_list.csv'#'target_list_top5_16Feb2024.csv'#
     gmat_file = 'GMAT_pandora_600_20240512.txt'#'GMAT_pandora_450_20230713.csv'#
     obs_name = 'Pandora_600km_20240518'#'Pandora_450km_20230713'#
 
