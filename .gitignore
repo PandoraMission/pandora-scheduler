@@ -61,3 +61,4 @@ src/pandorascheduler/data/GMAT_pandora_600_20240512.txt
 src/pandorascheduler/data/Deprioritized_Targets_2025-10-15 00:00:00.json
 src/pandorascheduler/data/Non_Primary_Obs_Time_2025-10-15 00:00:00.json
 src/pandorascheduler/scheduler_debug.log
+*.json
