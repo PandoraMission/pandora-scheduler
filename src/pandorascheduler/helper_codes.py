@@ -915,3 +915,13 @@ def check_and_update_target(info, flag):
                 logging.info(f"Skipping target {target} as it has reached the time limit.")
     return None, False
 
+def save_observation_time_report(all_target_obs_time, target_list, output_file):
+    primary_targets = set(target_list["Planet Name"])
+    
+    with open(output_file, 'w') as f:
+        f.write("Target,Is Primary,Total Observation Time (hours)\n")
+        
+        for target, time in all_target_obs_time.items():
+            is_primary = "Yes" if target in primary_targets else "No"
+            hours = time.total_seconds() / 3600  # Convert to hours
+            f.write(f"{target},{is_primary},{hours:.2f}\n")
