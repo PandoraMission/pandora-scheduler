@@ -28,7 +28,7 @@ def Schedule(
     aux_key: str,#='random',
     aux_list:str,#="aux_list.csv",
     fname_tracker: str,
-    commissioning_time: int,
+    commissioning_time: int = 30,
     sched_start: str = None,
     sched_stop: str = None,
     ):
@@ -73,20 +73,32 @@ def Schedule(
     """
     assert sum(sched_wts) == 1., "Sum of weights should equal 1"
 
-    # Convert times to datetime and add in commissioning time
-    pandora_start = datetime.strptime(pandora_start, "%Y-%m-%d %H:%M:%S") + timedelta(days = commissioning_time)
+    # Convert times to datetime
+    pandora_start = datetime.strptime(pandora_start, "%Y-%m-%d %H:%M:%S")
+    # Add in commissioning time
+    # pandora_start = pandora_start+timedelta(days=commissioning_time)
     pandora_stop = datetime.strptime(pandora_stop, "%Y-%m-%d %H:%M:%S")
 
     if sched_start == None:
         sched_start = pandora_start
+    #VK BEGIN: the following elif crashes so I removed it
+    #elif datetime.strptime(sched_start) < pandora_start:
+    #    sched_start = pandora_start
     else:
-        sched_start = datetime.strptime(sched_start, "%Y-%m-%d %H:%M:%S") + timedelta(days = commissioning_time)
+        sched_start = datetime.strptime(sched_start, "%Y-%m-%d %H:%M:%S")# + timedelta(days=commissioning_time)
     if sched_stop == None:
         sched_stop = pandora_stop
     else:
         sched_stop = datetime.strptime(sched_stop, "%Y-%m-%d %H:%M:%S")
 
+    # Import target list
+
+    # if 'updated_targ_list' in globals():
+    #     target_list = updated_targ_list.reset_index(drop=True)
+    # else:
+    #     target_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
     target_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
+    #target_list = pd.read_csv(f"{PACKAGEDIR}/data/target_list.csv", sep=",")
 
     # Import no phase events
     if os.path.exists(f"{PACKAGEDIR}/data/no_phase_list.csv") == True:
@@ -610,6 +622,27 @@ def Schedule(
             continue                
 
         else:
+            # VK BEGIN
+            # COMMENT OUT THE FOLLOWING, REPLACE WITH CODE BELOW
+            # # First, check Transit Factor for planets running out of available transits
+            # # if (temp_df["Transit Factor"] < 1.5).any():
+            # if (temp_df["Transit Factor"] < 2).any():
+            #     temp_df = temp_df.sort_values(by=["Transit Factor"]).reset_index(
+            #         drop=True
+            #     )
+            #     # logging.warning(temp_df["Planet Name"][0], "Transit Factor Warning", temp_df["Transit Factor"][0])
+
+            # # Otherwise sort by Quality Factor and schedule best target
+            # else:
+            #     temp_df = temp_df.sort_values(
+            #         by=["Quality Factor"], ascending=False
+            #     ).reset_index(drop=True)
+            #######
+            # REPLACE WITH THE FOLLOWING SORTING ORDER:
+            # 1) Transit Factor; 2) Quality Factor first and then Transit Factor
+            #######
+            # First, check Transit Factor for planets running out of available transits
+            # if (temp_df["Transit Factor"] < 1.5).any():
             if (temp_df["Transit Factor"] < 2).any():
                 temp_df = temp_df.sort_values(by=["Transit Factor"]).reset_index(
                     drop=True
@@ -631,6 +664,12 @@ def Schedule(
                 #         by=["Quality Factor", "Transit Factor"],
                 #         ascending=[False, True]
                 #     )
+
+            # Reset the index after all sorting operations
+            # temp_df = temp_df.reset_index(drop=True)
+            #######
+            #######
+            # VK END
 
             planet_name = temp_df["Planet Name"][0]
             star_name = target_list["Star Name"][np.where(target_list["Planet Name"] == planet_name)[0][0]]
@@ -750,10 +789,11 @@ def Schedule(
     sched_df.to_csv((f"{PACKAGEDIR}/data/" + save_fname), sep=",", index=False)
 
     # Save tracker
+    # save_tracker_fname = f"{PACKAGEDIR}/data/schedule_tracker.pkl"
     with open(fname_tracker, 'wb') as file:
         pickle.dump(tracker, file)
 
-    # Save non_primary_obs_time
+            # Save non_primary_obs_time
     # non_primary_obs_time_fname = f"Non_Primary_Obs_Time_{pandora_start}.json"
     # with open(f"{PACKAGEDIR}/data/" + non_primary_obs_time_fname, 'w') as file:
     #     json.dump({k: str(v) for k, v in non_primary_obs_time.items()}, file)
@@ -763,7 +803,7 @@ def Schedule(
     # with open(f"{PACKAGEDIR}/data/" + deprioritized_targets_fname, 'w') as file:
     #     json.dump(list(deprioritized_targets), file)
 
-    # Save all_target_obs_time
+    # Call this function at the end of the Schedule function
     helper_codes.save_observation_time_report(all_target_obs_time, target_list, f"{PACKAGEDIR}/data/Observation_Time_Report_{pandora_start}.csv")
 
     return tracker
@@ -774,7 +814,7 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time,
 
     obs_std_dur = timedelta(hours = 2) 
 
-    # Add standard stars!
+    # DO STD!
     if (start - last_std_obs > timedelta(days = 7.)) and ((start + obs_std_dur) < stop):
         # Schedule observations of a standard star 
         STD = [["STD", start, start + obs_std_dur]]
@@ -782,6 +822,12 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time,
         last_std_obs = start
 
         non_primary_obs_time["STD"] = non_primary_obs_time.get("STD", timedelta()) + obs_std_dur
+
+        # std_df = pd.DataFrame(
+        #     STD, columns=["Target", "Observation Start", "Observation Stop"]
+        # )
+    # DONE WITH STD!
+    #
 
     if aux_key == None:
         # No aux target scheduling, free time
@@ -797,6 +843,7 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time,
         aux_targs = pd.read_csv(aux_fn).reset_index(drop=True)
         # mask = ~aux_targs['Star Name'].isin(deprioritized_targets)
         # aux_targs = aux_targs[mask].reset_index(drop=True)
+        # aux_targs = aux_targs.reset_index(drop=True)
         names = aux_targs['Star Name']
         ras = aux_targs['RA']
         decs = aux_targs['DEC']
@@ -816,10 +863,29 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time,
 
         for n in tqdm(range(len(names)), desc=f"Finding visible non-primary target for {str(start)} to {str(stop)} from '{target_definition_files[tdf_idx]}'"):
 
-
+            # current_obs_time = non_primary_obs_time.get(names[n], timedelta())
+            # new_obs_time = non_primary_obs_time.get(names[n], timedelta()) + (stop - start)
+            # print(target_definition_files[tdf_idx], names[n], new_obs_time)
             if non_primary_obs_time.get(names[n], timedelta()) + (stop - start) > timedelta(hours = deprioritization_limit):
                 # print(f"----------------------------> Deprioritize {names[n]} <----------------------------")
                 continue
+            # else:
+            #     obs_duration = stop - start
+            #     # new_obs_time = non_primary_obs_time.get(names[n], timedelta()) + obs_duration
+            #     non_primary_obs_time[names[n]] = non_primary_obs_time.get(names[n], timedelta()) + obs_duration
+                # print(f"{names[n]} is good")
+                # print(non_primary_obs_time)
+                # print()
+
+            # new_obs_time = non_primary_obs_time.get(name, timedelta()) + (stop - start)
+            # if new_obs_time > timedelta(hours = 72):
+            #     deprioritized_targets.add(name)
+            #     print(f"Removing {name} due to deprioritization")
+            #         # print()
+            #         # continue  # Skip this target and try the next file
+                
+            #     # If we've reached here, we have a valid target
+            # non_primary_obs_time[name] = new_obs_time
 
             try:
                 vis_file = f"{PACKAGEDIR}/data/aux_targets/{names[n]}/Visibility for {names[n]}.csv"
@@ -840,7 +906,7 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time,
             # vis_all_targs, vis_any_targs, targ_vis = helper_codes.find_visible_targets(names, start, stop)
 
         # Select target
-        # If at least one target is visible the entire time, use vis_all_targs
+        #If at least one target is visible the entire time, use vis_all_targs
         if len(vis_all_targs) > 0:
             idx = 0 if aux_key == 'closest' else np.random.randint(0,len(vis_all_targs))
             name = names[vis_all_targs[idx]]
@@ -849,7 +915,7 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time,
             # log_info=f"{name} scheduled for non-primary observation with full visibility."
             break
         
-        # If at least one target is partially visible, use vis_any_targs
+        #The above should at least always happen with so many targets, but this is a safeguard
         elif len(vis_any_targs) > 0:
             # if aux_key == 'closest':
             #     idx = 0
@@ -873,8 +939,28 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time,
         #Safeguard against no aux targets being visible at all
         else:
             # print(f"No fuly or partially visible targets in {target_definition_files[tdf_idx]}, try next target list...")
+            #No aux target scheduling, free time
+            # name = "Free Time"
+            # # aux_df = pd.DataFrame(name, columns=["Target", "Observation Start", "Observation Stop"])
+            # log_info = 'Free time, no observation scheduled.'
             log_info = f"No fuly or partially visible targets in {target_definition_files[tdf_idx]}, try next target list..."
             continue
+
+        # if log_info != 'Free time, no observation scheduled.':
+        #     # print(f"     Found non-primary target from {target_definition_files[jj1]} --> {name}")
+        #     break
+
+
+
+    # new_obs_time = non_primary_obs_time.get(name, timedelta()) + (stop - start)
+    # if new_obs_time > timedelta(hours = 72):
+    #     deprioritized_targets.add(name)
+    #     print(f"Removing {name} due to deprioritization")
+    #         # print()
+    #         # continue  # Skip this target and try the next file
+        
+    #     # If we've reached here, we have a valid target
+    # non_primary_obs_time[name] = new_obs_time
 
     try:
         name
@@ -900,6 +986,7 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time,
     aux_df = pd.DataFrame(sched, columns=["Target", "Observation Start", "Observation Stop"])
 
     return aux_df, log_info, non_primary_obs_time, last_std_obs
+    # return aux_df, log_info, non_primary_obs_time, std_stars#, deprioritized_targets
 
 def Schedule_all_scratch(
         blocks:list,
@@ -1044,13 +1131,8 @@ def Schedule_all_scratch(
     #      aux_key, aux_list, fname_tracker, sched_wts, commissioning_time); print(tracker)#, aux_key=None)
 
     tracker = Schedule(pandora_start, pandora_stop, target_list, obs_window, transit_coverage_min, sched_wts, \
-        aux_key='closest', aux_list=aux_list, fname_tracker = fname_tracker, commissioning_time = commissioning_time, \
+        aux_key='closest', aux_list=aux_list, fname_tracker = fname_tracker, commissioning_time=commissioning_time, \
             sched_start=sched_start, sched_stop=sched_stop)
-
-
-    # tracker = Schedule(pandora_start, pandora_stop, primary_targ_list, obs_window, transit_coverage_min, sched_wts, min_visibility, deprioritization_limit, \
-    #     aux_key = 'closest', aux_list=f"{PACKAGEDIR}/data/aux_list_new.csv", fname_tracker = fname_tracker, commissioning_time=30, \
-    #         sched_start=sched_start, sched_stop=sched_stop)
     
 #Default values for parameters used
 if __name__ == "__main__":
@@ -1062,11 +1144,13 @@ if __name__ == "__main__":
     sched_start= "2025-10-15 00:00:00"#"2025-09-01 00:00:00"
     sched_stop= "2026-08-15 00:00:00"#"2026-10-01 00:00:00"
 
-    commissioning_time_ = 30 # days
+    commissioning_time_ = 0
 
     # sched_wts[transit coverage, saa overlap, schedule factor]
     # sched_wts = [0.5, 0.25, 0.25]
+    # sched_wts = [0.0, 0.0, 1.0]
     sched_wts = [0.8, 0.0, 0.2]
+    # transit_coverage_min = 0.25
     transit_coverage_min = 0.5
     deprioritization_limit = 48 # hours
     min_visibility = 0.5 # for non-primary targets
@@ -1074,12 +1158,18 @@ if __name__ == "__main__":
     #Mission requirements: >= 91 deg avoidance for Sun, >= 20 deg avoidance for Moon and Earth limbs
     # blocks = [91., 40., 63.]
     blocks = [91., 25., 63.]
+    # target_list_name = 'Pandora_Target_List_Top20_29Aug2024_names_only'#'Pandora_Target_List_Top20_14May2024'
+    # target_list =  target_list_name + '.csv'#'target_list_top20_16Feb2024.csv'
+    # target_partner_list='target_partner_list.csv'#'target_list_top5_16Feb2024.csv'#
     gmat_file = 'GMAT_pandora_600_20240512.txt'#'GMAT_pandora_450_20230713.csv'#
     obs_name = 'Pandora_600km_20240518'#'Pandora_450km_20230713'#
 
     update_target_list_as_per_json_files = True
     if update_target_list_as_per_json_files:
-
+        # targ_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
+        # pl_names = ['GJ 9827 b', 'L 98-59 d', 'WASP-69 b']
+        # which_targets = 'primary-exoplanet'#'occultation-standard'#'auxiliary-standard'#'auxiliary-exoplanet'#'secondary-exoplanet'#
+        # Example usage:
         target_definition_files = ['primary-exoplanet', 'auxiliary-exoplanet', 'auxiliary-standard', 'occultation-standard', \
             'monitoring-standard', 'secondary-exoplanet']
 
@@ -1096,6 +1186,15 @@ if __name__ == "__main__":
         occ_std_df = helper_codes.process_target_files(target_definition_files[3])
         occ_std_df.to_csv(f"{PACKAGEDIR}/data/aux_list_new.csv", index=False)
 
+    #     targ_list = helper_codes.get_targets_table(which_targets)
+    #     pl_names = targ_list['Planet Name'].values
+    #     updated_targ_list = helper_codes.update_target_list(targ_list, pl_names, which_targets)
+    #     # updated_targ_list.reset_index(drop=True)
+    #     target_list_name = which_targets#'Pandora_Target_List_Top20_29Aug2024_updated_targ_list'
+    #     # updated_targ_list.to_csv(PACKAGEDIR + "/data/Pandora_Target_List_Top20_29Aug2024_updated_targ_list.csv", index=False)
+
+    # # url = "https://github.com/PandoraMission/PandoraTargetList/blob/main/target_definition_files/primary-exoplanet/GJ_1214b_target_definition.json"
+    # # data = read_json_from_github(url)
     # print(updated_targ_list)
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_{pandora_start[0:10]}_to_{pandora_stop[0:10]}.pkl"#f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
@@ -1116,5 +1215,9 @@ if __name__ == "__main__":
     # #                  
     #
     Schedule(pandora_start, pandora_stop, primary_targ_list, obs_window, transit_coverage_min, sched_wts, min_visibility, deprioritization_limit, \
-        aux_key = 'closest', aux_list=f"{PACKAGEDIR}/data/aux_list_new.csv", fname_tracker = fname_tracker, commissioning_time = commissioning_time_, \
+        aux_key = 'closest', aux_list=f"{PACKAGEDIR}/data/aux_list_new.csv", fname_tracker = fname_tracker, commissioning_time=30, \
             sched_start=sched_start, sched_stop=sched_stop)
+
+    # Schedule(pandora_start, pandora_stop, obs_window, transit_coverage_min, sched_wts, \
+    #          commissioning_time=30, sched_start=sched_start, sched_stop=sched_stop,
+    #          aux_key='closest', aux_list=f"{PACKAGEDIR}/data/aux_list.csv")
