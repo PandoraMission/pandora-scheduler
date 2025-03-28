@@ -224,8 +224,12 @@ def Schedule(
     # cut_i=0
 
     non_primary_obs_time = {}
-    deprioritized_targets = set()
+    # deprioritized_targets = set()
     all_target_obs_time = {}
+    last_std_obs = datetime(2025, 10, 1)
+    print()
+    print('!!!!!!!!!!!!------->>>>>>CHANGE LAST STD OBS!<<<<<<------!!!!!!')
+    print()
     
     while stop <= sched_stop:
 
@@ -581,22 +585,29 @@ def Schedule(
         ### Check if there's no transits occuring during the observing window
         ### Schedule auxiliary observation if possible
         if len(temp_df) == 0:
-            # print(f'NO TRANSITS IN {start}, {stop}, WHAT TO USE FOR STAR NAME?!')
 
             if sched_df['Target'].iloc[-1].endswith(('b', 'c', 'd')):
                 star_name_tmp = sched_df['Target'].iloc[-1][0:-2]
             else:
                 star_name_tmp = sched_df['Target'].iloc[-1]
-                
-            star_sc = SkyCoord.from_name(star_name_tmp)#star_name)
-            ra = star_sc.ra.deg
-            dec = star_sc.dec.deg
 
-            aux_df, log_info, non_primary_obs_time = Schedule_aux(start, stop, aux_key, aux_list, prev_obs=[ra, dec], \
-                non_primary_obs_time=non_primary_obs_time, min_visibility = min_visibility, deprioritization_limit = deprioritization_limit); print()
+            try:
+                aux_fn = f"{PACKAGEDIR}/data/occultation-standard_targets.csv"
+                aux_targs = pd.read_csv(aux_fn).reset_index(drop=True)
+                ra_aux_no_transit = aux_targs[aux_targs["Star Name"] == star_name_tmp]["RA"].values[0]
+                dec_aux_no_transit = aux_targs[aux_targs["Star Name"] == star_name_tmp]["DEC"].values[0]
+            except:
+                if star_name_tmp.startswith("DR3"):
+                    star_name_tmp = star_name_tmp.replace('DR3_', 'Gaia DR3 ')
+                star_sc = SkyCoord.from_name(star_name_tmp)
+                ra_aux_no_transit = star_sc.ra.deg
+                dec_aux_no_transit = star_sc.dec.deg
+
+            aux_df, log_info, non_primary_obs_time, last_std_obs = Schedule_aux(start, stop, aux_key, aux_list, \
+                prev_obs=[ra_aux_no_transit, dec_aux_no_transit], non_primary_obs_time=non_primary_obs_time, min_visibility = min_visibility, \
+                    deprioritization_limit = deprioritization_limit, last_std_obs = last_std_obs); print()
             sched_df = pd.concat([sched_df, aux_df], axis=0)
 
-            all_target_obs_time[planet_name] = all_target_obs_time.get(planet_name, timedelta()) + (obs_stop - obs_start)
             # Update observation time for auxiliary targets
             if len(aux_df) > 0:
                 for _, row in aux_df.iterrows():
@@ -683,15 +694,21 @@ def Schedule(
             # VK END
 
             if obs_rng[0] < obs_start:
-                star_sc = SkyCoord.from_name(star_name)
-                ra = star_sc.ra.deg
-                dec = star_sc.dec.deg
+                try:
+                    ra_aux_partial_transit = target_list[target_list["Star Name"] == star_name].RA.values[0]
+                    dec_aux_partial_transit = target_list[target_list["Star Name"] == star_name].DEC.values[0]
+                except:
+                    print(f"{star_name} not in primary targets, just use SkyCoord")
+                    star_sc = SkyCoord.from_name(star_name)
+                    ra_aux_partial_transit = star_sc.ra.deg
+                    dec_aux_partial_transit = star_sc.dec.deg
 
-                aux_df, log_info, non_primary_obs_time = Schedule_aux(start, obs_start, aux_key, aux_list, prev_obs=[ra, dec], \
-                    non_primary_obs_time=non_primary_obs_time, min_visibility = min_visibility, deprioritization_limit = deprioritization_limit); print()
+                # print(f"Observe non-primary for {start} to {obs_start}; primary is {star_name} and is initially schedule for {start} to {stop}")
+                aux_df, log_info, non_primary_obs_time, last_std_obs = Schedule_aux(start, obs_start, aux_key, aux_list, \
+                    prev_obs=[ra_aux_partial_transit, dec_aux_partial_transit], non_primary_obs_time=non_primary_obs_time, \
+                        min_visibility = min_visibility, deprioritization_limit = deprioritization_limit, last_std_obs = last_std_obs); print()
                 sched_df = pd.concat([sched_df, aux_df], axis=0)
 
-                all_target_obs_time[planet_name] = all_target_obs_time.get(planet_name, timedelta()) + (obs_stop - obs_start)
                 # Update observation time for auxiliary targets
                 if len(aux_df) > 0:
                     for _, row in aux_df.iterrows():
@@ -727,6 +744,8 @@ def Schedule(
                 ],
             )
             sched_df = pd.concat([sched_df, sched], axis=0)
+
+            all_target_obs_time[planet_name] = all_target_obs_time.get(planet_name, timedelta()) + (obs_stop - obs_start)
 
             # update tracker info
             tracker.loc[(tracker["Planet Name"] == planet_name), "Transits Needed"] = (
@@ -775,9 +794,9 @@ def Schedule(
         pickle.dump(tracker, file)
 
             # Save non_primary_obs_time
-    non_primary_obs_time_fname = f"Non_Primary_Obs_Time_{pandora_start}.json"
-    with open(f"{PACKAGEDIR}/data/" + non_primary_obs_time_fname, 'w') as file:
-        json.dump({k: str(v) for k, v in non_primary_obs_time.items()}, file)
+    # non_primary_obs_time_fname = f"Non_Primary_Obs_Time_{pandora_start}.json"
+    # with open(f"{PACKAGEDIR}/data/" + non_primary_obs_time_fname, 'w') as file:
+    #     json.dump({k: str(v) for k, v in non_primary_obs_time.items()}, file)
 
     # Save deprioritized_targets
     # deprioritized_targets_fname = f"Deprioritized_Targets_{pandora_start}.json"
@@ -789,9 +808,26 @@ def Schedule(
 
     return tracker
 
-def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time, min_visibility, deprioritization_limit, **kwargs):
+def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time, min_visibility, deprioritization_limit, last_std_obs, **kwargs):
 
     obs_rng = pd.date_range(start, stop, freq = "min")
+
+    obs_std_dur = timedelta(hours = 2) 
+
+    # DO STD!
+    if (start - last_std_obs > timedelta(days = 7.)) and ((start + obs_std_dur) < stop):
+        # Schedule observations of a standard star 
+        STD = [["STD", start, start + obs_std_dur]]
+        start += obs_std_dur
+        last_std_obs = start
+
+        non_primary_obs_time["STD"] = non_primary_obs_time.get("STD", timedelta()) + obs_std_dur
+
+        # std_df = pd.DataFrame(
+        #     STD, columns=["Target", "Observation Start", "Observation Stop"]
+        # )
+    # DONE WITH STD!
+    #
 
     if aux_key == None:
         # No aux target scheduling, free time
@@ -800,7 +836,7 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time,
             free, columns=["Target", "Observation Start", "Observation Stop"]
         )
         log_info = 'Free time, no observation scheduled.'
-        return aux_df, log_info, non_primary_obs_time#, deprioritized_targets
+        return aux_df, log_info, non_primary_obs_time, last_std_obs
         
     for tdf_idx in range(1,4):
         aux_fn = f"{PACKAGEDIR}/data/{target_definition_files[tdf_idx]}_targets.csv"
@@ -827,16 +863,16 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time,
 
         for n in tqdm(range(len(names)), desc=f"Finding visible non-primary target for {str(start)} to {str(stop)} from '{target_definition_files[tdf_idx]}'"):
 
-            current_obs_time = non_primary_obs_time.get(names[n], timedelta())
+            # current_obs_time = non_primary_obs_time.get(names[n], timedelta())
             # new_obs_time = non_primary_obs_time.get(names[n], timedelta()) + (stop - start)
             # print(target_definition_files[tdf_idx], names[n], new_obs_time)
-            if current_obs_time + (stop - start) > timedelta(hours = deprioritization_limit):
-                # print(f"----------------------------> Deprioritize {names[n]}, try next target <----------------------------")
+            if non_primary_obs_time.get(names[n], timedelta()) + (stop - start) > timedelta(hours = deprioritization_limit):
+                # print(f"----------------------------> Deprioritize {names[n]} <----------------------------")
                 continue
-            else:
-                obs_duration = stop - start
-                new_obs_time = non_primary_obs_time.get(names[n], timedelta()) + obs_duration
-                non_primary_obs_time[names[n]] = new_obs_time
+            # else:
+            #     obs_duration = stop - start
+            #     # new_obs_time = non_primary_obs_time.get(names[n], timedelta()) + obs_duration
+            #     non_primary_obs_time[names[n]] = non_primary_obs_time.get(names[n], timedelta()) + obs_duration
                 # print(f"{names[n]} is good")
                 # print(non_primary_obs_time)
                 # print()
@@ -870,42 +906,6 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time,
             # vis_all_targs, vis_any_targs, targ_vis = helper_codes.find_visible_targets(names, start, stop)
 
         # Select target
-        # if (len(vis_all_targs) > 0):
-        #     idx = 0 if aux_key == 'closest' else np.random.randint(0,len(vis_all_targs))
-        #     name = names[vis_all_targs[idx]]
-        #     new_obs_time = non_primary_obs_time.get(name, timedelta()) + (stop - start)
-        #     print(f"{name} scheduled for non-primary observations with full visibility from {target_definition_files[tdf_idx]}.")
-        #     log_info = f"{name} scheduled for non-primary observations with full visibility from {target_definition_files[tdf_idx]}."
-        #     break
-
-        # elif (len(vis_all_targs) == 0) and (target_definition_files[tdf_idx] != "occultation-standard"):
-        #     # print(f"No fully visible targets in {target_definition_files[tdf_idx]}, try next...")
-        #     log_info = f"No fully visible targets in {target_definition_files[tdf_idx]}, try next..."
-        #     continue  # No visible targets in this file, move to next
-
-        # elif (len(vis_all_targs) == 0) and (target_definition_files[tdf_idx] == "occultation-standard"):
-        #     if len(vis_any_targs) > 0:
-        #         if aux_key == 'closest':
-        #             idx = 0
-        #         elif aux_key == 'max_visibility_any':
-        #             idx = np.asarray(targ_vis).argmax()
-        #         else:
-        #             idx = np.random.randint(0, len(vis_any_targs))
-        #         name = names[vis_any_targs[idx]]
-        #         new_obs_time = non_primary_obs_time.get(name, timedelta()) + (stop - start)
-
-        #         vis_perc = targ_vis[idx]
-        #         print(f"No target with full visibility; {name} scheduled for non-primary observations with {vis_perc:.2f}% visibility from {target_definition_files[tdf_idx]}.")
-        #         # print()
-        #         log_info = f"No target with full visibility; {name} scheduled for  non-primary observations with {vis_perc:.2f}% visibility from {target_definition_files[tdf_idx]}."
-        #     else:
-        #         #No full or partially-visible target, free time
-        #         new_obs_time = non_primary_obs_time#.get(name, timedelta()) + (stop - start)
-        #         name = "Free Time"
-        #         # free = [["Free Time", start, stop]]
-        #         # aux_df = pd.DataFrame(free, columns=["Target", "Observation Start", "Observation Stop"])
-        #         log_info = f"No full or partially-visible target, free time, no observation scheduled."
-
         #If at least one target is visible the entire time, use vis_all_targs
         if len(vis_all_targs) > 0:
             idx = 0 if aux_key == 'closest' else np.random.randint(0,len(vis_all_targs))
@@ -930,10 +930,10 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time,
                 name = names[vis_any_targs[idx]]
                 print(f"--------> No target with full visibility; {name} scheduled for non-primary observations with {vis_perc:.2f}% visibility from {target_definition_files[tdf_idx]}.")
             # print()
-            # log_info=f"{name} scheduled for non-primary observation with {vis_perc}\% visibility."
+            # log_info=f"No target with full visibility; {name} scheduled for non-primary observations with {vis_perc:.2f}% visibility from {target_definition_files[tdf_idx]}."
                 break
             else:
-                print(f"No target with visibility greater than {100*min_visibility}% from {target_definition_files[tdf_idx]}, try next target list...")
+                print(f"No non-primary target with visibility greater than {100*min_visibility}% from {target_definition_files[tdf_idx]}, try next target list...")
                 continue
         
         #Safeguard against no aux targets being visible at all
@@ -962,10 +962,31 @@ def Schedule_aux(start, stop, aux_key, aux_list, prev_obs, non_primary_obs_time,
     #     # If we've reached here, we have a valid target
     # non_primary_obs_time[name] = new_obs_time
 
+    try:
+        name
+    except NameError:
+        name = "Free Time"
+    
+    try:
+        log_info
+    except NameError:
+        log_info = "No fuly or partially visible targets"
+
+    non_primary_obs_time[name] = non_primary_obs_time.get(name, timedelta()) + (stop - start)
+
     sched = [[name, start, stop]]
+
+    try:
+        sched = STD + sched
+    except NameError:
+        no_std = True
+
+    print(f"Non-primary observed time: {non_primary_obs_time}")
+
     aux_df = pd.DataFrame(sched, columns=["Target", "Observation Start", "Observation Stop"])
 
-    return aux_df, log_info, non_primary_obs_time#, deprioritized_targets
+    return aux_df, log_info, non_primary_obs_time, last_std_obs
+    # return aux_df, log_info, non_primary_obs_time, std_stars#, deprioritized_targets
 
 def Schedule_all_scratch(
         blocks:list,
