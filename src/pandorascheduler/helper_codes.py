@@ -839,7 +839,14 @@ def process_target_files(keyword):
             
             original_filename = filename.replace('_target_definition.json', '')
             flat_data['Original Filename'] = original_filename
-            flat_data['Priority'] = 1  # Default priority
+
+            if (keyword == "primary-exoplanet") or (keyword == "secondary-exoplanet"):
+                flat_data['Priority'] = 1  # Default priority
+            else:
+                non_primary_priority_fn = os.path.join(directory, f"{keyword}_priorities.csv")
+                metadata, data = read_priority_csv(non_primary_priority_fn)
+                non_primary_priority = data[data["target"] == original_filename]["priority"].values[0]
+                flat_data['Priority'] = non_primary_priority
             
             # Add NIRDA and VDA readout scheme data
             nirda_setting = flat_data.get('NIRDA Setting')
@@ -925,3 +932,27 @@ def save_observation_time_report(all_target_obs_time, target_list, output_file):
             is_primary = "Yes" if target in primary_targets else "No"
             hours = time.total_seconds() / 3600  # Convert to hours
             f.write(f"{target},{is_primary},{hours:.2f}\n")
+
+
+def read_priority_csv(file_path):
+    # Read the entire file
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+
+    # Extract metadata
+    metadata = {}
+    for line in lines:
+        if line.startswith('#'):
+            if ':' in line:
+                key, value = line.strip('# ').split(':', 1)
+                metadata[key.strip()] = value.strip()
+        else:
+            break  # Stop when we hit non-comment lines
+
+    # Find the index where the actual CSV data starts
+    data_start = next(i for i, line in enumerate(lines) if not line.startswith('#'))
+
+    # Read the CSV data
+    df = pd.read_csv(file_path, skiprows=data_start)
+
+    return metadata, df

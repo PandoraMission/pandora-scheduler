@@ -140,11 +140,6 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         if p_lon[i] < -180:
             p_lon[i:] = p_lon[i:] + 360
     
-    
-    
-    
-    
-    
     p_lon = p_lon * u.deg
     p_lat = np.interp(t_mjd_utc, gmat_mjd_utc, gmat_lat) * u.deg
 
@@ -163,9 +158,6 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         (saa_lon_min <= p_lon[i]) and (p_lon[i] <= saa_lon_max):
             saa_cross[i] = 1.
 
-
-
-
     ### Import Target list
     target_data = pd.read_csv(targ_list, sep=',')
     
@@ -174,7 +166,10 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         
         star_name    = target_data['Star Name'][i]
         star_name_sc = target_data['Star Simbad Name'][i]
-        star_sc      = SkyCoord.from_name(star_name_sc)
+        if star_name_sc.startswith("DR3"):
+            star_name_sc = star_name_sc.replace('DR3_', 'Gaia DR3 ')
+
+        star_sc = SkyCoord.from_name(star_name_sc)
         logging.info('Analyzing constraints for:', star_name)
         
         #Check if folder exists for target and if not create new folder for 
@@ -241,7 +236,7 @@ def transit_timing(target_list:str, planet_name:str, star_name:str):
         file containing target's transits during Pandora's lifetime
     """
 
-### Read in Visibility Data
+    ### Read in Visibility Data
     vis_data = pd.read_csv(f'{PACKAGEDIR}/data/targets/' + star_name + '/' + \
                     'Visibility for ' + star_name + '.csv', sep=',')
     t_mjd_utc = vis_data['Time(MJD_UTC)']
@@ -252,7 +247,7 @@ def transit_timing(target_list:str, planet_name:str, star_name:str):
     T_iso_utc = Time(T_mjd_utc.iso, format='iso', scale='utc')
     dt_iso_utc = T_iso_utc.to_value('datetime')
 
-### Extract planet specific parameters from target list
+    ### Extract planet specific parameters from target list
     target_data = pd.read_csv(f'{PACKAGEDIR}/data/' + target_list, sep=',')
     planet_name_sc = target_data.loc[target_data['Planet Name'] == planet_name,
                                 'Planet Simbad Name'].iloc[0]
@@ -315,7 +310,7 @@ def transit_timing(target_list:str, planet_name:str, star_name:str):
     all_transits = np.arange(len(start_transits))
 
 
-### Calculate which transits are visible to Pandora
+    ### Calculate which transits are visible to Pandora
     dt_vis_times = [] 
     for i in range(len(dt_iso_utc)):
         if Visible[i] == 1.0:
@@ -340,17 +335,13 @@ def transit_timing(target_list:str, planet_name:str, star_name:str):
     if os.path.exists(save_dir) != True:
         os.makedirs(save_dir)
 
-### Save transit data to Visibility file
+    ### Save transit data to Visibility file
     transit_data = np.vstack((all_transits, Start_transits.value, End_transits.value, transit_coverage))
     transit_data = transit_data.T.reshape(-1, 4)
     transit_df = pd.DataFrame(transit_data, columns = ['Transits','Transit_Start','Transit_Stop','Transit_Coverage'])
 
     output_file_name = 'Visibility for ' + planet_name + '.csv'
     transit_df.to_csv((save_dir + output_file_name), sep=',', index=False)
-
-
-
-
 
 
 def Transit_overlap(target_list:str, partner_list:str, star_name:str):
@@ -374,7 +365,7 @@ def Transit_overlap(target_list:str, partner_list:str, star_name:str):
     target_data   = pd.read_csv(f'{PACKAGEDIR}/data/' + target_list, sep=',')
     partners_data = pd.read_csv(f'{PACKAGEDIR}/data/' + partner_list, sep=',')
 
-### Compile all planets in system to be considered
+    ### Compile all planets in system to be considered
     total_planets = []
     for i in range(len(target_data)):
         if target_data['Star Name'][i] == star_name:
@@ -416,8 +407,7 @@ def Transit_overlap(target_list:str, partner_list:str, star_name:str):
                 All_start_transits = pd.concat([All_start_transits, start_transits], axis=1) 
                 All_end_transits   = pd.concat([All_end_transits, end_transits], axis=1)  
 
-
-###     Find overlaps with other planets in the system
+    ###     Find overlaps with other planets in the system
         for j in range(len(total_planets)):
             planet_name = total_planets[j]
             planet_data = pd.read_csv(f'{PACKAGEDIR}/data/targets/' + star_name + '/' + planet_name + '/' + 
@@ -455,9 +445,8 @@ def Transit_overlap(target_list:str, partner_list:str, star_name:str):
                             overlap_times = pset.intersection(tset)
                             transit_overlap = len(overlap_times)/len(transit_rng)
                             overlap['Transit_Overlap'][n] = transit_overlap
-
-                            
-###         Update pandas dataframe and save csv
+                       
+    ###         Update pandas dataframe and save csv
             if 'Transit_Overlap' in planet_data:
                 planet_data.update(overlap)
             else:
@@ -487,7 +476,7 @@ def SAA_overlap(planet_name:str, star_name:str):
     csv file
         file containing target's transits during Pandora's lifetime
     """
-### Read in SAA crossing data
+    ### Read in SAA crossing data
     star_data = pd.read_csv(f'{PACKAGEDIR}/data/targets/' + star_name + '/' + 
                             'Visibility for ' + star_name + '.csv')
     SAA_time_mjd = Time(star_data['Time(MJD_UTC)'].values, format='mjd', scale='utc')
@@ -496,7 +485,7 @@ def SAA_overlap(planet_name:str, star_name:str):
     SAA_data = star_data['SAA_Crossing']
 
 
-### Read in planet transit data
+    ### Read in planet transit data
     planet_data = pd.read_csv(f'{PACKAGEDIR}/data/targets/' + star_name + '/' + planet_name + '/' + 
                             'Visibility for ' + planet_name + '.csv')
     start_transits = Time(planet_data['Transit_Start'].values, format='mjd', scale='utc')
@@ -506,7 +495,7 @@ def SAA_overlap(planet_name:str, star_name:str):
     end_transits   = end_transits.to_value('datetime')
 
 
-### Truncate everything after the minutes place
+    ### Truncate everything after the minutes place
     for i in range(len(start_transits)):
         start_transits[i] = start_transits[i] - timedelta(seconds=start_transits[i].second,
                                         microseconds=start_transits[i].microsecond)
@@ -514,7 +503,7 @@ def SAA_overlap(planet_name:str, star_name:str):
                                         microseconds=end_transits[i].microsecond)
 
 
-### Determine SAA overlap for each transit
+    ### Determine SAA overlap for each transit
     saa_overlap = pd.DataFrame(0., index=np.arange(len(planet_data)), columns=['SAA_Overlap'])
     
     for i in range(len(start_transits)):
@@ -533,7 +522,7 @@ def SAA_overlap(planet_name:str, star_name:str):
         transit_overlap = len(overlap_times)/len(transit_rng)
         saa_overlap['SAA_Overlap'][i] = transit_overlap
 
-### Update pandas dataframe and save csv
+    ### Update pandas dataframe and save csv
     if 'SAA_Overlap' in planet_data:
         planet_data.update(saa_overlap)
     else:
