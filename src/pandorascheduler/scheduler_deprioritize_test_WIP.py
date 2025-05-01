@@ -570,7 +570,11 @@ def Schedule(
                                 "Quality Factor",
                             ],
                         )
-                        temp_df = pd.concat([temp_df, temp], axis=0)
+                        # temp_df = pd.concat([temp_df, temp], axis=0) LATEST PYTHON DOESN'T LIKE THIS SO CHANGE IT TO THE LINE BELOW
+                        if temp_df.empty:
+                            temp_df = temp.copy()
+                        else:
+                            temp_df = pd.concat([temp_df, temp], axis=0)#, ignore_index=True)
 
         ### Check if there's no transits occuring during the observing window
         ### Schedule auxiliary observation if possible
@@ -595,8 +599,14 @@ def Schedule(
 
             aux_df, log_info, non_primary_obs_time, last_std_obs = Schedule_aux(start, stop, aux_key, \
                 prev_obs=[ra_aux_no_transit, dec_aux_no_transit], non_primary_obs_time=non_primary_obs_time, min_visibility = min_visibility, \
-                    deprioritization_limit = deprioritization_limit, last_std_obs = last_std_obs); print()
-            sched_df = pd.concat([sched_df, aux_df], axis=0)
+                    deprioritization_limit = deprioritization_limit, last_std_obs = last_std_obs)
+            if aux_key:
+                print()
+
+            if sched_df.empty:
+                sched_df = temp.copy()
+            else:        
+                sched_df = pd.concat([sched_df, aux_df], axis=0)
 
             # Update observation time for auxiliary targets
             if (len(aux_df) > 0) and (aux_df["Target"].values.all() != "Free Time"):
@@ -611,7 +621,7 @@ def Schedule(
             stop = start + obs_window
             continue                
 
-        else:
+        else: # THERE ARE TRANSITS DURING THE OBSERVING WINDOW
             if (temp_df["Transit Factor"] < 2).any():
                 temp_df = temp_df.sort_values(by=["Transit Factor"]).reset_index(
                     drop=True
@@ -669,8 +679,14 @@ def Schedule(
                 # print(f"Observe non-primary for {start} to {obs_start}; primary is {star_name} and is initially schedule for {start} to {stop}")
                 aux_df, log_info, non_primary_obs_time, last_std_obs = Schedule_aux(start, obs_start, aux_key, \
                     prev_obs=[ra_aux_partial_transit, dec_aux_partial_transit], non_primary_obs_time=non_primary_obs_time, \
-                        min_visibility = min_visibility, deprioritization_limit = deprioritization_limit, last_std_obs = last_std_obs); print()
-                sched_df = pd.concat([sched_df, aux_df], axis=0)
+                        min_visibility = min_visibility, deprioritization_limit = deprioritization_limit, last_std_obs = last_std_obs)
+                if aux_key:
+                    print()
+                
+                if sched_df.empty:
+                    sched_df = aux_df.copy()
+                else:        
+                    sched_df = pd.concat([sched_df, aux_df], axis=0)
 
                 # Update observation time for auxiliary targets
                 if len(aux_df) > 0:
@@ -706,6 +722,7 @@ def Schedule(
                     "Quality Factor",
                 ],
             )
+
             sched_df = pd.concat([sched_df, sched], axis=0)
 
             all_target_obs_time[planet_name] = all_target_obs_time.get(planet_name, timedelta()) + (obs_stop - obs_start)
@@ -744,6 +761,8 @@ def Schedule(
             )
             start = obs_stop
             stop = start + obs_window
+
+            # print(sched_df)
             continue
 
     ### Save results
@@ -806,24 +825,40 @@ def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visib
         aux_names = set(aux_targs['Star Name'])
 
         # Create a dictionary of name-priority pairs from non_primary_obs_time
-        non_primary_priorities = {name: priority for name, (_, priority) in non_primary_obs_time.items() if name != 'STD'}
-
-        # Create a boolean mask for matching names with different priorities
+        non_primary_priorities = {name: priority[-1] for name, (_, priority) in non_primary_obs_time.items() if name != 'STD'}
         mask = (aux_targs['Star Name'].isin(non_primary_priorities.keys())) & \
             (aux_targs['Priority'] != aux_targs['Star Name'].map(non_primary_priorities))
 
-        # Check if any rows match the condition
-        if mask.any():
-            # for name in aux_targs[mask]['Star Name']:
-            #     print(f"Update priority for {name} from {aux_targs[mask]['Priority'].values[0]} to {non_primary_priorities[name]}"
-            aux_targs.loc[mask, 'Priority'] = aux_targs.loc[mask, 'Star Name'].map(non_primary_priorities)
+        if aux_key == 'sort_by_tdf_priority':
+            if mask.any():
+                aux_targs.loc[mask, 'Priority'] = aux_targs.loc[mask, 'Star Name'].map(non_primary_priorities)
 
-        aux_targs = aux_targs.sort_values('Priority', ascending=False).reset_index(drop=True)
+            aux_targs = aux_targs.sort_values('Priority', ascending=False).reset_index(drop=True)
 
-        names = aux_targs['Star Name']
-        ras = aux_targs['RA']
-        decs = aux_targs['DEC']
-        aux_priority = aux_targs['Priority']
+            names = aux_targs['Star Name']
+            ras = aux_targs['RA']
+            decs = aux_targs['DEC']
+            aux_priority = aux_targs['Priority']
+
+
+        # non_primary_priorities = {name: priority for name, (_, priority) in non_primary_obs_time.items() if name != 'STD'}
+        # # Create a boolean mask for matching names with different priorities
+        # mask = (aux_targs['Star Name'].isin(non_primary_priorities.keys())) & \
+        #     (aux_targs['Priority'] != aux_targs['Star Name'].map(non_primary_priorities))
+
+        # if aux_key == 'sort_by_tdf_priority':
+        # # Check if any rows match the condition
+        #     if mask.any():
+        #         # for name in aux_targs[mask]['Star Name']:
+        #         #     print(f"Update priority for {name} from {aux_targs[mask]['Priority'].values[0]} to {non_primary_priorities[name]}"
+        #         aux_targs.loc[mask, 'Priority'] = aux_targs.loc[mask, 'Star Name'].map(non_primary_priorities)
+
+        #     aux_targs = aux_targs.sort_values('Priority', ascending=False).reset_index(drop=True)
+
+        #     names = aux_targs['Star Name']
+        #     ras = aux_targs['RA']
+        #     decs = aux_targs['DEC']
+        #     aux_priority = aux_targs['Priority']
 
         # if aux_key == 'sort_by_tdf_priority':
         #     aux_targs = aux_targs.sort_values('Priority', ascending=False).reset_index(drop=True)
@@ -835,7 +870,7 @@ def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visib
         #     except NameError:
         #         aux_priority = aux_targs['Priority']
 
-        if aux_key == 'closest':
+        elif aux_key == 'closest':
             po_sc = SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
             aux_sc = SkyCoord(unit='deg', ra=ras, dec=decs)
             dif = aux_sc.separation(po_sc).deg
@@ -853,10 +888,19 @@ def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visib
 
             # values_tmp = non_primary_obs_time.get(names[n], timedelta()).values()
             # existing_time = non_primary_obs_time.get(names[n])#, timedelta())
-            if non_primary_obs_time.get(names[n]):
-                if non_primary_obs_time.get(names[n])[0] + (stop - start) > 2.*timedelta(hours = deprioritization_limit):
+
+            # Modify this part of the code
+            if non_primary_obs_time.get(names[n]) is not None:
+                existing_times = non_primary_obs_time.get(names[n])[0]
+                total_time = np.sum(existing_times)
+                if total_time + (stop - start) > 2 * timedelta(hours=deprioritization_limit):
                     print(f"----------------------------> Remove {names[n]} <----------------------------")
                     continue
+
+            # if non_primary_obs_time.get(names[n]):
+            #     if non_primary_obs_time.get(names[n])[0] + (stop - start) > 2.*timedelta(hours = deprioritization_limit):
+            #         print(f"----------------------------> Remove {names[n]} <----------------------------")
+            #         continue
             # aaa = 999
             # if existing_time + (stop - start) > 2.*timedelta(hours = deprioritization_limit):
             #     print(f"----------------------------> Remove {names[n]} <----------------------------")
@@ -942,13 +986,36 @@ def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visib
     #     log_info = "No fuly or partially visible targets"
 
     if (name != "STD"):
-        existing_time, existing_priority = non_primary_obs_time.get(name, (timedelta(), priority_tmp))
-        non_primary_obs_time[name] = (existing_time + (stop - start), priority_tmp)
+        # existing_time, existing_priority = non_primary_obs_time.get(name, (timedelta(), priority_tmp))
+        # non_primary_obs_time[name] = (existing_time + (stop - start), priority_tmp)
 
-        if non_primary_obs_time.get(name, timedelta())[0] > timedelta(hours = deprioritization_limit):
+        # if non_primary_obs_time.get(name, timedelta())[0] > timedelta(hours = deprioritization_limit):
+        #     print(f"----------------------------> Deprioritize {name} <----------------------------")
+        #     new_priority = 0.95 * aux_priority.iloc[-1]#[len(names) - 1]
+        #     non_primary_obs_time[name] = (existing_time + (stop - start), new_priority)
+
+        existing_time, existing_priority = non_primary_obs_time.get(name, (np.array([]), np.array([])))
+        new_time = existing_time + (stop - start) if isinstance(existing_time, timedelta) else stop - start
+        if isinstance(existing_time, np.ndarray):
+            non_primary_obs_time[name] = (
+                np.append(existing_time, new_time),
+                np.append(existing_priority, priority_tmp)
+            )
+        else:
+            non_primary_obs_time[name] = (np.array([new_time]), np.array([priority_tmp]))
+
+        total_time = np.sum(non_primary_obs_time[name][0]) if isinstance(non_primary_obs_time[name][0], np.ndarray) else non_primary_obs_time[name][0]
+
+        if total_time > timedelta(hours=deprioritization_limit):
             print(f"----------------------------> Deprioritize {name} <----------------------------")
             new_priority = 0.95 * aux_priority[len(names) - 1]
-            non_primary_obs_time[name] = (existing_time + (stop - start), new_priority)
+            if isinstance(non_primary_obs_time[name][0], np.ndarray):
+                non_primary_obs_time[name] = (
+                    np.append(non_primary_obs_time[name][0], new_time),
+                    np.append(non_primary_obs_time[name][1], new_priority)
+                )
+            else:
+                non_primary_obs_time[name] = (np.array([new_time]), np.array([new_priority]))
 
     sched = [[name, start, stop]]
 
@@ -1127,9 +1194,9 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-10-15 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2026-10-15 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2025-11-15 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2025-10-15 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-10-15 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2025-11-15 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0 # days
 
@@ -1173,10 +1240,11 @@ if __name__ == "__main__":
     # print(updated_targ_list)
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_{pandora_start[0:10]}_to_{pandora_stop[0:10]}.pkl"#f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
+    # aux_key = None
+
     Schedule(pandora_start, pandora_stop, primary_targ_list, obs_window, transit_coverage_min, sched_wts, min_visibility, deprioritization_limit, \
         aux_key = aux_key, aux_list=aux_targ_list, fname_tracker = fname_tracker, commissioning_time = commissioning_time_, \
             sched_start = sched_start, sched_stop = sched_stop)
-
 
     # Schedule_all_scratch(blocks, pandora_start, pandora_stop, target_definition_files, \
     #     #updated_targ_list, target_partner_list, \

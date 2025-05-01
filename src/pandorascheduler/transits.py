@@ -7,7 +7,7 @@ from astropy.coordinates import SkyCoord
 from astropy.coordinates import EarthLocation
 from astropy.time import Time
 from datetime import timedelta
-from progressbar import ProgressBar
+# from progressbar import ProgressBar
 import logging
 # import barycorr
 from tqdm import tqdm

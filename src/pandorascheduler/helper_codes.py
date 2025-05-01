@@ -840,13 +840,21 @@ def process_target_files(keyword):
             original_filename = filename.replace('_target_definition.json', '')
             flat_data['Original Filename'] = original_filename
 
-            if (keyword == "primary-exoplanet") or (keyword == "secondary-exoplanet"):
-                flat_data['Priority'] = 1  # Default priority
+            if keyword != "occultation-standard":
+                priority_fn = os.path.join(directory, f"{keyword}_priorities.csv")
+                metadata, data = read_priority_csv(priority_fn)
+                priority_ = data[data["target"] == original_filename]["priority"].values[0]
+                flat_data['Priority'] = priority_
             else:
-                non_primary_priority_fn = os.path.join(directory, f"{keyword}_priorities.csv")
-                metadata, data = read_priority_csv(non_primary_priority_fn)
-                non_primary_priority = data[data["target"] == original_filename]["priority"].values[0]
-                flat_data['Priority'] = non_primary_priority
+                flat_data['Priority'] = 0.1 # Default priority
+
+            # if (keyword == "primary-exoplanet") or (keyword == "secondary-exoplanet"):
+            #     flat_data['Priority'] = 1  # Default priority
+            # else:
+            #     non_primary_priority_fn = os.path.join(directory, f"{keyword}_priorities.csv")
+            #     metadata, data = read_priority_csv(non_primary_priority_fn)
+            #     non_primary_priority = data[data["target"] == original_filename]["priority"].values[0]
+            #     flat_data['Priority'] = non_primary_priority
             
             # Add NIRDA and VDA readout scheme data
             nirda_setting = flat_data.get('NIRDA Setting')
@@ -868,7 +876,7 @@ def process_target_files(keyword):
                 for key, value in vda_schemes[vda_setting].items():
                     flat_data[f'VDA_{key}'] = value
             
-            if not filename.startswith('Gaia') or keyword != 'monitoring-standard':
+            if not filename.startswith('DR3') or keyword != 'monitoring-standard':
                 # Separate the last lowercase letter with a space
                 planet_name = re.sub(r'([a-z])$', r' \1', flat_data.get('Planet Name', ''))
                 flat_data['Planet Name'] = planet_name
@@ -889,8 +897,8 @@ def process_target_files(keyword):
 
     df = pd.DataFrame(data_list)
     
-    # Determine columns based on whether it's a Gaia file or not
-    if df['Original Filename'].str.startswith('Gaia').any() or keyword == 'monitoring-standard':
+    # Determine columns based on whether it's a Gaia DR3 file or not
+    if df['Original Filename'].str.startswith('DR3').any() or keyword == 'monitoring-standard':
         columns_order = ['Star Name', 'Star Simbad Name']
         columns_order.extend([col for col in df.columns if col not in columns_order and col != 'Priority'])
         columns_order.append('Priority')
