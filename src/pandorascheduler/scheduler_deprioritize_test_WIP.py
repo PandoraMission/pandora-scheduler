@@ -585,6 +585,9 @@ def Schedule(
             else:
                 star_name_tmp = sched_df['Target'].iloc[-1]
 
+            if star_name_tmp == 'Free Time':
+                continue
+
             try:
                 aux_fn = f"{PACKAGEDIR}/data/occultation-standard_targets.csv"
                 aux_targs = pd.read_csv(aux_fn).reset_index(drop=True)
@@ -769,6 +772,8 @@ def Schedule(
     sched_df = sched_df.sort_values(by=["Observation Start"]).reset_index(drop=True)
     save_fname = f"Pandora_Schedule_{sched_wts[0]}_{sched_wts[1]}_{sched_wts[2]}_{pandora_start}.csv"
     sched_df.to_csv((f"{PACKAGEDIR}/data/" + save_fname), sep=",", index=False)
+
+    tracker.to_csv((f"{PACKAGEDIR}/data/tracker.csv"), sep=",", index=False)
 
     # Save tracker
     with open(fname_tracker, 'wb') as file:
@@ -1194,9 +1199,9 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-10-15 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2026-01-15 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2026-10-15 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2025-10-15 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-01-15 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2026-10-15 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0 # days
 
