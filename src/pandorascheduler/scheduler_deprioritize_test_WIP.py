@@ -1194,9 +1194,9 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-10-15 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2025-11-15 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2026-01-15 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2025-10-15 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2025-11-15 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2026-01-15 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0 # days
 
@@ -1218,7 +1218,7 @@ if __name__ == "__main__":
     update_target_list_as_per_json_files = True
     if update_target_list_as_per_json_files:
 
-        target_definition_files = ['primary-exoplanet', 'auxiliary-exoplanet', 'auxiliary-standard', 'occultation-standard', \
+        target_definition_files = ['primary-exoplanet-test', 'auxiliary-exoplanet', 'auxiliary-standard', 'occultation-standard', \
             'monitoring-standard', 'secondary-exoplanet']
 
         for keyword_ in target_definition_files:
@@ -1240,7 +1240,7 @@ if __name__ == "__main__":
     # print(updated_targ_list)
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_{pandora_start[0:10]}_to_{pandora_stop[0:10]}.pkl"#f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
-    # aux_key = None
+    aux_key = None
 
     Schedule(pandora_start, pandora_stop, primary_targ_list, obs_window, transit_coverage_min, sched_wts, min_visibility, deprioritization_limit, \
         aux_key = aux_key, aux_list=aux_targ_list, fname_tracker = fname_tracker, commissioning_time = commissioning_time_, \
