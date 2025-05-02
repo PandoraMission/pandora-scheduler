@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 # VK END
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_0.8_0.0_0.2_2025-10-15_deprioritized.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
+schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_0.8_0.0_0.2_2025-10-15.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
 tar_vis_path=f'{PACKAGEDIR}/data/targets/'
 aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
 tar_path=f'{PACKAGEDIR}/data/primary-exoplanet_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
@@ -168,6 +168,9 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
         tv_data = pd.read_csv(tar_vis_path+f'{st_name}/{t_name}/Visibility for {t_name}.csv')
         tv_st = Time(tv_data['Transit_Start'], format='mjd', scale='utc').to_value('datetime')
         tv_sp = Time(tv_data['Transit_Stop'], format='mjd', scale='utc').to_value('datetime')
+    elif t_name == 'STD':
+        print(f'-------> STD NEED VISIBILITY <--------')
+        continue
     else:
         v_data = pd.read_csv(aux_vis_path+f'{t_name}/Visibility for {t_name}.csv')
         targ_info = a_list.loc[(a_list['Star Name'] == t_name)]
