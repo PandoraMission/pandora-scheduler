@@ -7,6 +7,7 @@ from astropy.coordinates import SkyCoord
 from astropy.coordinates import EarthLocation
 from astropy.time import Time
 from datetime import timedelta
+# from astropy.time import TimeDelta
 # from progressbar import ProgressBar
 import logging
 # import barycorr
@@ -242,6 +243,7 @@ def transit_timing(target_list:str, planet_name:str, star_name:str):
     t_mjd_utc = vis_data['Time(MJD_UTC)']
     Visible = np.array(vis_data['Visible'])
 
+    from astropy.time import Time
     # Convert time to datetime
     T_mjd_utc = Time(t_mjd_utc, format='mjd', scale='utc')
     T_iso_utc = Time(T_mjd_utc.iso, format='iso', scale='utc')
@@ -289,7 +291,12 @@ def transit_timing(target_list:str, planet_name:str, star_name:str):
     first_transit = epoch_MJD_UTC+(min_pers_start*period)
 
     # Calc transit times
-    Mid_transits = np.arange(first_transit, T_mjd_utc[-1], period)
+    Mid_transits = np.arange(first_transit, T_mjd_utc[-1], period)# --> THIS GIVES A WARNING, TRY WITH LINES BELOW
+    # from astropy.time import Time, TimeDelta
+    # period_delta = TimeDelta(period)
+    # num_periods = int((T_mjd_utc[-1] - first_transit) / period)
+    # Mid_transits = first_transit + period_delta * np.arange(num_periods)
+
     for i in range(len(Mid_transits)):
         Mid_transits[i] = Mid_transits[i].mjd
     Mid_transits = (np.array(list(Mid_transits[:])))
@@ -444,7 +451,8 @@ def Transit_overlap(target_list:str, partner_list:str, star_name:str):
                             tset = set(transit_rng)
                             overlap_times = pset.intersection(tset)
                             transit_overlap = len(overlap_times)/len(transit_rng)
-                            overlap['Transit_Overlap'][n] = transit_overlap
+                            # overlap['Transit_Overlap'][n] = transit_overlap
+                            overlap.loc[n, 'Transit_Overlap'] = transit_overlap
                        
     ###         Update pandas dataframe and save csv
             if 'Transit_Overlap' in planet_data:
@@ -520,7 +528,8 @@ def SAA_overlap(planet_name:str, star_name:str):
         tset = set(transit_rng)
         overlap_times = sset.intersection(tset)
         transit_overlap = len(overlap_times)/len(transit_rng)
-        saa_overlap['SAA_Overlap'][i] = transit_overlap
+        # saa_overlap['SAA_Overlap'][i] = transit_overlap
+        saa_overlap.loc[i, "SAA Overlap"] = transit_overlap
 
     ### Update pandas dataframe and save csv
     if 'SAA_Overlap' in planet_data:
