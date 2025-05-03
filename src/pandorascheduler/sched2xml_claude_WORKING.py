@@ -23,19 +23,19 @@ warnings.filterwarnings("ignore")
 # VK END
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path=f'{PACKAGEDIR}/data/Pandora_Schedule_0.8_0.0_0.2_2025-10-15.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
-tar_vis_path=f'{PACKAGEDIR}/data/targets/'
-aux_vis_path=f'{PACKAGEDIR}/data/aux_targets/'
-tar_path=f'{PACKAGEDIR}/data/primary-exoplanet_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
+schedule_path = f'{PACKAGEDIR}/data/Pandora_Schedule_0.8_0.0_0.2_2025-10-15.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
+tar_vis_path = f'{PACKAGEDIR}/data/targets/'
+aux_vis_path = f'{PACKAGEDIR}/data/aux_targets/'
+tar_path = f'{PACKAGEDIR}/data/primary-exoplanet_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
 tar_path_ALL = f'{PACKAGEDIR}/data/primary-exoplanet_targets.csv'#Pandora_Target_List_Top40_16Feb2024_Top40_SDM.csv'
-aux_path=f'{PACKAGEDIR}/data/aux_list_new.csv'
-t_list=pd.read_csv(tar_path)
-a_list=pd.read_csv(aux_path)
-sch=pd.read_csv(schedule_path)
+aux_path = f'{PACKAGEDIR}/data/aux_list_new.csv'
+t_list = pd.read_csv(tar_path)
+a_list = pd.read_csv(aux_path)
+sch = pd.read_csv(schedule_path)
 # author='VK'
 
 #save a stripped version as csv for LLNL
-save_csv=False
+save_csv = False
 
 #function to schedule an target during occultation
 #takes a start/stop in datetime and 
@@ -146,7 +146,7 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
 
     # st_name = t_name if t_name.startswith('Gaia') else t_name[:-2]
     
-    if t_name.endswith(('b', 'c', 'd')):
+    if t_name.endswith(('b', 'c', 'd', 'e', 'f')):
         st_name = t_name[:-2]
     else:
         st_name = t_name
@@ -161,29 +161,39 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
     
     #Get visibility data, replace if then with the flag later
     # if not t_name.startswith('Gaia'):# or t_name.startswith('Free'):
-    if t_name.endswith(('b', 'c', 'd')):
+    # if t_name.endswith(('b', 'c', 'd', 'e', 'f')):
+    if t_name in t_list['Planet Name'].values:
         v_data = pd.read_csv(tar_vis_path+f'{st_name}/Visibility for {st_name}.csv')
-        targ_info = t_list.loc[(t_list['Planet Name'] == t_name)]
+        tmp_idx = t_list.index[t_list['Planet Name'] == t_name].tolist()
+        targ_info = t_list.loc[[tmp_idx[0]]]#t_list.loc[(t_list['Planet Name'] == t_name)]
         i_flag = 1
         tv_data = pd.read_csv(tar_vis_path+f'{st_name}/{t_name}/Visibility for {t_name}.csv')
         tv_st = Time(tv_data['Transit_Start'], format='mjd', scale='utc').to_value('datetime')
         tv_sp = Time(tv_data['Transit_Stop'], format='mjd', scale='utc').to_value('datetime')
+    elif t_name in a_list['Star Name'].values:
+        v_data = pd.read_csv(aux_vis_path+f'{st_name}/Visibility for {t_name}.csv')
+        tmp_idx = a_list.index[a_list['Star Name'] == t_name].tolist()
+        targ_info = a_list.loc[[tmp_idx[0]]]#a_list.loc[(a_list['Star Name'] == t_name) & (a_list['Planet Name'].notna())]
+        i_flag = 0
     elif t_name == 'STD':
         print(f'-------> STD NEED VISIBILITY <--------')
         continue
-    else:
-        v_data = pd.read_csv(aux_vis_path+f'{t_name}/Visibility for {t_name}.csv')
-        targ_info = a_list.loc[(a_list['Star Name'] == t_name)]
-        i_flag = 0
-    
+    # elif:
+    #     v_data = pd.read_csv(aux_vis_path+f'{t_name}/Visibility for {t_name}.csv')
+    #     targ_info = a_list.loc[(a_list['Star Name'] == t_name) & (a_list['Planet Name'].notna())]#a_list.loc[(a_list['Star Name'] == t_name)]
+    #     i_flag = 0
+
+    # if t_name == 'TRAPPIST-1 f':
+    #     print('TRAPPIST-1 f')
+
     # VK BEGIN: try getting RA & Dec from SkyCoord
     try:
+        ra = targ_info['RA'].iloc[0]
+        dec = targ_info['DEC'].iloc[0]
+    except:
         star_sc = SkyCoord.from_name(st_name)
         ra = star_sc.ra.deg
         dec = star_sc.dec.deg
-    except:
-        ra=targ_info['RA'].iloc[0]
-        dec=targ_info['DEC'].iloc[0]
     # VK END
     
     #get times during this visit
@@ -351,7 +361,8 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
                 # logging.info(f"Visible period: {st} to {sp}")
                 current = st
                 while current < sp: # break observation sequences longer than 90 min
-                    try:
+                    if 1 == 1:
+                    # try:
                         next_val = min(current + dt, sp)
                         priority = get_priority(i_flag, current, next_val)
                         aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(seq_counter))))+str(seq_counter)}', \
@@ -361,7 +372,8 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
                             ra, dec, targ_info)
                         # logging.info(f"Vis sequence: {hcc.round_to_nearest_second(current)} to {hcc.round_to_nearest_second(next_val)}......DONE!")
                         # print()
-                    except Exception as e:
+                    else:
+                    # except Exception as e:
                         # logging.info(f"current: {current}, next_val: {next_val}, priority: {priority}")
                         # logging.info(f"ra: {ra}, dec: {dec}")
                         # logging.info(f"t_name: {t_name}, seq_counter: {seq_counter}")
