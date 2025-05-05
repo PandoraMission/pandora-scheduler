@@ -52,13 +52,14 @@ def create_visit_figure(visit_data, visit_id, target):
 
     for i, data in enumerate(visit_data):
         color = 'green' if all(data['visibility']) else 'red' if data['visibility'] else 'gray'
-        ax.plot([data['start'], data['stop']], [i, i], color=color, linewidth=5)
+        # ax.plot([data['start'], data['stop']], [i, i], color=color, linewidth=2)
         
         # Plot visibility
-        if data['visibility']:
+        if all(data['visibility']):
             vis_times = data['times']
-            vis_values = [i if v else None for v in data['visibility']]
-            ax.scatter(vis_times, [i] * len(vis_times), c=vis_values, cmap='RdYlGn', vmin=0, vmax=1, s=20)
+            vis_values = [i+1 if v else None for v in data['visibility']]
+            ax.scatter(vis_times, [i+1] * len(vis_times), c=vis_values, cmap='RdYlGn', vmin=0, vmax=1, s=3)
+            # print(data['start'], data['stop'], all(data['visibility']))
 
     # Set y-axis labels
     ax.set_yticks(range(len(visit_data)))
