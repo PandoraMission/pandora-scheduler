@@ -1229,9 +1229,9 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-10-15 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2026-04-15 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2026-10-15 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2025-10-15 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-04-15 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2026-10-15 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0 # days
 
@@ -1278,7 +1278,7 @@ if __name__ == "__main__":
 
     aux_key = None
 
-    run_ = 'vis_and_schedule'#'schedule_only'#''target_visibility'#
+    run_ = 'vis_and_schedule'#'target_visibility'#'schedule_only'#
     if run_ == 'schedule_only':
         Schedule(pandora_start, pandora_stop, primary_targ_list, obs_window, transit_coverage_min, sched_wts, min_visibility, deprioritization_limit, \
             aux_key = aux_key, aux_list=aux_targ_list, fname_tracker = fname_tracker, commissioning_time = commissioning_time_, \
@@ -1286,7 +1286,7 @@ if __name__ == "__main__":
     elif run_ == 'target_visibility':
             transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \
         # save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/{target_definition_files[1]}_targets.csv')
-            save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/{target_definition_files[1]}_targets.csv')
+            save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/{target_definition_files[5]}_targets.csv')
     elif run_ == 'vis_and_schedule':
             Schedule_all_scratch(blocks, pandora_start, pandora_stop, primary_targ_list, aux_targ_list, target_definition_files, \
                 obs_window, transit_coverage_min, sched_wts = sched_wts, aux_key=aux_key, \
