@@ -6,6 +6,7 @@ from datetime import datetime
 from astropy.time import Time
 import os
 import helper_codes_aux as hcc
+import tqdm as tqdm
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -88,7 +89,7 @@ if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
 # Process each Visit
-for visit in root.findall('ns:Visit', namespace):
+for visit in tqdm.tqdm(root.findall('ns:Visit', namespace)):
     visit_id = visit.find('ns:ID', namespace).text
     visit_data = []
 
