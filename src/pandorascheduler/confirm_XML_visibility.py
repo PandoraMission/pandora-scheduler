@@ -26,7 +26,14 @@ def check_visibility(target, start_time, stop_time):
     stop_mjd = Time(stop_time, format='isot', scale='utc').mjd
 
     # Read visibility data
-    st_name = target[:-2] if target.endswith('b') or target.endswith('c') else target
+
+    if target.endswith(('b', 'c', 'd', 'e', 'f')):
+        st_name = target[:-2]
+    else:
+        st_name = target
+
+    # st_name = target[:-2] if target.endswith('b') or target.endswith('c') else target
+
     if not target.startswith('DR3'):
         v_data = pd.read_csv(tar_vis_path+f'{st_name}/Visibility for {st_name}.csv')
     else:
@@ -39,8 +46,8 @@ def check_visibility(target, start_time, stop_time):
     return period_data['Visible'].tolist(), period_data['Time(MJD_UTC)'].tolist()
 
 # Function to create and save a figure for a visit
-def create_visit_figure(visit_data, visit_id):
-    fig, ax = plt.subplots(figsize=(15, 10))
+def create_visit_figure(visit_data, visit_id, target):
+    fig, ax = plt.subplots(figsize=(10, 5))
 
     for i, data in enumerate(visit_data):
         color = 'green' if all(data['visibility']) else 'red' if data['visibility'] else 'gray'
@@ -67,11 +74,13 @@ def create_visit_figure(visit_data, visit_id):
     plt.tight_layout()
 
     # Save the figure as a PNG file
-    output_file = os.path.join(output_dir, f'visit_{visit_id}_visibility.png')
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    plt.close(fig)
-
-    print(f"Figure for Visit {visit_id} saved as {output_file}")
+    try:
+        output_file = os.path.join(output_dir, f'visit_{visit_id}_visibility_for_{target}.png')
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+        plt.close(fig)
+        # print(f"Figure for Visit {visit_id} saved as {output_file}")
+    except:
+        no_fig = True
 
 # Prepare output directory
 output_dir = PACKAGEDIR + '/data/confirm_visibility'
@@ -114,8 +123,12 @@ for visit in root.findall('ns:Visit', namespace):
             'times': [Time(t, format='mjd').datetime for t in times]
         })
 
+    try:
+        target#print(target)
+    except:
+        target = None#standard_ = True
     # Create and save figure for this visit
-    create_visit_figure(visit_data, visit_id)
+    create_visit_figure(visit_data, visit_id, target)
 
 
 
