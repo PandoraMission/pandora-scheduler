@@ -925,7 +925,7 @@ def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visib
                 existing_times = non_primary_obs_time.get(names[n])[0]
                 total_time = np.sum(existing_times)
                 if total_time + (stop - start) > 2 * timedelta(hours=deprioritization_limit):
-                    print(f"----------------------------> Remove {names[n]} <----------------------------")
+                    # print(f"----------------------------> Remove {names[n]} <----------------------------")
                     continue
 
             # if non_primary_obs_time.get(names[n]):
@@ -944,8 +944,8 @@ def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visib
                 
             # continue
 
-            # try:
-            if 1 ==1:
+            try:
+            # if 1 ==1:
                 vis_file = f"{PACKAGEDIR}/data/aux_targets/{names[n]}/Visibility for {names[n]}.csv"
                 vis = pd.read_csv(vis_file, usecols=["Time(MJD_UTC)", "Visible"])
                 time_mask = (Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') >= start) & \
@@ -958,8 +958,8 @@ def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visib
                 elif not vis_filtered.empty and vis_filtered['Visible'].any():
                     vis_any_targs.append(n)
                     targ_vis.append(100*(np.sum(vis_filtered['Visible'])/len(vis_filtered)))
-            # except FileNotFoundError:
-            else:
+            except FileNotFoundError:
+            # else:
                 pass
 
             # vis_all_targs, vis_any_targs, targ_vis = helper_codes.find_visible_targets(names, start, stop)
