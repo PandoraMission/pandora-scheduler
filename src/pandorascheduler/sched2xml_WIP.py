@@ -16,7 +16,7 @@ import logging
 
 # VK BEGIN:
 import helper_codes
-import helper_codes_claude as hcc
+import helper_codes_aux as hcc
 import importlib
 import warnings
 warnings.filterwarnings("ignore")
