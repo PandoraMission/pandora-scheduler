@@ -361,8 +361,8 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
                 # logging.info(f"Visible period: {st} to {sp}")
                 current = st
                 while current < sp: # break observation sequences longer than 90 min
-                    if 1 == 1:
-                    # try:
+                    # if 1 == 1:
+                    try:
                         next_val = min(current + dt, sp)
                         priority = get_priority(i_flag, current, next_val)
                         aa = helper_codes.observation_sequence(visit, f'{("0"*(3-len(str(seq_counter))))+str(seq_counter)}', \
@@ -372,8 +372,8 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
                             ra, dec, targ_info)
                         # logging.info(f"Vis sequence: {hcc.round_to_nearest_second(current)} to {hcc.round_to_nearest_second(next_val)}......DONE!")
                         # print()
-                    else:
-                    # except Exception as e:
+                    # else:
+                    except Exception as e:
                         # logging.info(f"current: {current}, next_val: {next_val}, priority: {priority}")
                         # logging.info(f"ra: {ra}, dec: {dec}")
                         # logging.info(f"t_name: {t_name}, seq_counter: {seq_counter}")
