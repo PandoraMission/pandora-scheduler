@@ -26,12 +26,18 @@ PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 schedule_path = f'{PACKAGEDIR}/data/Pandora_Schedule_0.8_0.0_0.2_2025-10-15.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
 tar_vis_path = f'{PACKAGEDIR}/data/targets/'
 aux_vis_path = f'{PACKAGEDIR}/data/aux_targets/'
-tar_path = f'{PACKAGEDIR}/data/primary-exoplanet_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
-tar_path_ALL = f'{PACKAGEDIR}/data/primary-exoplanet_targets.csv'#Pandora_Target_List_Top40_16Feb2024_Top40_SDM.csv'
+tar_path = f'{PACKAGEDIR}/data/primary-exoplanet-extended_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
+tar_path_ALL = f'{PACKAGEDIR}/data/primary-exoplanet-extended_targets.csv'#Pandora_Target_List_Top40_16Feb2024_Top40_SDM.csv'
 aux_path = f'{PACKAGEDIR}/data/aux_list_new.csv'
 t_list = pd.read_csv(tar_path)
 a_list = pd.read_csv(aux_path)
 sch = pd.read_csv(schedule_path)
+
+target_definition_files = ['primary-exoplanet-extended', 'auxiliary-exoplanet-reduced', 'auxiliary-standard', 'occultation-standard', \
+    'monitoring-standard', 'secondary-exoplanet']
+
+t_list = pd.read_csv(f"{PACKAGEDIR}/data/{target_definition_files[0]}_targets.csv")
+
 # author='VK'
 
 #save a stripped version as csv for LLNL
@@ -220,7 +226,8 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
     
     #if full visibility
     def full_visibility():
-        print('Target is visible for the entire visit')
+        # print('Target is visible for the entire visit')
+        tqdm.write(f'{st} to {sp}: Target is visible for the entire visit')
         
         #break observation sequence into <= 90 minute blocks
         n = (sp - st)/dt
@@ -300,10 +307,13 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
 
         #find an occultation target for this visit that will always be visible
         def find_occultation_target(oc_starts, oc_stops, tar_path, tar_path_ALL, aux_path, ra, dec):
-            logging.info(f"Searching for occultation targets from {st} to {sp}")
+            # logging.info(f"Searching for occultation targets from {st} to {sp}")
+            # tqdm.write(f"{st} to {sp}: Searching for occultation targets from {st} to {sp}")
             # Try to find a target from tar_path
             info, flag = sch_occ(oc_starts, oc_stops, tar_path, sort_key = 'closest', prev_obs=[ra,dec])
-            logging.info(f"From target list itself? {flag}")
+            if flag:
+                tqdm.write(f"{st} to {sp}:     Found occultation target from target list itself")
+            # logging.info(f"From target list itself? {flag}")
             
             oc_flag=1
             # if not flag:
@@ -315,7 +325,9 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
             if not flag:
                 # If still not found, try aux_path
                 info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
-                logging.info(f"From aux list? {flag}")
+                if flag:
+                     tqdm.write(f"{st} to {sp}:         Found occultation target from target list itself")
+                # logging.info(f"From aux list? {flag}")
             
             if flag:
                 target_info = {
@@ -326,7 +338,8 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
                 # logging.info(f"Occultation targets found: {target_info['name']}")
                 return info, flag#target_info
             else:
-                logging.warning(f"No suitable occultation targets found for period {st} to {sp}")
+                tqdm.write(f"{st} to {sp}:             No suitable occultation targets found!!!!")
+                # logging.warning(f"No suitable occultation targets found for period {st} to {sp}")
                 return None
 
         info, flag = find_occultation_target(oc_starts, oc_stops, tar_path, tar_path_ALL, aux_path, ra, dec)

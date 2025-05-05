@@ -5,12 +5,12 @@ import matplotlib.dates as mdates
 from datetime import datetime
 from astropy.time import Time
 import os
-import helper_codes_claude as hcc
+import helper_codes_aux as hcc
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 
 # Parse the XML file
-fname = f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_TEST_deprioritized.xml'#calendar_Pandora_Schedule_27Aug2024_Claude.xml'
+fname = f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_TEST.xml'#calendar_Pandora_Schedule_27Aug2024_Claude.xml'
 tree = ET.parse(fname)
 root = tree.getroot()
 
