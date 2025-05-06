@@ -1276,7 +1276,9 @@ if __name__ == "__main__":
     # print(updated_targ_list)
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_{pandora_start[0:10]}_to_{pandora_stop[0:10]}.pkl"#f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
-    # aux_key = None
+    # create aux_list_new
+    create_aux_list = helper_codes.create_aux_list(target_definition_files, PACKAGEDIR)
+
 
     run_ = 'vis_and_schedule'#'target_visibility'#'schedule_only'#
     if run_ == 'schedule_only':

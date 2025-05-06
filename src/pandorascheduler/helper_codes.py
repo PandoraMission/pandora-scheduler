@@ -964,3 +964,53 @@ def read_priority_csv(file_path):
     df = pd.read_csv(file_path, skiprows=data_start)
 
     return metadata, df
+
+def create_aux_list(target_definition_files, PACKAGEDIR):
+    import pandas as pd
+    from functools import reduce
+    import os
+    
+    # Create full file paths
+    file_paths = [f"{PACKAGEDIR}/data/{file}_targets.csv" for file in target_definition_files]
+
+    # Read all CSV files into a list of DataFrames
+    dfs = []
+    for file in file_paths:
+        if os.path.exists(file):
+            df = pd.read_csv(file)
+            dfs.append(df)
+        else:
+            print(f"Warning: File {file} not found. Skipping.")
+
+    if not dfs:
+        print("No valid files found. Exiting.")
+        exit()
+
+    # Store the column order of the first file
+    first_file_columns = dfs[0].columns.tolist()
+
+    # Find common columns
+    common_columns = list(reduce(set.intersection, [set(df.columns) for df in dfs]))
+
+    # Select only common columns from each DataFrame
+    dfs = [df[common_columns] for df in dfs]
+
+    # Concatenate all DataFrames
+    combined_df = pd.concat(dfs, ignore_index=True)
+
+    # Remove duplicate rows if any
+    combined_df = combined_df.drop_duplicates()
+
+    # Sort the columns of combined_df to match the order in the first file
+    sorted_columns = [col for col in first_file_columns if col in common_columns]
+    combined_df = combined_df[sorted_columns]
+
+    # Write the result to a new CSV file
+    output_file = f"{PACKAGEDIR}/data/aux_list_new.csv"
+    combined_df.to_csv(output_file, index=False)
+
+    # print(f"Combined CSV created with {len(common_columns)} common columns.")
+    # print(f"Output file: {output_file}")
+    # print("Common columns in order:", sorted_columns)
+
+    return
