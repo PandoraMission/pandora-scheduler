@@ -691,12 +691,12 @@ def Schedule(
             # VK END
 
             if obs_rng[0] < obs_start:
-                # try:
-                if 1 ==1:
+                try:
+                # if 1 ==1:
                     ra_aux_partial_transit = target_list[target_list["Star Name"] == star_name].RA.values[0]
                     dec_aux_partial_transit = target_list[target_list["Star Name"] == star_name].DEC.values[0]
-                # except:
-                else:
+                except:
+                # else:
                     print(f"{star_name} not in primary targets, just use SkyCoord")
                     star_sc = SkyCoord.from_name(star_name)
                     ra_aux_partial_transit = star_sc.ra.deg
