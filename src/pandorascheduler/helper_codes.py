@@ -832,7 +832,7 @@ def process_target_files(keyword):
                 data = json.load(f)
             
             # Remove unwanted keys
-            for key in ['Time Created', 'Version', 'Author']:
+            for key in ['Time Created', 'Version', 'Time Updated', 'Author']:
                 data.pop(key, None)
             
             flat_data = flatten_dict(data)
