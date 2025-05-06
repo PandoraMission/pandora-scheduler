@@ -96,7 +96,10 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 vda_subelement_.text = str(targ_info['StarRoiDetMethod'].iloc[0])
             elif vda_key == 'VDA_numPredefinedStarRois' and targ_info['StarRoiDetMethod'].iloc[0] != 1:
                 vda_subelement_ = ET.SubElement(vda, xml_key)
-                vda_subelement_.text = str(targ_info['numPredefinedStarRois'].iloc[0])
+                try:
+                    vda_subelement_.text = str(targ_info['numPredefinedStarRois'].iloc[0])
+                except:
+                    vda_subelement_.text = str('-999')
             elif vda_key == 'VDA_PredefinedStarRoiRa' and targ_info['StarRoiDetMethod'].iloc[0] != 1:
                 roi_coord_columns = [col for col in targ_info.columns if col.startswith('ROI_coord_') and col != 'ROI_coord_epoch']
                 roi_coord_values = targ_info[roi_coord_columns].dropna(axis = 1)
@@ -594,7 +597,7 @@ def schedule_occultation_targets(v_names, starts, stops, path, o_df, o_list, try
     if 'Visibility' not in o_df.columns:
         o_df['Visibility'] = np.nan
 
-    for v_name in tqdm(v_names, desc=f"Finding visible occultation target from {try_occ_targets}", leave = False):#, position=position):#, leave=leave):#, leave=(position != 0)):#desc="Processing targets"):
+    for v_name in tqdm(v_names, desc=f"{st} to {sp}: Searching for occultation target from {try_occ_targets}", leave = False):#, position=position):#, leave=leave):#, leave=(position != 0)):#desc="Processing targets"):
     # for v_name in v_names:
         # Process visibility for this target
         vis = pd.read_csv(f"{path}/{v_name}/Visibility for {v_name}.csv")

@@ -227,7 +227,7 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
     #if full visibility
     def full_visibility():
         # print('Target is visible for the entire visit')
-        tqdm.write(f'{st} to {sp}: Target is visible for the entire visit')
+        tqdm.write(f'{st} to {sp}: No occultations needed; target is visible for the entire visit')
         
         #break observation sequence into <= 90 minute blocks
         n = (sp - st)/dt
@@ -326,7 +326,7 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
                 # If still not found, try aux_path
                 info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
                 if flag:
-                     tqdm.write(f"{st} to {sp}:         Found occultation target from target list itself")
+                     tqdm.write(f"{st} to {sp}:         Found occultation target from aux list")
                 # logging.info(f"From aux list? {flag}")
             
             if flag:
