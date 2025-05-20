@@ -112,7 +112,10 @@ def Schedule(
     transit_have = pd.DataFrame(
         np.zeros(len(planet_names)), columns=["Transits Acquired"]
     )
-    tracker = pd.concat([planet_names, transit_need, transit_have], axis=1)
+    primary_target = pd.DataFrame(
+        np.array(target_list["Primary Target"]), columns=["Primary Target"]
+    )
+    tracker = pd.concat([planet_names, primary_target, transit_need, transit_have], axis=1)
 
     ### Check if previous observations already exist and if so update tracker
     if os.path.exists(f"{PACKAGEDIR}/data/Pandora_archive.csv") == True:
@@ -1150,15 +1153,11 @@ def Schedule_all_scratch(
         tmp_planet_name_lst = tmp_csv['Planet Name']
         tmp_star_name_lst = tmp_csv['Star Name']
 
-        # if "exoplanet" in fn_:#(fn_ == 'primary-exoplanet') or (fn_ == "primary-exoplanet-extended"):
-        if fn_ in ('exoplanet', 'auxiliary-exoplanet', 'primary-exoplanet', 'secondary-exoplanet'):
+        if "exoplanet" in fn_:
             sub_dir = "targets"
         else:
             sub_dir = "aux_targets"
 
-        # sub_dir = "targets" if fn_ == "primary-exoplanet" or "primary-exoplanet-extended" else "aux_targets"
-        # print(fn_, sub_dir)
-        # print()
         vis_done = []
         for s in range(len(tmp_star_name_lst)):
             vis_done.append(os.path.exists(f'{PACKAGEDIR}/data/{sub_dir}/{tmp_star_name_lst[s]}/Visibility for {tmp_star_name_lst[s]}.csv'))
@@ -1167,29 +1166,11 @@ def Schedule_all_scratch(
             transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \
                 save_pth = f'{PACKAGEDIR}/data/{sub_dir}/', targ_list = f'{PACKAGEDIR}/data/{fn_}_targets.csv')
 
-        # #Determine primary transits for targets and partners during Pandora's 
-        # #science observation lifetime.
-        if "exoplanet" in fn_:#if (fn_ == 'primary-exoplanet') or (fn_ == "primary-exoplanet-extended"):
+        # Determine primary transits for targets and partners during Pandora's science observation lifetime.
+        if "exoplanet" in fn_:
             for s in range(len(tmp_star_name_lst)):
                 if not os.path.exists(f'{PACKAGEDIR}/data/{sub_dir}/{tmp_star_name_lst[s]}/{tmp_planet_name_lst[s]}'):
                     transits.transit_timing(f'{fn_}_targets.csv', tmp_planet_name_lst[s], tmp_star_name_lst[s])
-
-    # vis_done=[]
-    # for s in range(len(prim_star_name_list)):
-    #     vis_done.append(os.path.exists(f'{PACKAGEDIR}/data/targets/{prim_star_name_list[s]}/Visibility for {prim_star_name_list[s]}.csv'))
-    # if np.all(vis_done) == False:
-    #     transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop) 
-
-    # #Determine primary transits for targets and partners during Pandora's 
-    # #science observation lifetime.
-    # for t in range(len(prim_planet_name_list)):
-    #     if not os.path.exists(f'{PACKAGEDIR}/data/targets/{prim_star_name_list[t]}/{prim_planet_name_list[t]}'):
-    #         # transits.transit_timing(target_list, t_list[t], ts_list[t])
-    #         transits.transit_timing(f'{target_definition_files[0]}_targets.csv', prim_planet_name_list[t], prim_star_name_list[t])
-
-    # for t in range(len(tp_list)):
-    #     if not os.path.exists(f'{PACKAGEDIR}/data/targets/{ts_list[t]}/{tp_list[t]}'):
-    #         transits.transit_timing(target_partner_list, tp_list[t], ps_list[t])
     
     targets_prim_csv = pd.read_csv(f'{PACKAGEDIR}/data/{target_definition_files[0]}_targets.csv', sep=',')
     targets_aux_csv = pd.read_csv(f'{PACKAGEDIR}/data/{target_definition_files[1]}_targets.csv', sep=',')
@@ -1198,8 +1179,7 @@ def Schedule_all_scratch(
     tp_list = targets_aux_csv['Planet Name']
     ps_list = targets_aux_csv['Star Name']
     for t in tqdm(range(len(t_list))):
-        #Determine if there is overlap between target planets' transits and any 
-        #companion planets
+        #Determine if there is overlap between target planets' transits and any companion planets
         try:
         # if 1 == 1: 
             vis = pd.read_csv(f'{PACKAGEDIR}/data/targets/{ts_list[t]}/{t_list[t]}/Visibility for {t_list[t]}.csv')
@@ -1208,8 +1188,7 @@ def Schedule_all_scratch(
         # else:
             transits.Transit_overlap(os.path.basename(primary_targ_list),f'{target_definition_files[1]}_targets.csv',ts_list[t])
         
-        #Determine if there is overlap between target planets' transits
-        #and South Atlantic Anomaly crossing
+        #Determine if there is overlap between target planets' transits and South Atlantic Anomaly crossing
         try:
         # if 1 == 1:
             vis = pd.read_csv(f'{PACKAGEDIR}/data/targets/{ts_list[t]}/{t_list[t]}/Visibility for {t_list[t]}.csv')
@@ -1230,9 +1209,9 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-11-15 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2026-12-15 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2026-11-15 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2025-11-15 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-12-15 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2026-11-15 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0 # days
 
@@ -1281,7 +1260,7 @@ if __name__ == "__main__":
 
     aux_key = None
 
-    run_ = 'target_visibility'#'vis_and_schedule'#'schedule_only'#
+    run_ = 'vis_and_schedule'#'target_visibility'#'schedule_only'#
     if run_ == 'schedule_only':
         Schedule(pandora_start, pandora_stop, primary_targ_list, obs_window, transit_coverage_min, sched_wts, min_visibility, deprioritization_limit, \
             aux_key = aux_key, aux_list=aux_targ_list, fname_tracker = fname_tracker, commissioning_time = commissioning_time_, \
