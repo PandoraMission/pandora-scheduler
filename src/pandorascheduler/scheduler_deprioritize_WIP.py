@@ -204,6 +204,7 @@ def Schedule(
             "Schedule Factor",
             "Transit Factor",
             "Quality Factor",
+            "Comments",
         ],
     )
     
@@ -238,7 +239,8 @@ def Schedule(
         #     cut_i=np.mod(cut_i+1, 37)
         #     continue
         
-        tracker = tracker.sort_values(by=["Transit Priority"]).reset_index(drop=True)
+        # tracker = tracker.sort_values(by=["Transit Priority"]).reset_index(drop=True)
+        tracker = tracker.sort_values(by=['Primary Target', 'Transit Priority'], ascending=[False, True]).reset_index(drop=True)
         obs_rng = pd.date_range(start, stop, freq="min")
         temp_df = pd.DataFrame(
             [],
@@ -251,46 +253,52 @@ def Schedule(
                 "Schedule Factor",
                 "Transit Factor",
                 "Quality Factor",
+                "Comments",
             ],
         )
 
-        ### First check if a no phase event is within observing window
+        ### First check if a Target of Opportunity is within observing window
         overlap_nophase = obs_rng.intersection(nophase_starts)
         if len(overlap_nophase) > 0:
-            # print('Time critical Target')
+            # print('ToO')
             obs_start = nophase_starts[nophase_starts.index(overlap_nophase[0])]
             obs_stop = nophase_stops[nophase_starts.index(overlap_nophase[0])]
-            target = nophase_targets[nophase_starts.index(overlap_nophase[0])]
+            ToO = nophase_targets[nophase_starts.index(overlap_nophase[0])]
+
+            sched = [[ToO, obs_start, obs_stop]]
+            sched = pd.DataFrame(sched, columns=["Target", "Observation Start", "Observation Stop"])
 
             if obs_rng[0] < obs_start:
-                free = [["Free Time", obs_rng[0], obs_start]]
+                free = [["Free Time, Need filler", obs_rng[0], obs_start]]
                 free = pd.DataFrame(
                     free, columns=["Target", "Observation Start", "Observation Stop"]
                 )
                 sched_df = pd.concat([sched_df, free], axis=0)
 
-            sched = [[target, obs_start, obs_stop]]
-            sched = pd.DataFrame(
-                sched, columns=["Target", "Observation Start", "Observation Stop"]
-            )
+            if sched_df.empty:
+                sched_df = sched.copy()
+            else:        
+                sched_df = pd.concat([sched_df, sched], axis=0)
 
-            sched_df = pd.concat([sched_df, sched], axis=0)
-            # if sched_df.empty:
-            #     sched_df = sched.copy()
-            # else:        
-            #     sched_df = pd.concat([sched_df, sched], axis=0)
-
-            logging.info("Scheduled no phase event", target)
+            logging.info("Scheduled Target of Opportunity", target)
             start = obs_stop
             stop = start + obs_window
 
-            import re
-            def remove_suffix(name):
-                return re.sub(r' [a-z]$', '', name)
-            star_name_tmp = tracker['Planet Name'].apply(remove_suffix)
+            print('CHECK CODE BELOW WITH TF (probably comes from PB):')
+
+            # import re
+            # def remove_suffix(name):
+            #     return re.sub(r' [a-z]$', '', name)
+            star_name_tmp = tracker['Planet Name'].apply(helper_codes.remove_suffix)
             
-            #Check MTR for each planet
+            #Check minimum targeting requirements (MTR) for each planet
             for i in range(len(tracker)):
+
+                VK_test = True
+                if VK_test:
+                    transits_in_obs_rng = helper_codes.check_if_transits_in_obs_window(tracker, temp_df, target_list, start, \
+                        pandora_start, pandora_stop, sched_start, sched_stop, obs_rng, obs_window, sched_wts, transit_coverage_min)
+
                 # tf = tracker["Transit Factor"][i]
                 tf = tracker["Transits Left in Lifetime"][i]/tracker["Transits Needed"][i]
                 if tf <= 1.:
@@ -298,17 +306,6 @@ def Schedule(
                     #final transit occurs within the observation window
                     planet_name = tracker["Planet Name"][i]
                     planet_data = pd.read_csv(f"{PACKAGEDIR}/data/targets/{star_name_tmp[i]}/{planet_name}/Visibility for {planet_name}.csv")
-                    
-                    # start_transit = planet_data["Transit_Start"].iloc[-1]
-                    # end_transit = planet_data["Transit_Stop"].iloc[-1]   
-                    # start_transit = start_transit - timedelta(
-                    #     seconds=start_transit.second,
-                    #     microseconds=start_transit.microsecond,
-                    # )
-                    # end_transit = end_transit - timedelta(
-                    #     seconds=end_transit.second,
-                    #     microseconds=end_transit.microsecond,
-                    # )
 
                     start_transit = Time(planet_data["Transit_Start"].iloc[-1], format='mjd', scale='utc')
                     end_transit = Time(planet_data["Transit_Stop"].iloc[-1], format='mjd', scale='utc')  
@@ -369,6 +366,7 @@ def Schedule(
                                 saa_cover,
                                 s_factor,
                                 q_factor,
+                                np.nan,
                             ]
                         ]
                         sched = pd.DataFrame(
@@ -381,6 +379,7 @@ def Schedule(
                                 "SAA Overlap",
                                 "Schedule Factor",
                                 "Quality Factor",
+                                "Comments",
                             ],
                         )
                         # sched_df = pd.concat([sched_df, sched], axis=0)
@@ -411,6 +410,7 @@ def Schedule(
                             ]
                         )
                         # logging.warning(planet_name, "{planet_name} Observation Forced Over No Phase Event")
+                        print(f'{planet_name} Observation Forced Over Targer of Opportunity')
                         logging.info(
                             "Scheduled the ",
                             tracker.loc[
@@ -436,7 +436,7 @@ def Schedule(
                         )
                         sched_df = pd.concat([sched_df, free], axis=0)
         
-                    sched = [[target, obs_start, obs_stop]]
+                    sched = [[ToO, obs_start, obs_stop]]
                     sched = pd.DataFrame(
                         sched, columns=["Target", "Observation Start", "Observation Stop"]
                     )
@@ -447,7 +447,7 @@ def Schedule(
                         sched_df = pd.concat([sched_df, sched], axis=0)
         
                     logging.info("Scheduled no phase event", target)
-                    # logging.warning(target, "Warning: {planet_name} has MTRM < 2 and is transiting during the event")
+                    # logging.warning(ToO, "Warning: {planet_name} has MTRM < 2 and is transiting during the event")
                     start = obs_stop
                     stop = start + obs_window
                     #recalculate MTRM?
@@ -460,144 +460,149 @@ def Schedule(
        
 
         ### Next look at each planet and determine if transit occurs in window
-        for i in range(len(tracker)):
-            planet_name = tracker["Planet Name"][i]
+        # for i in range(len(tracker)):
+        #     planet_name = tracker["Planet Name"][i]
 
-            if (
-                tracker.loc[(tracker["Planet Name"] == planet_name), "Transits Needed"][
-                    i
-                ]
-                == 0
-            ):
-                pass
+        #     if (
+        #         tracker.loc[(tracker["Planet Name"] == planet_name), "Transits Needed"][
+        #             i
+        #         ]
+        #         == 0
+        #     ):
+        #         pass
 
-            else:
-                star_name = target_list["Star Name"][
-                    np.where(target_list["Planet Name"] == planet_name)[0][0]
-                ]
-                planet_data = pd.read_csv(
-                    f"{PACKAGEDIR}/data/targets/{star_name}/{planet_name}/Visibility for {planet_name}.csv"
-                )
-                planet_data = planet_data.drop(
-                    planet_data.index[
-                        (planet_data["Transit_Coverage"] < transit_coverage_min)
-                    ]
-                ).reset_index(drop=True)
-                planet_data["Transit_Start"] = Time(
-                    planet_data["Transit_Start"], format="mjd", scale="utc"
-                ).to_value("datetime")
-                planet_data["Transit_Stop"] = Time(
-                    planet_data["Transit_Stop"], format="mjd", scale="utc"
-                ).to_value("datetime")
-                planet_data = planet_data.drop(
-                    planet_data.index[(planet_data["Transit_Start"] < start)]
-                ).reset_index(drop=True)
-                start_transits = planet_data["Transit_Start"].copy()
-                end_transits = planet_data["Transit_Stop"].copy()
-                # start_transits = Time(planet_data["Transit_Start"], format="mjd", scale="utc").to_value("datetime")
-                # end_transits = Time(planet_data["Transit_Stop"], format="mjd", scale="utc").to_value("datetime")
+        #     else:
+        #         star_name = target_list["Star Name"][
+        #             np.where(target_list["Planet Name"] == planet_name)[0][0]
+        #         ]
+        #         planet_data = pd.read_csv(
+        #             f"{PACKAGEDIR}/data/targets/{star_name}/{planet_name}/Visibility for {planet_name}.csv"
+        #         )
+        #         planet_data = planet_data.drop(
+        #             planet_data.index[
+        #                 (planet_data["Transit_Coverage"] < transit_coverage_min)
+        #             ]
+        #         ).reset_index(drop=True)
+        #         planet_data["Transit_Start"] = Time(
+        #             planet_data["Transit_Start"], format="mjd", scale="utc"
+        #         ).to_value("datetime")
+        #         planet_data["Transit_Stop"] = Time(
+        #             planet_data["Transit_Stop"], format="mjd", scale="utc"
+        #         ).to_value("datetime")
+        #         planet_data = planet_data.drop(
+        #             planet_data.index[(planet_data["Transit_Start"] < start)]
+        #         ).reset_index(drop=True)
+        #         start_transits = planet_data["Transit_Start"].copy()
+        #         end_transits = planet_data["Transit_Stop"].copy()
+        #         # start_transits = Time(planet_data["Transit_Start"], format="mjd", scale="utc").to_value("datetime")
+        #         # end_transits = Time(planet_data["Transit_Stop"], format="mjd", scale="utc").to_value("datetime")
 
-                p_trans = planet_data.index[
-                    (pandora_start <= start_transits) & (end_transits <= pandora_stop)
-                ]
-                s_trans = planet_data.index[
-                    (sched_start <= start_transits) & (end_transits <= sched_stop)
-                ]
-                tracker.loc[
-                    (tracker["Planet Name"] == planet_name), "Transits Left in Lifetime"
-                ] = len(p_trans)
-                tracker.loc[
-                    (tracker["Planet Name"] == planet_name), "Transits Left in Schedule"
-                ] = len(s_trans)
-                tracker.loc[
-                    (tracker["Planet Name"] == planet_name), "Transit Priority"
-                ] = (
-                    tracker.loc[
-                        (tracker["Planet Name"] == planet_name),
-                        "Transits Left in Lifetime",
-                    ]
-                    - tracker.loc[
-                        (tracker["Planet Name"] == planet_name), "Transits Needed"
-                    ]
-                )
+        #         p_trans = planet_data.index[
+        #             (pandora_start <= start_transits) & (end_transits <= pandora_stop)
+        #         ]
+        #         s_trans = planet_data.index[
+        #             (sched_start <= start_transits) & (end_transits <= sched_stop)
+        #         ]
+        #         tracker.loc[
+        #             (tracker["Planet Name"] == planet_name), "Transits Left in Lifetime"
+        #         ] = len(p_trans)
+        #         tracker.loc[
+        #             (tracker["Planet Name"] == planet_name), "Transits Left in Schedule"
+        #         ] = len(s_trans)
+        #         tracker.loc[
+        #             (tracker["Planet Name"] == planet_name), "Transit Priority"
+        #         ] = (
+        #             tracker.loc[
+        #                 (tracker["Planet Name"] == planet_name),
+        #                 "Transits Left in Lifetime",
+        #             ]
+        #             - tracker.loc[
+        #                 (tracker["Planet Name"] == planet_name), "Transits Needed"
+        #             ]
+        #         )
 
-                # Remove seconds and below from times
-                for j in range(len(start_transits)):
-                    start_transits.iloc[j] = start_transits.iloc[j] - timedelta(
-                        seconds=start_transits.iloc[j].second,
-                        microseconds=start_transits.iloc[j].microsecond,
-                    )
-                    end_transits.iloc[j] = end_transits.iloc[j] - timedelta(
-                        seconds=end_transits.iloc[j].second,
-                        microseconds=end_transits.iloc[j].microsecond,
-                    )
+        #         # Remove seconds and below from times
+        #         for j in range(len(start_transits)):
+        #             start_transits.iloc[j] = start_transits.iloc[j] - timedelta(
+        #                 seconds=start_transits.iloc[j].second,
+        #                 microseconds=start_transits.iloc[j].microsecond,
+        #             )
+        #             end_transits.iloc[j] = end_transits.iloc[j] - timedelta(
+        #                 seconds=end_transits.iloc[j].second,
+        #                 microseconds=end_transits.iloc[j].microsecond,
+        #             )
 
-                early_start = end_transits - timedelta(
-                    hours=20
-                )  # Earliest start time to capture transit plus >=4 hours post transit
-                late_start = start_transits - timedelta(
-                    hours=4
-                )  # Latest start time to capture transit plus >=4 hours pre transit
+        #         early_start = end_transits - timedelta(
+        #             hours=20
+        #         )  # Earliest start time to capture transit plus >=4 hours post transit
+        #         late_start = start_transits - timedelta(
+        #             hours=4
+        #         )  # Latest start time to capture transit plus >=4 hours pre transit
 
-                # Check if any transit occurs during observing window
-                for j in range(len(early_start)):
-                    start_rng = pd.date_range(early_start[j], late_start[j], freq="min")
-                    overlap_times = obs_rng.intersection(start_rng)
-                    if len(overlap_times) > 0:
-                        # Calc a 'transit factor'
-                        t_left = tracker.loc[
-                            (tracker["Planet Name"] == planet_name),
-                            "Transits Left in Lifetime",
-                        ].iloc[0]
-                        t_need = tracker.loc[
-                            (tracker["Planet Name"] == planet_name), "Transits Needed"
-                        ].iloc[0]
-                        t_factor = t_left / t_need
+        #         # Check if any transit occurs during observing window
+        #         for j in range(len(early_start)):
+        #             start_rng = pd.date_range(early_start[j], late_start[j], freq="min")
+        #             overlap_times = obs_rng.intersection(start_rng)
+        #             if len(overlap_times) > 0:
+        #                 # Calc a 'transit factor'
+        #                 t_left = tracker.loc[
+        #                     (tracker["Planet Name"] == planet_name),
+        #                     "Transits Left in Lifetime",
+        #                 ].iloc[0]
+        #                 t_need = tracker.loc[
+        #                     (tracker["Planet Name"] == planet_name), "Transits Needed"
+        #                 ].iloc[0]
+        #                 t_factor = t_left / t_need
 
-                        # Calc scheduling efficiency factor
-                        obs_start = overlap_times[0]
-                        gap_time = obs_start - obs_rng[0] # THIS IS THE time between the start of the current observation window and the start of the potential observation.
-                        s_factor = 1 - (gap_time / obs_window)  # maximize
+        #                 # Calc scheduling efficiency factor
+        #                 obs_start = overlap_times[0]
+        #                 gap_time = obs_start - obs_rng[0] # THIS IS THE time between the start of the current observation window and the start of the potential observation.
+        #                 s_factor = 1 - (gap_time / obs_window)  # maximize
 
-                        # Calc a quality factor (currently based on transit coverage, SAA crossing, scheduling efficiency)
-                        trans_cover = planet_data["Transit_Coverage"][j]  # maximize
-                        saa_cover = planet_data["SAA_Overlap"][j]
-                        q_factor = (
-                            (sched_wts[0] * trans_cover)
-                            + (sched_wts[1] * (1 - saa_cover))
-                            + (sched_wts[2] * s_factor)
-                        )
+        #                 # Calc a quality factor (currently based on transit coverage, SAA crossing, scheduling efficiency)
+        #                 trans_cover = planet_data["Transit_Coverage"][j]  # maximize
+        #                 saa_cover = planet_data["SAA_Overlap"][j]
+        #                 q_factor = (
+        #                     (sched_wts[0] * trans_cover)
+        #                     + (sched_wts[1] * (1 - saa_cover))
+        #                     + (sched_wts[2] * s_factor)
+        #                 )
 
-                        temp = [
-                            [
-                                planet_name,
-                                obs_start,
-                                gap_time,
-                                planet_data["Transit_Coverage"][j],
-                                saa_cover,
-                                s_factor,
-                                t_factor,
-                                q_factor,
-                            ]
-                        ]
-                        temp = pd.DataFrame(
-                            temp,
-                            columns=[
-                                "Planet Name",
-                                "Obs Start",
-                                "Obs Gap Time",
-                                "Transit Coverage",
-                                "SAA Overlap",
-                                "Schedule Factor",
-                                "Transit Factor",
-                                "Quality Factor",
-                            ],
-                        )
-                        # temp_df = pd.concat([temp_df, temp], axis=0) LATEST PYTHON DOESN'T LIKE THIS SO CHANGE IT TO THE LINE BELOW
-                        if temp_df.empty:
-                            temp_df = temp.copy()
-                        else:
-                            temp_df = pd.concat([temp_df, temp], axis=0)#, ignore_index=True)
+        #                 temp = [
+        #                     [
+        #                         planet_name,
+        #                         obs_start,
+        #                         gap_time,
+        #                         planet_data["Transit_Coverage"][j],
+        #                         saa_cover,
+        #                         s_factor,
+        #                         t_factor,
+        #                         q_factor,
+        #                         np.nan,
+        #                     ]
+        #                 ]
+        #                 temp = pd.DataFrame(
+        #                     temp,
+        #                     columns=[
+        #                         "Planet Name",
+        #                         "Obs Start",
+        #                         "Obs Gap Time",
+        #                         "Transit Coverage",
+        #                         "SAA Overlap",
+        #                         "Schedule Factor",
+        #                         "Transit Factor",
+        #                         "Quality Factor",
+        #                         "Comments",
+        #                     ],
+        #                 )
+        #                 # temp_df = pd.concat([temp_df, temp], axis=0) LATEST PYTHON DOESN'T LIKE THIS SO CHANGE IT TO THE LINE BELOW
+        #                 if temp_df.empty:
+        #                     temp_df = temp.copy()
+        #                 else:
+        #                     temp_df = pd.concat([temp_df, temp], axis=0)#, ignore_index=True)
+
+        temp_df = helper_codes.check_if_transits_in_obs_window(tracker, temp_df, target_list, start, \
+            pandora_start, pandora_stop, sched_start, sched_stop, obs_rng, obs_window, sched_wts, transit_coverage_min)
 
         ### Check if there's no transits occuring during the observing window
         ### Schedule auxiliary observation if possible
@@ -740,6 +745,7 @@ def Schedule(
                     saa_cover,
                     s_factor,
                     q_factor,
+                    np.nan,
                 ]
             ]
             sched = pd.DataFrame(
@@ -752,6 +758,7 @@ def Schedule(
                     "SAA Overlap",
                     "Schedule Factor",
                     "Quality Factor",
+                    "Comments",
                 ],
             )
 

@@ -1026,3 +1026,152 @@ def create_aux_list(target_definition_files, PACKAGEDIR):
     # print("Common columns in order:", sorted_columns)
 
     return
+
+def check_if_transits_in_obs_window(tracker, temp_df, target_list, start, pandora_start, pandora_stop, \
+    sched_start, sched_stop, obs_rng, obs_window, sched_wts, transit_coverage_min):
+    for i in range(len(tracker)):
+        planet_name = tracker["Planet Name"][i]
+
+        if (
+            tracker.loc[(tracker["Planet Name"] == planet_name), "Transits Needed"][
+                i
+            ]
+            == 0
+        ):
+            pass
+
+        else:
+            star_name = target_list["Star Name"][
+                np.where(target_list["Planet Name"] == planet_name)[0][0]
+            ]
+            planet_data = pd.read_csv(
+                f"{PACKAGEDIR}/data/targets/{star_name}/{planet_name}/Visibility for {planet_name}.csv"
+            )
+            planet_data = planet_data.drop(
+                planet_data.index[
+                    (planet_data["Transit_Coverage"] < transit_coverage_min)
+                ]
+            ).reset_index(drop=True)
+            planet_data["Transit_Start"] = Time(
+                planet_data["Transit_Start"], format="mjd", scale="utc"
+            ).to_value("datetime")
+            planet_data["Transit_Stop"] = Time(
+                planet_data["Transit_Stop"], format="mjd", scale="utc"
+            ).to_value("datetime")
+            planet_data = planet_data.drop(
+                planet_data.index[(planet_data["Transit_Start"] < start)]
+            ).reset_index(drop=True)
+            start_transits = planet_data["Transit_Start"].copy()
+            end_transits = planet_data["Transit_Stop"].copy()
+            # start_transits = Time(planet_data["Transit_Start"], format="mjd", scale="utc").to_value("datetime")
+            # end_transits = Time(planet_data["Transit_Stop"], format="mjd", scale="utc").to_value("datetime")
+
+            p_trans = planet_data.index[
+                (pandora_start <= start_transits) & (end_transits <= pandora_stop)
+            ]
+            s_trans = planet_data.index[
+                (sched_start <= start_transits) & (end_transits <= sched_stop)
+            ]
+            tracker.loc[
+                (tracker["Planet Name"] == planet_name), "Transits Left in Lifetime"
+            ] = len(p_trans)
+            tracker.loc[
+                (tracker["Planet Name"] == planet_name), "Transits Left in Schedule"
+            ] = len(s_trans)
+            tracker.loc[
+                (tracker["Planet Name"] == planet_name), "Transit Priority"
+            ] = (
+                tracker.loc[
+                    (tracker["Planet Name"] == planet_name),
+                    "Transits Left in Lifetime",
+                ]
+                - tracker.loc[
+                    (tracker["Planet Name"] == planet_name), "Transits Needed"
+                ]
+            )
+
+            # Remove seconds and below from times
+            for j in range(len(start_transits)):
+                start_transits.iloc[j] = start_transits.iloc[j] - timedelta(
+                    seconds=start_transits.iloc[j].second,
+                    microseconds=start_transits.iloc[j].microsecond,
+                )
+                end_transits.iloc[j] = end_transits.iloc[j] - timedelta(
+                    seconds=end_transits.iloc[j].second,
+                    microseconds=end_transits.iloc[j].microsecond,
+                )
+
+            early_start = end_transits - timedelta(
+                hours=20
+            )  # Earliest start time to capture transit plus >=4 hours post transit
+            late_start = start_transits - timedelta(
+                hours=4
+            )  # Latest start time to capture transit plus >=4 hours pre transit
+
+            # Check if any transit occurs during observing window
+            for j in range(len(early_start)):
+                start_rng = pd.date_range(early_start[j], late_start[j], freq="min")
+                overlap_times = obs_rng.intersection(start_rng)
+                if len(overlap_times) > 0:
+                    # Calc a 'transit factor'
+                    t_left = tracker.loc[
+                        (tracker["Planet Name"] == planet_name),
+                        "Transits Left in Lifetime",
+                    ].iloc[0]
+                    t_need = tracker.loc[
+                        (tracker["Planet Name"] == planet_name), "Transits Needed"
+                    ].iloc[0]
+                    t_factor = t_left / t_need
+
+                    # Calc scheduling efficiency factor
+                    obs_start = overlap_times[0]
+                    gap_time = obs_start - obs_rng[0] # THIS IS THE time between the start of the current observation window and the start of the potential observation.
+                    s_factor = 1 - (gap_time / obs_window)  # maximize
+
+                    # Calc a quality factor (currently based on transit coverage, SAA crossing, scheduling efficiency)
+                    trans_cover = planet_data["Transit_Coverage"][j]  # maximize
+                    saa_cover = planet_data["SAA_Overlap"][j]
+                    q_factor = (
+                        (sched_wts[0] * trans_cover)
+                        + (sched_wts[1] * (1 - saa_cover))
+                        + (sched_wts[2] * s_factor)
+                    )
+
+                    temp = [
+                        [
+                            planet_name,
+                            obs_start,
+                            gap_time,
+                            planet_data["Transit_Coverage"][j],
+                            saa_cover,
+                            s_factor,
+                            t_factor,
+                            q_factor,
+                            np.nan,
+                        ]
+                    ]
+                    temp = pd.DataFrame(
+                        temp,
+                        columns=[
+                            "Planet Name",
+                            "Obs Start",
+                            "Obs Gap Time",
+                            "Transit Coverage",
+                            "SAA Overlap",
+                            "Schedule Factor",
+                            "Transit Factor",
+                            "Quality Factor",
+                            "Comments",
+                        ],
+                    )
+                    # temp_df = pd.concat([temp_df, temp], axis=0) LATEST PYTHON DOESN'T LIKE THIS SO CHANGE IT TO THE LINE BELOW
+                    if temp_df.empty:
+                        temp_df = temp.copy()
+                    else:
+                        temp_df = pd.concat([temp_df, temp], axis=0)#, ignore_index=True)
+
+    return temp_df
+
+def remove_suffix(name):
+    import re
+    return re.sub(r' [a-z]$', '', name)
