@@ -265,47 +265,46 @@ def Schedule(
             obs_stop = nophase_stops[nophase_starts.index(overlap_nophase[0])]
             ToO = nophase_targets[nophase_starts.index(overlap_nophase[0])]
 
-            sched = [[ToO, obs_start, obs_stop]]
-            sched = pd.DataFrame(sched, columns=["Target", "Observation Start", "Observation Stop"])
+            # sched = [[ToO, obs_start, obs_stop]]
+            # sched = pd.DataFrame(sched, columns=["Target", "Observation Start", "Observation Stop"])
 
-            if obs_rng[0] < obs_start:
-                free = [["Free Time, Need filler", obs_rng[0], obs_start]]
-                free = pd.DataFrame(
-                    free, columns=["Target", "Observation Start", "Observation Stop"]
-                )
-                sched_df = pd.concat([sched_df, free], axis=0)
+            # if obs_rng[0] < obs_start:
+            #     free = [["Free Time, Need filler", obs_rng[0], obs_start]]
+            #     free = pd.DataFrame(
+            #         free, columns=["Target", "Observation Start", "Observation Stop"]
+            #     )
+            #     sched_df = pd.concat([sched_df, free], axis=0)
 
-            if sched_df.empty:
-                sched_df = sched.copy()
-            else:        
-                sched_df = pd.concat([sched_df, sched], axis=0)
+            # if sched_df.empty:
+            #     sched_df = sched.copy()
+            # else:        
+            #     sched_df = pd.concat([sched_df, sched], axis=0)
 
-            logging.info("Scheduled Target of Opportunity", target)
-            start = obs_stop
-            stop = start + obs_window
+            # logging.info("Scheduled Target of Opportunity", target)
+            # start = obs_stop
+            # stop = start + obs_window
 
-            print('CHECK CODE BELOW WITH TF (probably comes from PB):')
+            print('------------> CHECK CODE BELOW WITH TF (probably comes from PB) <------------')
 
-            # import re
-            # def remove_suffix(name):
-            #     return re.sub(r' [a-z]$', '', name)
-            star_name_tmp = tracker['Planet Name'].apply(helper_codes.remove_suffix)
+            # star_name_tmp = tracker['Planet Name'].apply(helper_codes.remove_suffix)
             
             #Check minimum targeting requirements (MTR) for each planet
             for i in range(len(tracker)):
 
-                VK_test = True
+                VK_test = False
                 if VK_test:
                     transits_in_obs_rng = helper_codes.check_if_transits_in_obs_window(tracker, temp_df, target_list, start, \
                         pandora_start, pandora_stop, sched_start, sched_stop, obs_rng, obs_window, sched_wts, transit_coverage_min)
 
                 # tf = tracker["Transit Factor"][i]
                 tf = tracker["Transits Left in Lifetime"][i]/tracker["Transits Needed"][i]
+
                 if tf <= 1.:
                     #Force compliance with minimum targeting requirements if the 
                     #final transit occurs within the observation window
                     planet_name = tracker["Planet Name"][i]
-                    planet_data = pd.read_csv(f"{PACKAGEDIR}/data/targets/{star_name_tmp[i]}/{planet_name}/Visibility for {planet_name}.csv")
+                    star_name_tmp = pd.Series(planet_name).apply(helper_codes.remove_suffix)
+                    planet_data = pd.read_csv(f"{PACKAGEDIR}/data/targets/{star_name_tmp.iloc[0]}/{planet_name}/Visibility for {planet_name}.csv")
 
                     start_transit = Time(planet_data["Transit_Start"].iloc[-1], format='mjd', scale='utc')
                     end_transit = Time(planet_data["Transit_Stop"].iloc[-1], format='mjd', scale='utc')  
@@ -366,7 +365,7 @@ def Schedule(
                                 saa_cover,
                                 s_factor,
                                 q_factor,
-                                np.nan,
+                                f'{planet_name} Observation Forced Over Targer of Opportunity',
                             ]
                         ]
                         sched = pd.DataFrame(
@@ -424,11 +423,11 @@ def Schedule(
                         start = obs_stop
                         stop = start + obs_window
                         continue
-                    
+               
                 elif 1. < tf <= 2.:
                     #Flag that the MTRM is getting low for the planet, but do
                     #not force compliance
-                    planet_name = tracker["Planet Name"][i]
+                    # planet_name = tracker["Planet Name"][i]
                     if obs_rng[0] < obs_start:
                         free = [["Free Time", obs_rng[0], obs_start]]
                         free = pd.DataFrame(
@@ -436,9 +435,9 @@ def Schedule(
                         )
                         sched_df = pd.concat([sched_df, free], axis=0)
         
-                    sched = [[ToO, obs_start, obs_stop]]
+                    sched = [[ToO, obs_start, obs_stop, f"Warning: {planet_name} has MTRM < 2 and is transiting during ToO'"]]
                     sched = pd.DataFrame(
-                        sched, columns=["Target", "Observation Start", "Observation Stop"]
+                        sched, columns=["Target", "Observation Start", "Observation Stop", "Comments"]
                     )
                     # sched_df = pd.concat([sched_df, sched], axis=0)
                     if sched_df.empty:
@@ -446,14 +445,14 @@ def Schedule(
                     else:        
                         sched_df = pd.concat([sched_df, sched], axis=0)
         
-                    logging.info("Scheduled no phase event", target)
+                    # logging.info("Scheduled no phase event", ToO)
                     # logging.warning(ToO, "Warning: {planet_name} has MTRM < 2 and is transiting during the event")
                     start = obs_stop
                     stop = start + obs_window
                     #recalculate MTRM?
                     continue
                  
-            continue
+            # continue
         
         
             #******ADD: functionality to force MTR prioritization and flag if nophase event causes the minimum schedule to not be met
