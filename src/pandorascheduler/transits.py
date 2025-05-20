@@ -382,6 +382,9 @@ def Transit_overlap(target_list:str, partner_list:str, star_name:str):
             total_planets.append(partners_data['Planet Name'][i])
     total_planets.sort()
 
+    if len(total_planets) > 1:
+        total_planets = pd.Series(total_planets).unique().tolist()
+
     if len(total_planets) < 2:
         logging.info('Only one planet in list around ', star_name)
     else:
