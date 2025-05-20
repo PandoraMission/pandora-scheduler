@@ -257,7 +257,7 @@ def Schedule(
         ### First check if a no phase event is within observing window
         overlap_nophase = obs_rng.intersection(nophase_starts)
         if len(overlap_nophase) > 0:
-            print('here nophase')
+            # print('Time critical Target')
             obs_start = nophase_starts[nophase_starts.index(overlap_nophase[0])]
             obs_stop = nophase_stops[nophase_starts.index(overlap_nophase[0])]
             target = nophase_targets[nophase_starts.index(overlap_nophase[0])]
@@ -283,29 +283,37 @@ def Schedule(
             logging.info("Scheduled no phase event", target)
             start = obs_stop
             stop = start + obs_window
+
+            import re
+            def remove_suffix(name):
+                return re.sub(r' [a-z]$', '', name)
+            star_name_tmp = tracker['Planet Name'].apply(remove_suffix)
             
             #Check MTR for each planet
             for i in range(len(tracker)):
-                tf = tracker["Transit Factor"][i]
-                if tf == 1.:
+                # tf = tracker["Transit Factor"][i]
+                tf = tracker["Transits Left in Lifetime"][i]/tracker["Transits Needed"][i]
+                if tf <= 1.:
                     #Force compliance with minimum targeting requirements if the 
                     #final transit occurs within the observation window
                     planet_name = tracker["Planet Name"][i]
-                    planet_data = pd.read_csv(
-                    f"{PACKAGEDIR}/data/targets/{star_name}/{planet_name}/Visibility for {planet_name}.csv"
-                    )
+                    planet_data = pd.read_csv(f"{PACKAGEDIR}/data/targets/{star_name_tmp[i]}/{planet_name}/Visibility for {planet_name}.csv")
                     
-                    start_transit = planet_data["Transit_Start"][-1]
-                    end_transit = planet_data["Transit_Stop"][-1]    
-                    
-                    start_transit = start_transit - timedelta(
-                        seconds=start_transit.second,
-                        microseconds=start_transit.microsecond,
-                    )
-                    end_transit = end_transit - timedelta(
-                        seconds=end_transit.second,
-                        microseconds=end_transit.microsecond,
-                    )
+                    # start_transit = planet_data["Transit_Start"].iloc[-1]
+                    # end_transit = planet_data["Transit_Stop"].iloc[-1]   
+                    # start_transit = start_transit - timedelta(
+                    #     seconds=start_transit.second,
+                    #     microseconds=start_transit.microsecond,
+                    # )
+                    # end_transit = end_transit - timedelta(
+                    #     seconds=end_transit.second,
+                    #     microseconds=end_transit.microsecond,
+                    # )
+
+                    start_transit = Time(planet_data["Transit_Start"].iloc[-1], format='mjd', scale='utc')
+                    end_transit = Time(planet_data["Transit_Stop"].iloc[-1], format='mjd', scale='utc')  
+                    start_transit = start_transit.datetime.replace(second=0, microsecond=0)
+                    end_transit = end_transit.datetime.replace(second=0, microsecond=0)
 
                     early_start = end_transit - timedelta(
                         hours=20
@@ -314,14 +322,11 @@ def Schedule(
                         hours=4
                     )  # Latest start time to capture transit plus >=4 hours pre transit
     
-                    # Check if any transit occurs during observing window
-                    
-                    
+                    # Check if any transit occurs during observing window 
                     start_rng = pd.date_range(early_start, late_start, freq="min")
                     overlap_times = obs_rng.intersection(start_rng)
                     
                     if len(overlap_times) > 0:
-
                         # Calc a 'transit factor'
                         t_left = tracker.loc[
                             (tracker["Planet Name"] == planet_name),
@@ -420,7 +425,7 @@ def Schedule(
                         stop = start + obs_window
                         continue
                     
-                elif tf <= 2.:
+                elif 1. < tf <= 2.:
                     #Flag that the MTRM is getting low for the planet, but do
                     #not force compliance
                     planet_name = tracker["Planet Name"][i]
@@ -447,9 +452,7 @@ def Schedule(
                     stop = start + obs_window
                     #recalculate MTRM?
                     continue
-                
-            
-            
+                 
             continue
         
         
@@ -1256,7 +1259,7 @@ if __name__ == "__main__":
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_{pandora_start[0:10]}_to_{pandora_stop[0:10]}.pkl"#f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
     # create aux_list_new
-    create_aux_list = helper_codes.create_aux_list(target_definition_files, PACKAGEDIR)
+    # create_aux_list = helper_codes.create_aux_list(target_definition_files, PACKAGEDIR)
 
     aux_key = None
 
