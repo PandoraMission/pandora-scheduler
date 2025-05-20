@@ -274,11 +274,11 @@ def Schedule(
                 sched, columns=["Target", "Observation Start", "Observation Stop"]
             )
 
-            # sched_df = pd.concat([sched_df, sched], axis=0)
-            if sched_df.empty:
-                sched_df = sched.copy()
-            else:        
-                sched_df = pd.concat([sched_df, sched], axis=0)
+            sched_df = pd.concat([sched_df, sched], axis=0)
+            # if sched_df.empty:
+            #     sched_df = sched.copy()
+            # else:        
+            #     sched_df = pd.concat([sched_df, sched], axis=0)
 
             logging.info("Scheduled no phase event", target)
             start = obs_stop
