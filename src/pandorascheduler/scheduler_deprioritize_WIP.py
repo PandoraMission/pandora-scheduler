@@ -286,7 +286,7 @@ def Schedule(
             
             #Check MTR for each planet
             for i in range(len(tracker)):
-                tf=tracker["Transit Factor"][i]
+                tf = tracker["Transit Factor"][i]
                 if tf == 1.:
                     #Force compliance with minimum targeting requirements if the 
                     #final transit occurs within the observation window
