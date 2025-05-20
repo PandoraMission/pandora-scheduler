@@ -1228,10 +1228,10 @@ if __name__ == "__main__":
 
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
-    pandora_start = "2025-10-15 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2026-10-15 00:00:00"#"2026-10-01 00:00:00"
-    sched_start= "2025-10-15 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-10-15 00:00:00"#"2026-10-01 00:00:00"
+    pandora_start = "2025-11-15 00:00:00"#"2025-09-01 00:00:00"
+    pandora_stop = "2026-01-15 00:00:00"#"2026-10-01 00:00:00"
+    sched_start= "2025-11-15 00:00:00"#"2025-09-01 00:00:00"
+    sched_stop= "2026-01-15 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0 # days
 
@@ -1253,7 +1253,7 @@ if __name__ == "__main__":
     update_target_list_as_per_json_files = True
     if update_target_list_as_per_json_files:
 
-        target_definition_files = ['primary-exoplanet-extended', 'auxiliary-exoplanet-reduced', 'auxiliary-standard', 'occultation-standard', \
+        target_definition_files = ['exoplanet', 'auxiliary-exoplanet', 'auxiliary-standard', 'occultation-standard', \
             'monitoring-standard', 'secondary-exoplanet']
 
         for keyword_ in target_definition_files:
@@ -1279,16 +1279,20 @@ if __name__ == "__main__":
     # create aux_list_new
     create_aux_list = helper_codes.create_aux_list(target_definition_files, PACKAGEDIR)
 
-
     run_ = 'vis_and_schedule'#'target_visibility'#'schedule_only'#
     if run_ == 'schedule_only':
         Schedule(pandora_start, pandora_stop, primary_targ_list, obs_window, transit_coverage_min, sched_wts, min_visibility, deprioritization_limit, \
             aux_key = aux_key, aux_list=aux_targ_list, fname_tracker = fname_tracker, commissioning_time = commissioning_time_, \
                 sched_start = sched_start, sched_stop = sched_stop)
     elif run_ == 'target_visibility':
+        for tt in target_definition_files:#[0:2]:
+            if tt in ('exoplanet', 'auxiliary-exoplanet', 'primary-exoplanet', 'secondary-exoplanet'):
+                save_path_ = f'{PACKAGEDIR}/data/targets/'
+            else:
+                save_path_ = f'{PACKAGEDIR}/data/aux_targets/'
             transits.star_vis(blocks[0], blocks[1], blocks[2], pandora_start, pandora_stop, gmat_file, obs_name, \
+                save_pth = save_path_, targ_list = f'{PACKAGEDIR}/data/{tt}_targets.csv')
         # save_pth = f'{PACKAGEDIR}/data/aux_targets/', targ_list = f'{PACKAGEDIR}/data/{target_definition_files[1]}_targets.csv')
-            save_pth = f'{PACKAGEDIR}/data/targets/', targ_list = f'{PACKAGEDIR}/data/{target_definition_files[5]}_targets.csv')
     elif run_ == 'vis_and_schedule':
             Schedule_all_scratch(blocks, pandora_start, pandora_stop, primary_targ_list, aux_targ_list, target_definition_files, \
                 obs_window, transit_coverage_min, sched_wts = sched_wts, aux_key=aux_key, \

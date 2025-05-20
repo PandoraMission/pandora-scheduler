@@ -835,7 +835,7 @@ def process_target_files(keyword):
                 data = json.load(f)
             
             # Remove unwanted keys
-            for key in ['Time Created', 'Version', 'Time Updated', 'Author']:
+            for key in ['Time Created', 'Version',  'Author', 'Time Updated']:
                 data.pop(key, None)
             
             flat_data = flatten_dict(data)
@@ -843,13 +843,22 @@ def process_target_files(keyword):
             original_filename = filename.replace('_target_definition.json', '')
             flat_data['Original Filename'] = original_filename
 
-            if keyword != "occultation-standard":
+            # if keyword == 'exoplanet' or keyword == 'auxiliary-exoplanet' or 'primary-exoplanet' or 'secondary-exoplanet':#!= "occultation-standard":
+            if keyword in ('exoplanet', 'auxiliary-exoplanet', 'primary-exoplanet', 'secondary-exoplanet'):
                 priority_fn = os.path.join(directory, f"{keyword}_priorities.csv")
                 metadata, data = read_priority_csv(priority_fn)
                 priority_ = data[data["target"] == original_filename]["priority"].values[0]
                 flat_data['Priority'] = priority_
-            else:
+                flat_data['Number of Transits to Capture'] = int(data[data["target"] == original_filename]["transits_req"].values[0])
+            elif keyword in ('auxiliary-standard', 'monitoring-standard'):
+                priority_fn = os.path.join(directory, f"{keyword}_priorities.csv")
+                metadata, data = read_priority_csv(priority_fn)
+                priority_ = data[data["target"] == original_filename]["priority"].values[0]
+                flat_data['Priority'] = priority_
+                flat_data['Number of Hours Requested'] = int(data[data["target"] == original_filename]["hours_req"].values[0])
+            elif keyword in ('occultation-standard'):
                 flat_data['Priority'] = 0.1 # Default priority
+                # flat_data['Number of Transits to Capture'] = 0
 
             # if (keyword == "primary-exoplanet") or (keyword == "secondary-exoplanet"):
             #     flat_data['Priority'] = 1  # Default priority
@@ -901,7 +910,7 @@ def process_target_files(keyword):
     df = pd.DataFrame(data_list)
     
     # Determine columns based on whether it's a Gaia DR3 file or not
-    if df['Original Filename'].str.startswith('DR3').any() or keyword == 'monitoring-standard':
+    if df['Original Filename'].str.startswith('DR3').any() or keyword in ('auxiliary-standard', 'monitoring-standard'):#keyword == 'monitoring-standard':
         columns_order = ['Star Name', 'Star Simbad Name']
         columns_order.extend([col for col in df.columns if col not in columns_order and col != 'Priority'])
         columns_order.append('Priority')
