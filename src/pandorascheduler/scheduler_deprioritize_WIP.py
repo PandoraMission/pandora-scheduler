@@ -1150,7 +1150,8 @@ def Schedule_all_scratch(
         tmp_planet_name_lst = tmp_csv['Planet Name']
         tmp_star_name_lst = tmp_csv['Star Name']
 
-        if "exoplanet" in fn_:#(fn_ == 'primary-exoplanet') or (fn_ == "primary-exoplanet-extended"):
+        # if "exoplanet" in fn_:#(fn_ == 'primary-exoplanet') or (fn_ == "primary-exoplanet-extended"):
+        if fn_ in ('exoplanet', 'auxiliary-exoplanet', 'primary-exoplanet', 'secondary-exoplanet'):
             sub_dir = "targets"
         else:
             sub_dir = "aux_targets"
@@ -1200,12 +1201,13 @@ def Schedule_all_scratch(
         #Determine if there is overlap between target planets' transits and any 
         #companion planets
         try:
-        # if 1 ==1: 
+        # if 1 == 1: 
             vis = pd.read_csv(f'{PACKAGEDIR}/data/targets/{ts_list[t]}/{t_list[t]}/Visibility for {t_list[t]}.csv')
             t_over=vis['Transit_Overlap']
         except KeyError:
         # else:
             transits.Transit_overlap(os.path.basename(primary_targ_list),f'{target_definition_files[1]}_targets.csv',ts_list[t])
+            print(f'{t_list[t]} done')
         
         #Determine if there is overlap between target planets' transits
         #and South Atlantic Anomaly crossing
