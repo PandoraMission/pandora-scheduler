@@ -265,36 +265,35 @@ def Schedule(
             obs_stop = nophase_stops[nophase_starts.index(overlap_nophase[0])]
             ToO = nophase_targets[nophase_starts.index(overlap_nophase[0])]
 
-            # sched = [[ToO, obs_start, obs_stop]]
-            # sched = pd.DataFrame(sched, columns=["Target", "Observation Start", "Observation Stop"])
+            sched = [[ToO, obs_start, obs_stop]]
+            sched = pd.DataFrame(sched, columns=["Target", "Observation Start", "Observation Stop"])
 
-            # if obs_rng[0] < obs_start:
-            #     free = [["Free Time, Need filler", obs_rng[0], obs_start]]
-            #     free = pd.DataFrame(
-            #         free, columns=["Target", "Observation Start", "Observation Stop"]
-            #     )
-            #     sched_df = pd.concat([sched_df, free], axis=0)
+            if obs_rng[0] < obs_start:
+                free = [["FREE TIME BEFORE TOO", obs_rng[0], obs_start]]
+                free = pd.DataFrame(
+                    free, columns=["Target", "Observation Start", "Observation Stop"]
+                )
+                sched_df = pd.concat([sched_df, free], axis=0)
 
-            # if sched_df.empty:
-            #     sched_df = sched.copy()
-            # else:        
-            #     sched_df = pd.concat([sched_df, sched], axis=0)
+            if sched_df.empty:
+                sched_df = sched.copy()
+            else:        
+                sched_df = pd.concat([sched_df, sched], axis=0)
 
-            # logging.info("Scheduled Target of Opportunity", target)
-            # start = obs_stop
-            # stop = start + obs_window
+            logging.info("Scheduled Target of Opportunity", ToO)
+            start = obs_stop
+            stop = start + obs_window
+            # continue
 
-            print('------------> CHECK CODE BELOW WITH TF (probably comes from PB) <------------')
+            print('------------> ToO: Check code below with TF (probably comes from PB) <------------')
 
-            # star_name_tmp = tracker['Planet Name'].apply(helper_codes.remove_suffix)
-            
-            #Check minimum targeting requirements (MTR) for each planet
+            # #Check minimum targeting requirements (MTR) for each planet
             for i in range(len(tracker)):
 
-                VK_test = False
-                if VK_test:
-                    transits_in_obs_rng = helper_codes.check_if_transits_in_obs_window(tracker, temp_df, target_list, start, \
-                        pandora_start, pandora_stop, sched_start, sched_stop, obs_rng, obs_window, sched_wts, transit_coverage_min)
+                # VK_test = False
+                # if VK_test:
+                #     transits_in_obs_rng = helper_codes.check_if_transits_in_obs_window(tracker, temp_df, target_list, start, \
+                #         pandora_start, pandora_stop, sched_start, sched_stop, obs_rng, obs_window, sched_wts, transit_coverage_min)
 
                 # tf = tracker["Transit Factor"][i]
                 tf = tracker["Transits Left in Lifetime"][i]/tracker["Transits Needed"][i]
@@ -350,7 +349,7 @@ def Schedule(
                         # Schedule observation with warning
             
                         if obs_rng[0] < obs_start:
-                            free = [["Free Time", obs_rng[0], obs_start]]
+                            free = [["FREE TIME BEFORE TOO", obs_rng[0], obs_start]]
                             free = pd.DataFrame(
                                 free, columns=["Target", "Observation Start", "Observation Stop"]
                             )
@@ -435,7 +434,7 @@ def Schedule(
                         )
                         sched_df = pd.concat([sched_df, free], axis=0)
         
-                    sched = [[ToO, obs_start, obs_stop, f"Warning: {planet_name} has MTRM < 2 and is transiting during ToO'"]]
+                    sched = [[ToO, obs_start, obs_stop, f"Warning: {planet_name} has MTRM < 2 and is transiting during ToO"]]
                     sched = pd.DataFrame(
                         sched, columns=["Target", "Observation Start", "Observation Stop", "Comments"]
                     )
@@ -451,10 +450,8 @@ def Schedule(
                     stop = start + obs_window
                     #recalculate MTRM?
                     continue
-                 
-            # continue
-        
-        
+
+            continue  
             #******ADD: functionality to force MTR prioritization and flag if nophase event causes the minimum schedule to not be met
        
 
@@ -1218,9 +1215,9 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-11-15 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2026-11-15 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2026-01-15 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2025-11-15 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-11-15 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2026-01-15 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0 # days
 
