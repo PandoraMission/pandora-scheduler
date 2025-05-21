@@ -220,9 +220,9 @@ def Schedule(
     non_primary_obs_time = {}
     # deprioritized_targets = set()
     all_target_obs_time = {}
-    last_std_obs = datetime(2025, 10, 1)
+    last_std_obs = datetime(2025, 11, 1)
     print()
-    print('!!!!!!!!!!!!------->>>>>>CHANGE LAST STD OBS!<<<<<<------!!!!!!')
+    print(f'!!!!!!!!!!!!------->>>>>>CHANGE LAST STD OBS (currently {last_std_obs})!<<<<<<------!!!!!!'f)
     print()
     
     while stop <= sched_stop:
@@ -260,6 +260,7 @@ def Schedule(
         ### First check if a Target of Opportunity is within observing window
         overlap_nophase = obs_rng.intersection(nophase_starts)
         if len(overlap_nophase) > 0:
+            print('--------> Try scheduling ToO <--------')
             obs_start = nophase_starts[nophase_starts.index(overlap_nophase[0])]
             obs_stop = nophase_stops[nophase_starts.index(overlap_nophase[0])]
             ToO = nophase_targets[nophase_starts.index(overlap_nophase[0])]
@@ -306,6 +307,7 @@ def Schedule(
                         sched_df = pd.concat([sched_df, sched], axis=0).reset_index(drop=True)
                     
                     logging.info(f"Forced observation of {planet_name} over ToO due to critical transit factor")
+                    print(f"Forced observation of {planet_name} over ToO due to critical transit factor")
                     break  # Stop after scheduling the first critical planet
             
             if not forced_observation:
@@ -1318,9 +1320,9 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-11-15 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2026-05-15 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2026-11-15 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2025-11-15 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-05-15 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2026-11-15 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0 # days
 
