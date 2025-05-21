@@ -265,8 +265,9 @@ def Schedule(
             ToO = nophase_targets[nophase_starts.index(overlap_nophase[0])]
 
             # 1) Check for planets with tf <= 1
-            critical_planets = tracker[tracker["Transits Left in Lifetime"] / tracker["Transits Needed"] <= 1]
-            
+            # critical_planets = tracker[tracker["Transits Left in Lifetime"] / tracker["Transits Needed"] <= 1]
+            critical_planets = tracker[(tracker["Transits Needed"] > 0) & (tracker["Transits Left in Lifetime"] / tracker["Transits Needed"] <= 1)]
+
             forced_observation = False
             for _, planet in critical_planets.iterrows():
                 planet_name = planet["Planet Name"]
@@ -292,7 +293,7 @@ def Schedule(
                     obs_start = overlap_times[0]
 
                     if obs_rng[0] < obs_start:
-                        free = [["FREE PRE-TOO, REPLACE WITH AUX", obs_rng[0], obs_start]]
+                        free = [[f"FREE PRE-TOO, REPLACE WITH AUX", obs_rng[0], obs_start]]
                         free = pd.DataFrame(free, columns=["Target", "Observation Start", "Observation Stop"])
                         sched_df = pd.concat([sched_df, free], axis=0).reset_index(drop=True)
                     
@@ -310,7 +311,8 @@ def Schedule(
             if not forced_observation:
                 # 3) or 5) Schedule the ToO
                 tf_warning = ""
-                for _, planet in tracker.iterrows():
+                # for _, planet in tracker.iterrows():
+                for _, planet in tracker[tracker["Transits Needed"] > 0].iterrows():
                     planet_name = planet["Planet Name"]
                     tf = planet["Transits Left in Lifetime"] / planet["Transits Needed"]
                     
@@ -333,7 +335,7 @@ def Schedule(
                         tf_warning += f"Warning: {planet_name} has MTRM > 1 and is transiting during ToO. "
 
                 if obs_rng[0] < obs_start:
-                    free = [["FREE PRE-TOO, REPLACE WITH AUX", obs_rng[0], obs_start]]
+                    free = [[f"FREE PRE-TOO, REPLACE WITH AUX", obs_rng[0], obs_start]]
                     free = pd.DataFrame(free, columns=["Target", "Observation Start", "Observation Stop"])
                     sched_df = pd.concat([sched_df, free], axis=0).reset_index(drop=True)
 
@@ -352,6 +354,7 @@ def Schedule(
             # Update the observation window
             start = obs_stop
             stop = start + obs_window
+            continue
 
             # Add free time before the scheduled observation if any
             # if obs_rng[0] < obs_start:
@@ -706,7 +709,7 @@ def Schedule(
             else:
                 star_name_tmp = sched_df['Target'].iloc[-1]
 
-            if star_name_tmp == 'Free Time' or star_name_tmp.startswith("ToO"):
+            if star_name_tmp == 'Free Time':# or star_name_tmp.startswith("TоO"):
                 start = stop
                 stop = start + obs_window
                 continue
@@ -721,6 +724,9 @@ def Schedule(
             # else:
                 if star_name_tmp.startswith("DR3"):
                     star_name_tmp = star_name_tmp.replace('DR3_', 'Gaia DR3 ')
+                if star_name_tmp.startswith("TоO"):
+                    print(' ----> CHANGE NAME FOR ToO!!! <---- ')
+                    star_name_tmp = "Rigel"
                 star_sc = SkyCoord.from_name(star_name_tmp)
                 ra_aux_no_transit = star_sc.ra.deg
                 dec_aux_no_transit = star_sc.dec.deg
