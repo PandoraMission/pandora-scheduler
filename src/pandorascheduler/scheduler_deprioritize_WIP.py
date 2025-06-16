@@ -90,8 +90,8 @@ def Schedule(
     # target_list = pd.read_csv(f"{PACKAGEDIR}/data/" + target_list, sep=",")
 
     # Import no phase events
-    if os.path.exists(f"{PACKAGEDIR}/data/no_phase_list.csv") == True:
-        nophase_list = pd.read_csv(f"{PACKAGEDIR}/data/no_phase_list.csv", sep=",")
+    if os.path.exists(f"{PACKAGEDIR}/data/ToO_list.csv") == True:
+        nophase_list = pd.read_csv(f"{PACKAGEDIR}/data/ToO_list.csv", sep=",")
         nophase_targets = nophase_list["Target"]
         nophase_starts = [
             datetime.strptime(d, "%Y-%m-%d %H:%M:%S")
@@ -222,7 +222,7 @@ def Schedule(
     all_target_obs_time = {}
     last_std_obs = datetime(2025, 11, 1)
     print()
-    print(f'!!!!!!!!!!!!------->>>>>>CHANGE LAST STD OBS (currently {last_std_obs})!<<<<<<------!!!!!!'f)
+    print(f'!!!!!!!!!!!!------->>>>>>CHANGE LAST STD OBS (currently {last_std_obs})!<<<<<<------!!!!!!')
     print()
     
     while stop <= sched_stop:
@@ -1320,9 +1320,9 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2025-11-15 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2026-11-15 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2026-01-15 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2025-11-15 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-11-15 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2026-01-15 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0 # days
 

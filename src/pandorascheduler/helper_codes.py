@@ -587,7 +587,7 @@ def schedule_occultation_targets_all(v_names, starts, stops, path, o_df, o_list)
 
     return o_df, d_flag
 
-def schedule_occultation_targets(v_names, starts, stops, path, o_df, o_list, try_occ_targets):#, position):
+def schedule_occultation_targets(v_names, starts, stops, st, sp, path, o_df, o_list, try_occ_targets):#, position):
     schedule = pd.DataFrame(index=starts, columns=['Stop', 'Target', 'Visibility'], dtype='object')
     schedule['Stop'] = stops
     schedule['Target'] = np.nan
@@ -597,10 +597,13 @@ def schedule_occultation_targets(v_names, starts, stops, path, o_df, o_list, try
     if 'Visibility' not in o_df.columns:
         o_df['Visibility'] = np.nan
 
+    # for v_name in v_names:
+    #     print(find_file(v_name))
+
     for v_name in tqdm(v_names, desc=f"{st} to {sp}: Searching for occultation target from {try_occ_targets}", leave = False):#, position=position):#, leave=leave):#, leave=(position != 0)):#desc="Processing targets"):
     # for v_name in v_names:
         # Process visibility for this target
-        vis = pd.read_csv(f"{path}/{v_name}/Visibility for {v_name}.csv")
+        vis = pd.read_csv(find_file(v_name))#f"{path}/{v_name}/Visibility for {v_name}.csv")
         vis_times = vis['Time(MJD_UTC)']
         visibility = vis['Visible']
 
@@ -1175,3 +1178,17 @@ def check_if_transits_in_obs_window(tracker, temp_df, target_list, start, pandor
 def remove_suffix(name):
     import re
     return re.sub(r' [a-z]$', '', name)
+
+
+def find_file(filename):
+    possible_paths = [
+        f"{PACKAGEDIR}/data/targets/",
+        f"{PACKAGEDIR}/data/aux_targets/"
+    ]
+    
+    for path in possible_paths:
+        full_path = os.path.join(path, filename, f"Visibility for {filename}.csv")
+        if os.path.isfile(full_path):
+            return full_path
+    
+    return None  # File not found in any of the directories
