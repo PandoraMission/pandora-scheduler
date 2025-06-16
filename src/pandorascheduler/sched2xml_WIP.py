@@ -145,7 +145,7 @@ meta=ET.SubElement(cal, 'Meta',
 #
 #
 #
-for i in tqdm(range(0,10)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -230,7 +230,7 @@ for i in tqdm(range(0,10)):#len(sch))):#1,2)):#, position = 0, leave = True):#le
     #if full visibility
     def full_visibility():
         # print('Target is visible for the entire visit')
-        tqdm.write(f'{st} to {sp}: No occultations needed; target is visible for the entire visit')
+        tqdm.write(f'{st} to {sp}: No occultations needed; {t_name} is visible for the entire visit')
         
         #break observation sequence into <= 90 minute blocks
         n = (sp - st)/dt
@@ -313,34 +313,34 @@ for i in tqdm(range(0,10)):#len(sch))):#1,2)):#, position = 0, leave = True):#le
         def find_occultation_target(oc_starts, oc_stops, st, sp, tar_path, aux_path, ra, dec):
             # logging.info(f"Searching for occultation targets from {st} to {sp}")
             # tqdm.write(f"{st} to {sp}: Searching for occultation targets from {st} to {sp}")
-            # # Try to find a target from aux_list
-            # info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'closest', prev_obs = [ra,dec])
-            # if flag:
-            #     tqdm.write(f"{st} to {sp}:     Found occultation target from aux list")
-            # # logging.info(f"From aux list? {flag}")
-
-            # oc_flag=1
-
-            # if not flag:
-            #     # If still not found, try tar_path
-            #     info, flag = sch_occ(oc_starts, oc_stops, tar_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
-            #     if flag:
-            #          tqdm.write(f"{st} to {sp}:         Found occultation target from aux list")
-            #     # logging.info(f"From tar list? {flag}")
-
-            # Try to find a target from tar_list
-            info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, tar_path, sort_key = 'closest', prev_obs=[ra,dec])
+            # Try to find a target from aux_list
+            info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, aux_path, sort_key = 'closest', prev_obs = [ra,dec])
             if flag:
-                tqdm.write(f"{st} to {sp}:     Found occultation target from target list itself")
-            # logging.info(f"From target list itself? {flag}")
+                tqdm.write(f"{st} to {sp}:     Found occultation target from aux list")
+            # logging.info(f"From aux list? {flag}")
+
             oc_flag=1
 
             if not flag:
                 # If still not found, try tar_path
-                info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, aux_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
+                info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, tar_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
                 if flag:
-                     tqdm.write(f"{st} to {sp}:         Found occultation target from aux list")
+                     tqdm.write(f"{st} to {sp}:         Found occultation target from target list itself")
                 # logging.info(f"From tar list? {flag}")
+
+            # # Try to find a target from tar_list
+            # info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, tar_path, sort_key = 'closest', prev_obs=[ra,dec])
+            # if flag:
+            #     tqdm.write(f"{st} to {sp}:     Found occultation target from target list itself")
+            # # logging.info(f"From target list itself? {flag}")
+            # oc_flag=1
+
+            # if not flag:
+            #     # If still not found, try tar_path
+            #     info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, aux_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
+            #     if flag:
+            #          tqdm.write(f"{st} to {sp}:         Found occultation target from aux list")
+            #     # logging.info(f"From tar list? {flag}")
             
             if flag:
                 target_info = {

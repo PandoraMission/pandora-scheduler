@@ -547,7 +547,7 @@ def add_random_targets_visibility(schedule_array, vis_df, target_names):
     
     return new_schedule_array
 
-def schedule_occultation_targets_all(v_names, starts, stops, path, o_df, o_list):
+def sch_occultation_targets_all(v_names, starts, stops, path, o_df, o_list):
 
     results = process_visibility(v_names, starts, stops, path)
 
