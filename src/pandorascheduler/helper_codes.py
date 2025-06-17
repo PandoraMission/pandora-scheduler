@@ -828,7 +828,7 @@ def process_target_files(keyword):
         return dict(items)
 
     data_list = []
-    for filename in os.listdir(directory):
+    for filename in tqdm(os.listdir(directory)):
         if filename.endswith('_target_definition.json'):
             file_path = os.path.join(directory, filename)
             with open(file_path, 'r') as f:
@@ -900,6 +900,8 @@ def process_target_files(keyword):
                     flat_data['Transit Epoch (BJD_TDB-2400000.5)'] = flat_data['Transit Epoch (BJD_TDB)'] - 2400000.5
             else:
                 flat_data['Star Simbad Name'] = flat_data.get('Star Name', '')
+
+            flat_data['RA'], flat_data['DEC']= update_coordinates_astropy(flat_data['RA'], flat_data['DEC'], flat_data['pm_RA'], flat_data['pm_DEC'])
             
             data_list.append(flat_data)
 
@@ -1364,3 +1366,19 @@ def sch_occ_old_but_working(starts, stops, list_path, sort_key=None, prev_obs = 
                     print('More than two auxiliary targets were needed to cover the occultation time.')
 
     return o_df, d_flag
+
+def update_coordinates_astropy(ra0, dec0, pm_ra, pm_dec):
+    from astropy.coordinates import SkyCoord
+    from astropy.time import Time
+    import astropy.units as u
+
+    t0 = Time('J2016.0')
+    t1 = Time('2025-11-15')
+    coord = SkyCoord(ra=ra0*u.degree, dec=dec0*u.degree, 
+                     pm_ra_cosdec=pm_ra*u.mas/u.yr, 
+                     pm_dec=pm_dec*u.mas/u.yr, 
+                     frame='icrs', obstime=t0, distance=None)
+    
+    new_coord = coord.apply_space_motion(new_obstime=Time(t1))
+    
+    return new_coord.ra.degree, new_coord.dec.degree

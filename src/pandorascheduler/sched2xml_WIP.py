@@ -61,61 +61,63 @@ def sch_occ_new(starts, stops, st, sp, list_path, sort_key=None, prev_obs = None
     starts=Time(starts, format='datetime').to_value('mjd')
     stops=Time(stops, format='datetime').to_value('mjd')
     
-    if sort_key == None:
-        #No occluded target scheduling, free time
-        starts=starts.to_value('datetime')
-        stops=stops.to_value('datetime')
-        free = [["Free Time",datetime.strftime(starts[s], "%Y-%m-%dT%H:%M:%SZ"),datetime.strftime(stops[s], "%Y/%m/%d, %H:%M:%S"), '', ''] for s in range(len(starts))]
-        o_df = pd.DataFrame(free, columns=["Target", "start", "stop", "RA", "DEC"])
+
+    # if sort_key == None:
+    #     #No occluded target scheduling, free time
+    #     starts=starts.to_value('datetime')
+    #     stops=stops.to_value('datetime')
+    #     free = [["Free Time",datetime.strftime(starts[s], "%Y-%m-%dT%H:%M:%SZ"),datetime.strftime(stops[s], "%Y/%m/%d, %H:%M:%S"), '', ''] for s in range(len(starts))]
+    #     o_df = pd.DataFrame(free, columns=["Target", "start", "stop", "RA", "DEC"])
     
-    else:       
-        o_list = pd.read_csv(list_path)
-        ras=o_list['RA']
-        decs=o_list['DEC']
+    # else:       
+    #     o_list = pd.read_csv(list_path)
+    #     ras=o_list['RA']
+    #     decs=o_list['DEC']
         
-        if sort_key == 'closest':
-            #sort name list based on minimized sky distance
-            #prev_obs must be specified as an array consisting of ra and dec (in degrees) for the previous observation
-            #this seeks to minimize slew distance to an occultation target, though actual slew sims are not performed
-            try:
-                po_sc=SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
-                oc_sc=[SkyCoord(unit='deg', ra=ras[n], dec=decs[n]) for n in range(len(ras))]
+    #     if sort_key == 'closest':
+    #         #sort name list based on minimized sky distance
+    #         #prev_obs must be specified as an array consisting of ra and dec (in degrees) for the previous observation
+    #         #this seeks to minimize slew distance to an occultation target, though actual slew sims are not performed
+    #         try:
+    #             po_sc=SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
+    #             oc_sc=[SkyCoord(unit='deg', ra=ras[n], dec=decs[n]) for n in range(len(ras))]
 
-                dif=[oc_sc[n].separation(po_sc).deg for n in range(len(oc_sc))]
-                o_list['sky_dif'] = dif
-                o_list = o_list.sort_values(by='sky_dif').reset_index(drop=True)
+    #             dif=[oc_sc[n].separation(po_sc).deg for n in range(len(oc_sc))]
+    #             o_list['sky_dif'] = dif
+    #             o_list = o_list.sort_values(by='sky_dif').reset_index(drop=True)
                 
-            except NameError:
-                print('No previous observation was specified, defaulting to random auxiliary target.')
-                o_list.sample(frac=1).reset_index(drop=True)
-        else:
-            #default sort is random
-            o_list.sample(frac=1).reset_index(drop=True)
+    #         except NameError:
+    #             print('No previous observation was specified, defaulting to random auxiliary target.')
+    #             o_list.sample(frac=1).reset_index(drop=True)
+    #     else:
+    #         #default sort is random
+    #         o_list.sample(frac=1).reset_index(drop=True)
         
-        v_names = o_list['Star Name']
-        v_names=np.array(v_names)
-        #For prioritization via flag later
-        o_flag = o_list['Priority']#['Flag']
-        #Reload these
-        ras=o_list['RA']
-        decs=o_list['DEC']
+    o_list = pd.read_csv(list_path)
+    v_names = o_list['Star Name']
+    v_names=np.array(v_names)
+    #For prioritization via flag later
+    o_flag = o_list['Priority']#['Flag']
+    #Reload these
+    ras=o_list['RA']
+    decs=o_list['DEC']
 
-        multi_target_occultation = True#False
+    multi_target_occultation = True#False
 
-        d_flag = False
+    d_flag = False
 
-        if multi_target_occultation:
-            if (list_path == tar_path):# or (list_path == tar_path_ALL):
-                path_ = f"{PACKAGEDIR}/data/targets"
-                try_occ_targets = 'target list'
-            elif list_path == aux_path:
-                path_ = f"{PACKAGEDIR}/data/aux_targets"
-                try_occ_targets = 'aux list'
-            
-            # importlib.reload(helper_codes)
-            o_df, d_flag = helper_codes.schedule_occultation_targets(v_names, starts, stops, st, sp, path_, o_df, o_list, try_occ_targets)#, position)
+    if multi_target_occultation:
+        if (list_path == tar_path):# or (list_path == tar_path_ALL):
+            path_ = f"{PACKAGEDIR}/data/targets"
+            try_occ_targets = 'target list'
+        elif list_path == aux_path:
+            path_ = f"{PACKAGEDIR}/data/aux_targets"
+            try_occ_targets = 'aux list'
+        
+        # importlib.reload(helper_codes)
+        o_df, d_flag = helper_codes.schedule_occultation_targets(v_names, starts, stops, st, sp, path_, o_df, o_list, try_occ_targets)#, position)
 
-        return o_df, d_flag
+    return o_df, d_flag
 
 
 
@@ -313,34 +315,31 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
         def find_occultation_target(oc_starts, oc_stops, st, sp, tar_path, aux_path, ra, dec):
             # logging.info(f"Searching for occultation targets from {st} to {sp}")
             # tqdm.write(f"{st} to {sp}: Searching for occultation targets from {st} to {sp}")
-            # Try to find a target from aux_list
-            info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, aux_path, sort_key = 'closest', prev_obs = [ra,dec])
-            if flag:
-                tqdm.write(f"{st} to {sp}:     Found occultation target from aux list")
-            # logging.info(f"From aux list? {flag}")
-
-            oc_flag=1
-
-            if not flag:
-                # If still not found, try tar_path
-                info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, tar_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
-                if flag:
-                     tqdm.write(f"{st} to {sp}:         Found occultation target from target list itself")
-                # logging.info(f"From tar list? {flag}")
-
-            # # Try to find a target from tar_list
-            # info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, tar_path, sort_key = 'closest', prev_obs=[ra,dec])
+            # # Try to find a target from aux_list
+            # info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, aux_path, sort_key = 'closest', prev_obs = [ra,dec])
             # if flag:
-            #     tqdm.write(f"{st} to {sp}:     Found occultation target from target list itself")
-            # # logging.info(f"From target list itself? {flag}")
+            #     tqdm.write(f"{st} to {sp}:     Found occultation target from aux list")
+            # # logging.info(f"From aux list? {flag}")
             # oc_flag=1
-
             # if not flag:
             #     # If still not found, try tar_path
-            #     info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, aux_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
+            #     info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, tar_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
             #     if flag:
-            #          tqdm.write(f"{st} to {sp}:         Found occultation target from aux list")
+            #          tqdm.write(f"{st} to {sp}:         Found occultation target from target list itself")
             #     # logging.info(f"From tar list? {flag}")
+
+            # Try to find a target from tar_list
+            info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, tar_path, sort_key = 'closest', prev_obs=[ra,dec])
+            if flag:
+                tqdm.write(f"{st} to {sp}:     Found occultation target from target list itself")
+            # logging.info(f"From target list itself? {flag}")
+            oc_flag=1
+            if not flag:
+                # If still not found, try tar_path
+                info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, aux_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
+                if flag:
+                     tqdm.write(f"{st} to {sp}:         Found occultation target from aux list")
+                # logging.info(f"From tar list? {flag}")
             
             if flag:
                 target_info = {
