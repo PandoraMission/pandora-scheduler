@@ -52,3 +52,9 @@ __pycache__/
 
 # Outputs
 */targets/
+*.csv
+*.pkl
+*.txt
+*.xml
+*.xml
+*.json
