@@ -985,6 +985,35 @@ def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visib
             decs = aux_targs['DEC']
             aux_priority = aux_targs['Priority']
 
+        # non_primary_priorities = {name: priority for name, (_, priority) in non_primary_obs_time.items() if name != 'STD'}
+        # # Create a boolean mask for matching names with different priorities
+        # mask = (aux_targs['Star Name'].isin(non_primary_priorities.keys())) & \
+        #     (aux_targs['Priority'] != aux_targs['Star Name'].map(non_primary_priorities))
+
+        # if aux_key == 'sort_by_tdf_priority':
+        # # Check if any rows match the condition
+        #     if mask.any():
+        #         # for name in aux_targs[mask]['Star Name']:
+        #         #     print(f"Update priority for {name} from {aux_targs[mask]['Priority'].values[0]} to {non_primary_priorities[name]}"
+        #         aux_targs.loc[mask, 'Priority'] = aux_targs.loc[mask, 'Star Name'].map(non_primary_priorities)
+
+        #     aux_targs = aux_targs.sort_values('Priority', ascending=False).reset_index(drop=True)
+
+        #     names = aux_targs['Star Name']
+        #     ras = aux_targs['RA']
+        #     decs = aux_targs['DEC']
+        #     aux_priority = aux_targs['Priority']
+
+        # if aux_key == 'sort_by_tdf_priority':
+        #     aux_targs = aux_targs.sort_values('Priority', ascending=False).reset_index(drop=True)
+        #     names = aux_targs['Star Name']
+        #     ras = aux_targs['RA']
+        #     decs = aux_targs['DEC']
+        #     try:
+        #         aux_priority
+        #     except NameError:
+        #         aux_priority = aux_targs['Priority']
+
         elif aux_key == 'closest':
             po_sc = SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
             aux_sc = SkyCoord(unit='deg', ra=ras, dec=decs)
