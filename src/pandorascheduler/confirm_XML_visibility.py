@@ -11,7 +11,7 @@ import tqdm as tqdm
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 
 # Parse the XML file
-fname = f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_TEST.xml'#calendar_Pandora_Schedule_27Aug2024_Claude.xml'
+fname = f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_TEST.xml'
 tree = ET.parse(fname)
 root = tree.getroot()
 
@@ -48,22 +48,80 @@ def check_visibility(target, start_time, stop_time):
 
 # Function to create and save a figure for a visit
 def create_visit_figure(visit_data, visit_id, target):
+    import numpy as np
     fig, ax = plt.subplots(figsize=(10, 5))
 
+    unique_targets = list(dict.fromkeys(d['target'] for d in visit_data))
+    target_to_y = {target: i for i, target in enumerate(unique_targets)}
+
+    
+
+    # for data in visit_data:
     for i, data in enumerate(visit_data):
-        color = 'green' if all(data['visibility']) else 'red' if data['visibility'] else 'gray'
-        # ax.plot([data['start'], data['stop']], [i, i], color=color, linewidth=2)
+        visible_ = np.asarray(data['visibility']) == 1.
+        times = np.asarray(data['times'])
+        y_value = target_to_y[data['target']]
+
+        vis_times = data['times']
+        vis_values = [i+1 if v else None for v in data['visibility']]
+        # ax.scatter(vis_times, [y_value] * len(vis_times), color='green', marker='.', s=2)
+        ax.plot(times, [y_value] * len(times), color='green', linewidth=1)
+
+        if not(all(visible_)):
+            for t in times[~visible_]:
+                ax.axvline(t, ymin=y_value/len(target_to_y), 
+                    ymax=(y_value+1)/len(target_to_y), 
+                    color='r', linewidth=1, alpha=1)
+            # vis_times = data['times']
+            # vis_values = [i+1 if v else None for v in data['visibility']]
+            # ax.scatter(vis_times, [i+1] * len(vis_times), c=vis_values, cmap='RdYlGn', vmin=0, vmax=1, s=3)
+        #     ax.scatter(times[visible_], [y_value] * np.sum(visible_), color='green', marker='.', s=2)
+        # else:
+        # Plot green points for visible times, red for invisible
+        # ax.scatter(times[visible_], [y_value] * np.sum(visible_), color='green', marker='.', s=2)
+            # ax.scatter(times[~visible_], [y_value] * np.sum(~visible_), color='red', marker='o', s=4)
+
+
+    # for i, data in enumerate(visit_data):
+    #     visible_ = np.asarray(data['visibility']) == 1.
+    #     times = np.linspace(data['start'], data['stop'], len(visible_))
+
+    #     # Plot green points for visible times, red for invisible
+    #     ax.scatter(times[visible_], [i] * np.sum(visible_), color='green', marker='.', s=2)
+    #     ax.scatter(times[~visible_], [i] * np.sum(~visible_), color='red', marker='o', s=4)
+
+    #     # if visible_:
+    #     #     color_ = 'green'
+    #     # else:
+    #     #     color_ = 'red'
+
+    #     # if all(data['visibility']):
+    #     #     color_ = 'green'
+    #     #     marker_ = 'o' 
+    #     #     ms_ = 2
+    #     # elif data['visibility']:
+    #     #     color_ = 'red'
+    #     #     marker_ = 'o' 
+    #     #     ms_ = 4
+    #     # else:
+    #     #     color_ = 'gray'
+    #     #     marker_ = 'x' 
+    #     #     ms_ = 8
+
+    #     # color_ = 'green' if all(data['visibility']) else 'red' if data['visibility'] else 'gray'
+
+    #     # ax.plot([data['start'], data['stop']], [i, i], color=color_, marker = 'o', ms = 2)
         
-        # Plot visibility
-        if all(data['visibility']):
-            vis_times = data['times']
-            vis_values = [i+1 if v else None for v in data['visibility']]
-            ax.scatter(vis_times, [i+1] * len(vis_times), c=vis_values, cmap='RdYlGn', vmin=0, vmax=1, s=3)
-            # print(data['start'], data['stop'], all(data['visibility']))
+    #     # # Plot visibility
+    #     # if all(data['visibility']):
+    #     #     vis_times = data['times']
+    #     #     vis_values = [i+1 if v else None for v in data['visibility']]
+    #     #     ax.scatter(vis_times, [i+1] * len(vis_times), c=vis_values, cmap='RdYlGn', vmin=0, vmax=1, s=3)
+    #     #     # print(data['start'], data['stop'], all(data['visibility']))
 
     # Set y-axis labels
-    ax.set_yticks(range(len(visit_data)))
-    ax.set_yticklabels([d['target'] for d in visit_data])
+    ax.set_yticks(range(len(unique_targets)))
+    ax.set_yticklabels(unique_targets)
 
     # Format x-axis
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M'))
@@ -71,7 +129,7 @@ def create_visit_figure(visit_data, visit_id, target):
 
     plt.title(f'Target Visibility During Visit {visit_id}')
     plt.xlabel('Time')
-    plt.ylabel('Targets')
+    plt.ylabel('Target')
 
     plt.tight_layout()
 
