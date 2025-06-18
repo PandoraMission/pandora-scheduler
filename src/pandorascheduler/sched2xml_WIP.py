@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 # VK END
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path = f'{PACKAGEDIR}/data/Pandora_Schedule_0.8_0.0_0.2_2025-11-15.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
+schedule_path = f'{PACKAGEDIR}/data/Pandora_Schedule_0.8_0.0_0.2_2025-12-15.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
 tar_vis_path = f'{PACKAGEDIR}/data/targets/'
 aux_vis_path = f'{PACKAGEDIR}/data/aux_targets/'
 tar_path = f'{PACKAGEDIR}/data/primary-exoplanet-extended_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
@@ -33,8 +33,9 @@ t_list = pd.read_csv(tar_path)
 a_list = pd.read_csv(aux_path)
 sch = pd.read_csv(schedule_path)
 
-target_definition_files = ['primary-exoplanet-extended', 'auxiliary-exoplanet-reduced', 'auxiliary-standard', 'occultation-standard', \
-    'monitoring-standard', 'secondary-exoplanet']
+# target_definition_files = ['primary-exoplanet-extended', 'auxiliary-exoplanet-reduced', 'auxiliary-standard', 'occultation-standard', \
+#     'monitoring-standard', 'secondary-exoplanet']
+target_definition_files = ['exoplanet', 'auxiliary-exoplanet', 'auxiliary-standard', 'monitoring-standard', 'secondary-exoplanet', 'occultation-standard']
 
 t_list = pd.read_csv(f"{PACKAGEDIR}/data/{target_definition_files[0]}_targets.csv")
 
@@ -147,7 +148,7 @@ meta=ET.SubElement(cal, 'Meta',
 #
 #
 #
-for i in tqdm(range(44,50)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -190,6 +191,10 @@ for i in tqdm(range(44,50)):#len(sch))):#1,2)):#, position = 0, leave = True):#l
     elif t_name == 'STD':
         print(f'-------> STD NEED VISIBILITY <--------')
         continue
+    else:
+        print(f"No visibility data for {t_name}. Stop code")
+        break
+        xxxx
     # elif:
     #     v_data = pd.read_csv(aux_vis_path+f'{t_name}/Visibility for {t_name}.csv')
     #     targ_info = a_list.loc[(a_list['Star Name'] == t_name) & (a_list['Planet Name'].notna())]#a_list.loc[(a_list['Star Name'] == t_name)]
@@ -587,7 +592,7 @@ dom = minidom.parseString(etstr)
 
 #dom = xml.dom.minidom.parseString(etstr)
 pretty_xml_as_string = dom.toprettyxml()
-f=open(f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_TEST_wip.xml','w+')#test.xml', 'w+')
+f=open(f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_TEST_wip','w+')#test.xml', 'w+')
 f.write(pretty_xml_as_string)
 f.close()
 
