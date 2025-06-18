@@ -5,12 +5,13 @@ import matplotlib.dates as mdates
 from datetime import datetime
 from astropy.time import Time
 import os
-import helper_codes_claude as hcc
+import helper_codes_aux as hcc
+import tqdm as tqdm
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 
 # Parse the XML file
-fname = f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_TEST_deprioritized.xml'#calendar_Pandora_Schedule_27Aug2024_Claude.xml'
+fname = f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_TEST.xml'#calendar_Pandora_Schedule_27Aug2024_Claude.xml'
 tree = ET.parse(fname)
 root = tree.getroot()
 
@@ -26,7 +27,14 @@ def check_visibility(target, start_time, stop_time):
     stop_mjd = Time(stop_time, format='isot', scale='utc').mjd
 
     # Read visibility data
-    st_name = target[:-2] if target.endswith('b') or target.endswith('c') else target
+
+    if target.endswith(('b', 'c', 'd', 'e', 'f')):
+        st_name = target[:-2]
+    else:
+        st_name = target
+
+    # st_name = target[:-2] if target.endswith('b') or target.endswith('c') else target
+
     if not target.startswith('DR3'):
         v_data = pd.read_csv(tar_vis_path+f'{st_name}/Visibility for {st_name}.csv')
     else:
@@ -39,18 +47,19 @@ def check_visibility(target, start_time, stop_time):
     return period_data['Visible'].tolist(), period_data['Time(MJD_UTC)'].tolist()
 
 # Function to create and save a figure for a visit
-def create_visit_figure(visit_data, visit_id):
-    fig, ax = plt.subplots(figsize=(15, 10))
+def create_visit_figure(visit_data, visit_id, target):
+    fig, ax = plt.subplots(figsize=(10, 5))
 
     for i, data in enumerate(visit_data):
         color = 'green' if all(data['visibility']) else 'red' if data['visibility'] else 'gray'
-        ax.plot([data['start'], data['stop']], [i, i], color=color, linewidth=5)
+        # ax.plot([data['start'], data['stop']], [i, i], color=color, linewidth=2)
         
         # Plot visibility
-        if data['visibility']:
+        if all(data['visibility']):
             vis_times = data['times']
-            vis_values = [i if v else None for v in data['visibility']]
-            ax.scatter(vis_times, [i] * len(vis_times), c=vis_values, cmap='RdYlGn', vmin=0, vmax=1, s=20)
+            vis_values = [i+1 if v else None for v in data['visibility']]
+            ax.scatter(vis_times, [i+1] * len(vis_times), c=vis_values, cmap='RdYlGn', vmin=0, vmax=1, s=3)
+            # print(data['start'], data['stop'], all(data['visibility']))
 
     # Set y-axis labels
     ax.set_yticks(range(len(visit_data)))
@@ -67,11 +76,13 @@ def create_visit_figure(visit_data, visit_id):
     plt.tight_layout()
 
     # Save the figure as a PNG file
-    output_file = os.path.join(output_dir, f'visit_{visit_id}_visibility.png')
-    plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    plt.close(fig)
-
-    print(f"Figure for Visit {visit_id} saved as {output_file}")
+    try:
+        output_file = os.path.join(output_dir, f'visit_{visit_id}_visibility_for_{target}.png')
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
+        plt.close(fig)
+        # print(f"Figure for Visit {visit_id} saved as {output_file}")
+    except:
+        no_fig = True
 
 # Prepare output directory
 output_dir = PACKAGEDIR + '/data/confirm_visibility'
@@ -79,7 +90,7 @@ if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
 # Process each Visit
-for visit in root.findall('ns:Visit', namespace):
+for visit in tqdm.tqdm(root.findall('ns:Visit', namespace)):
     visit_id = visit.find('ns:ID', namespace).text
     visit_data = []
 
@@ -114,8 +125,12 @@ for visit in root.findall('ns:Visit', namespace):
             'times': [Time(t, format='mjd').datetime for t in times]
         })
 
+    try:
+        target#print(target)
+    except:
+        target = None#standard_ = True
     # Create and save figure for this visit
-    create_visit_figure(visit_data, visit_id)
+    create_visit_figure(visit_data, visit_id, target)
 
 
 
