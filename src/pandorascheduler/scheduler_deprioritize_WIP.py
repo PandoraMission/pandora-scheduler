@@ -1367,7 +1367,8 @@ if __name__ == "__main__":
     fname_tracker = f"{PACKAGEDIR}/data/Tracker_{pandora_start[0:10]}_to_{pandora_stop[0:10]}.pkl"#f"{PACKAGEDIR}/data/Tracker_" + target_list_name + ".pkl"
 
     # create aux_list_new
-    # create_aux_list = helper_codes.create_aux_list(target_definition_files, PACKAGEDIR)
+    if not os.path.exists(f"{PACKAGEDIR}/data/aux_list_new.csv"):
+        create_aux_list = helper_codes.create_aux_list(target_definition_files, PACKAGEDIR)
 
     # aux_key = None
 
