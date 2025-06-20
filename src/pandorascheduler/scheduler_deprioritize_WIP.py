@@ -910,7 +910,8 @@ def Schedule(
 
     ### Save results
     sched_df = sched_df.sort_values(by=["Observation Start"]).reset_index(drop=True)
-    save_fname = f"Pandora_Schedule_{sched_wts[0]}_{sched_wts[1]}_{sched_wts[2]}_{pandora_start}.csv"
+    # save_fname = f"Pandora_Schedule_{sched_wts[0]}_{sched_wts[1]}_{sched_wts[2]}_{pandora_start}_to_{pandora_stop}.csv"
+    save_fname = f"Pandora_Schedule_{sched_wts[0]}_{sched_wts[1]}_{sched_wts[2]}_{pandora_start.strftime('%Y-%m-%d')}_to_{pandora_stop.strftime('%Y-%m-%d')}.csv"
     sched_df.to_csv((f"{PACKAGEDIR}/data/" + save_fname), sep=",", index=False)
 
     tracker.to_csv((f"{PACKAGEDIR}/data/tracker.csv"), sep=",", index=False)
@@ -1262,12 +1263,14 @@ def Schedule_all_scratch(
     for t in tqdm(range(len(t_list))):
         #Determine if there is overlap between target planets' transits and any companion planets
         try:
+            print('######### CHECK TRANSIT OVERLAP BUSINESS!!! #########')
         # if 1 == 1: 
             vis = pd.read_csv(f'{PACKAGEDIR}/data/targets/{ts_list[t]}/{t_list[t]}/Visibility for {t_list[t]}.csv')
             t_over=vis['Transit_Overlap']
         except KeyError:
         # else:
-            transits.Transit_overlap(os.path.basename(primary_targ_list),f'{target_definition_files[1]}_targets.csv',ts_list[t])
+            # transits.Transit_overlap(os.path.basename(primary_targ_list), f'{target_definition_files[1]}_targets.csv', ts_list[t])
+            transits.Transit_overlap(os.path.basename(primary_targ_list), os.path.basename(primary_targ_list), ts_list[t])
         
         #Determine if there is overlap between target planets' transits and South Atlantic Anomaly crossing
         try:
@@ -1289,10 +1292,10 @@ if __name__ == "__main__":
 
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
-    pandora_start = "2025-12-15 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2026-01-15 00:00:00"#"2026-10-01 00:00:00"
-    sched_start= "2025-12-15 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-01-15 00:00:00"#"2026-10-01 00:00:00"
+    pandora_start = "2025-11-15 00:00:00"#"2025-09-01 00:00:00"
+    pandora_stop = "2026-11-15 00:00:00"#"2026-10-01 00:00:00"
+    sched_start= "2025-11-15 00:00:00"#"2025-09-01 00:00:00"
+    sched_stop= "2026-11-15 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0 # days
 
@@ -1314,7 +1317,8 @@ if __name__ == "__main__":
     update_target_list_as_per_json_files = True
     if update_target_list_as_per_json_files:
 
-        target_definition_files = ['exoplanet', 'auxiliary-exoplanet', 'auxiliary-standard', 'monitoring-standard', 'secondary-exoplanet', 'occultation-standard']
+        # target_definition_files = ['exoplanet', 'auxiliary-exoplanet', 'auxiliary-standard', 'monitoring-standard', 'secondary-exoplanet', 'occultation-standard']
+        target_definition_files = ['exoplanet', 'auxiliary-standard', 'monitoring-standard', 'secondary-exoplanet', 'occultation-standard']
 
         for keyword_ in target_definition_files:
             fn_tmp = f"{PACKAGEDIR}/data/{keyword_}_targets.csv"
