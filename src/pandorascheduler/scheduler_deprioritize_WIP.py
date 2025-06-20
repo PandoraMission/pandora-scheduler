@@ -962,6 +962,8 @@ def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visib
         log_info = 'Free time, no observation scheduled.'
         return aux_df, log_info, non_primary_obs_time, last_std_obs
         
+    deprioritized_last_resort = [[],[]]
+
     for tdf_idx in range(1,len(target_definition_files)):
         aux_fn = f"{PACKAGEDIR}/data/{target_definition_files[tdf_idx]}_targets.csv"
         aux_targs = pd.read_csv(aux_fn).reset_index(drop=True)
@@ -1002,16 +1004,13 @@ def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visib
 
         for n in tqdm(range(len(names)), desc=f"Finding visible non-primary target for {str(start)} to {str(stop)} from '{target_definition_files[tdf_idx]}'"):
 
-            # values_tmp = non_primary_obs_time.get(names[n], timedelta()).values()
-            # existing_time = non_primary_obs_time.get(names[n])#, timedelta())
-
-            # Modify this part of the code
             if non_primary_obs_time.get(names[n]) is not None:
                 existing_times = non_primary_obs_time.get(names[n])[0]
                 total_time = np.sum(existing_times)
-                if total_time + (stop - start) > 2 * timedelta(hours=deprioritization_limit):
+                if total_time + (stop - start) > 1 * timedelta(hours=deprioritization_limit):
+                    deprioritized_last_resort = np.vstack((names[n], total_time))
                     # print(f"----------------------------> Remove {names[n]} <----------------------------")
-                    continue
+                    # continue
 
             # if non_primary_obs_time.get(names[n]):
             #     if non_primary_obs_time.get(names[n])[0] + (stop - start) > 2.*timedelta(hours = deprioritization_limit):
@@ -1077,26 +1076,78 @@ def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visib
             if vis_perc >= 100*min_visibility:
                 name = names[vis_any_targs[idx]]
                 priority_tmp = aux_priority[vis_any_targs[idx]]
-                print(f"--------> No target with full visibility; {name} scheduled for non-primary observations with {vis_perc:.2f}% visibility from {target_definition_files[tdf_idx]}.")
+                print(f"--------> No non-primary target with full visibility; {name} scheduled for non-primary observations with {vis_perc:.2f}% visibility from {target_definition_files[tdf_idx]}.")
             # print()
-                log_info=f"No target with full visibility; {name} scheduled for non-primary observations with {vis_perc:.2f}% visibility from {target_definition_files[tdf_idx]}."
+                log_info=f"No non-primary target with full visibility; {name} scheduled for non-primary observations with {vis_perc:.2f}% visibility from {target_definition_files[tdf_idx]}."
                 break
             else:
                 print(f"No non-primary target with visibility greater than {100*min_visibility}% from {target_definition_files[tdf_idx]}, try next target list...")
                 continue
         
-        #Safeguard against no aux targets being visible at all
-        else:
-            # print(f"No fuly or partially visible targets in {target_definition_files[tdf_idx]}, try next target list...")
-            # log_info = f"No fuly or partially visible targets in {target_definition_files[tdf_idx]}, try next target list..."
-            continue
+        # # Last resort safeguard against no non-deprioritized aux targets being visible at all ---> check back all deprioritized and try to use one of them!
+        # else:
+        #     if tdf_idx < len(target_definition_files) - 1:
+        #         continue
+        #     else:
+        #         for nn in tqdm(range(len(deprioritized_last_resort)), desc=f"-----> Last resort attempt to find visible non-primary target for {str(start)} to {str(stop)} from deprioritized list"):
+        #             try:
+        #                 vis_file = vis = pd.read_csv(helper_codes.find_file(deprioritized_last_resort[nn]))#f"{PACKAGEDIR}/data/aux_targets/{deprioritized_last_resort[nn]}/Visibility for {deprioritized_last_resort[nn]}.csv"
+        #                 vis = pd.read_csv(vis_file, usecols=["Time(MJD_UTC)", "Visible"])
+        #                 time_mask = (Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') >= start) & \
+        #                             (Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') <= stop)
+        #                 vis_filtered = vis[time_mask]
+
+        #                 if not vis_filtered.empty and vis_filtered['Visible'].all():
+        #                     vis_all_targs.append(nn)
+        #                     break
+        #                 elif not vis_filtered.empty and vis_filtered['Visible'].any():
+        #                     vis_any_targs.append(nn)
+        #                     targ_vis.append(100*(np.sum(vis_filtered['Visible'])/len(vis_filtered)))
+        #             except FileNotFoundError:
+        #             # else:
+        #                 pass
+
+        #         if len(vis_all_targs) > 0:
+        #             if aux_key == ('sort_by_tdf_priority') or (aux_key == 'closest'):
+        #                 idx = 0 
+        #             else:
+        #                 idx = np.random.randint(0,len(vis_all_targs))
+        #             name = names[vis_all_targs[idx]]
+        #             priority_tmp = aux_priority[vis_all_targs[idx]]
+        #             print(f"--------> {name} scheduled for non-primary observations with full visibility from {target_definition_files[tdf_idx]}.")
+        #             # print()
+        #             log_info=f"{name} scheduled for non-primary observation with full visibility."
+        #             break
+
+        #         elif len(vis_any_targs) > 0:
+        #             # if aux_key == 'closest':
+        #             #     idx = 0
+        #             # elif aux_key == 'max_visibility_any':
+        #             #     idx = np.asarray(targ_vis).argmax()
+        #             # else:
+        #             #     idx = np.random.randint(0, len(vis_any_targs))
+        #             idx = np.asarray(targ_vis).argmax()
+        #             vis_perc = targ_vis[idx]
+        #             # print(targ_vis, vis_perc, min_visibility)
+        #             if vis_perc >= 100*min_visibility:
+        #                 name = names[vis_any_targs[idx]]
+        #                 priority_tmp = aux_priority[vis_any_targs[idx]]
+        #                 print(f"--------> No non-primary target with full visibility; {name} scheduled for non-primary observations with {vis_perc:.2f}% visibility from {target_definition_files[tdf_idx]}.")
+        #             # print()
+        #                 log_info=f"No non-primary target with full visibility; {name} scheduled for non-primary observations with {vis_perc:.2f}% visibility from {target_definition_files[tdf_idx]}."
+        #                 break
+        #         else:
+        #             name = "Free Time"
+        #             priority_tmp = 0.
+        #             print(f"No fuly or partially visible non-primary targets, Free Time...")
+        #             log_info = f"No fuly or partially visible non-primary targets, Free Time..."
 
     try:
         name
     except NameError:
         name = "Free Time"
         priority_tmp = 0.
-        log_info = "No fuly or partially visible targets"
+        log_info = "No fuly or partially visible non-primary targets, Free Time..."
         
     # try:
     #     log_info
@@ -1125,6 +1176,7 @@ def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visib
         total_time = np.sum(non_primary_obs_time[name][0]) if isinstance(non_primary_obs_time[name][0], np.ndarray) else non_primary_obs_time[name][0]
 
         if total_time > timedelta(hours=deprioritization_limit):
+            # deprioritized_last_resort = np.vstack((name, total_time))
             print(f"----------------------------> Deprioritize {name} <----------------------------")
             new_priority = 0.95 * aux_priority[len(names) - 1]
             if isinstance(non_primary_obs_time[name][0], np.ndarray):
