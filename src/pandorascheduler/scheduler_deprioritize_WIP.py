@@ -1004,13 +1004,16 @@ def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visib
 
         for n in tqdm(range(len(names)), desc=f"Finding visible non-primary target for {str(start)} to {str(stop)} from '{target_definition_files[tdf_idx]}'"):
 
-            if non_primary_obs_time.get(names[n]) is not None:
-                existing_times = non_primary_obs_time.get(names[n])[0]
-                total_time = np.sum(existing_times)
-                if total_time + (stop - start) > 1 * timedelta(hours=deprioritization_limit):
-                    deprioritized_last_resort = np.vstack((names[n], total_time))
-                    # print(f"----------------------------> Remove {names[n]} <----------------------------")
-                    # continue
+            # The following block created a curious issue. If the continue statement is executed, the target is removed from the visibility checks and the scheduler 
+            # moves to the next. This resulted in a situation where enough targets were removed from consideration, such that some of them happend to be only visible 
+            # target at a later time -- yet the scheduler could not select them because they could not be checked for visibility during that particular time!
+            # if non_primary_obs_time.get(names[n]) is not None:
+            #     existing_times = non_primary_obs_time.get(names[n])[0]
+            #     total_time = np.sum(existing_times)
+            #     if total_time + (stop - start) > 2 * timedelta(hours=deprioritization_limit):
+            #         deprioritized_last_resort = np.vstack((names[n], total_time))
+            #         # print(f"----------------------------> Remove {names[n]} <----------------------------")
+            #         continue
 
             # if non_primary_obs_time.get(names[n]):
             #     if non_primary_obs_time.get(names[n])[0] + (stop - start) > 2.*timedelta(hours = deprioritization_limit):
