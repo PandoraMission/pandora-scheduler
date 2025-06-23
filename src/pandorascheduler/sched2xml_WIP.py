@@ -592,7 +592,7 @@ dom = minidom.parseString(etstr)
 
 #dom = xml.dom.minidom.parseString(etstr)
 pretty_xml_as_string = dom.toprettyxml()
-f=open(f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_TEST_wip','w+')#test.xml', 'w+')
+f=open(f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_TEST_wip.xml','w+')#test.xml', 'w+')
 f.write(pretty_xml_as_string)
 f.close()
 

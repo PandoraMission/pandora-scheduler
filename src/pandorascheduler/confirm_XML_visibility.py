@@ -11,7 +11,7 @@ import tqdm as tqdm
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 
 # Parse the XML file
-fname = f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_TEST.xml'
+fname = f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_TEST_wip.xml'
 tree = ET.parse(fname)
 root = tree.getroot()
 
