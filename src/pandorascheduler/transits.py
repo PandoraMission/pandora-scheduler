@@ -206,11 +206,20 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         # def custom_float_format(df):
         #     formatters = {}
         #     for col in df.columns:
-        #         if col in [0, 3, 4, 5]:
-        #             formatters[col] = lambda x: f'{x:.6f}'
-        #         elif col in [1, 2]:
-        #             formatters[col] = lambda x: f'{x:.1f}'
-        #     return formatters
+        #         if col == 'Time(MJD_UTC)':
+        #             df[col] = lambda x: f'{x:.6f}'
+        #         elif col == 'SAA_Crossing' or col == 'Visible':
+        #             df[col] = lambda x: f'{x:.1f}'
+        #         else:
+        #             df[col] = lambda x: f'{x:.3f}'
+        #     return df
+
+        vis_df['Time(MJD_UTC)'] = np.round(vis_df['Time(MJD_UTC)'], 6)
+        vis_df['SAA_Crossing'] = np.round(vis_df['SAA_Crossing'], 1)
+        vis_df['Visible'] = np.round(vis_df['Visible'], 1)
+        vis_df['Earth_Sep'] = np.round(vis_df['Earth_Sep'], 3)
+        vis_df['Moon_Sep'] = np.round(vis_df['Moon_Sep'], 3)
+        vis_df['Sun_Sep'] = np.round(vis_df['Sun_Sep'], 3)
 
         # formatters = custom_float_format(vis_df)
         # vis_df.to_csv(save_name, sep=',', index=False, float_format=custom_float_format)
