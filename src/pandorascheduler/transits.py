@@ -541,7 +541,8 @@ def SAA_overlap(planet_name:str, star_name:str):
         overlap_times = sset.intersection(tset)
         transit_overlap = len(overlap_times)/len(transit_rng)
         # saa_overlap['SAA_Overlap'][i] = transit_overlap
-        saa_overlap.loc[i, "SAA Overlap"] = transit_overlap
+        # saa_overlap.loc[i, "SAA Overlap"] = transit_overlap
+        saa_overlap.loc[i] = transit_overlap
 
     ### Update pandas dataframe and save csv
     if 'SAA_Overlap' in planet_data:
