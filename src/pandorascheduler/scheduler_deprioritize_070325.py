@@ -987,15 +987,15 @@ def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visib
             decs = aux_targs['DEC']
             aux_priority = aux_targs['Priority']
 
-        elif aux_key == 'closest':
-            po_sc = SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
-            aux_sc = SkyCoord(unit='deg', ra=ras, dec=decs)
-            dif = aux_sc.separation(po_sc).deg
-            aux_sc_sorted_by_distance = dif.argsort()
-            names = names.iloc[aux_sc_sorted_by_distance].reset_index(drop=True)
-            ras = ras.iloc[aux_sc_sorted_by_distance].reset_index(drop=True)
-            decs = decs.iloc[aux_sc_sorted_by_distance].reset_index(drop=True)
-            aux_priority = aux_targs['Priority'].iloc[aux_sc_sorted_by_distance].reset_index(drop=True)
+        # elif aux_key == 'closest':
+        #     po_sc = SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
+        #     aux_sc = SkyCoord(unit='deg', ra=ras, dec=decs)
+        #     dif = aux_sc.separation(po_sc).deg
+        #     aux_sc_sorted_by_distance = dif.argsort()
+        #     names = names.iloc[aux_sc_sorted_by_distance].reset_index(drop=True)
+        #     ras = ras.iloc[aux_sc_sorted_by_distance].reset_index(drop=True)
+        #     decs = decs.iloc[aux_sc_sorted_by_distance].reset_index(drop=True)
+        #     aux_priority = aux_targs['Priority'].iloc[aux_sc_sorted_by_distance].reset_index(drop=True)
 
         vis_all_targs = []
         vis_any_targs = []
