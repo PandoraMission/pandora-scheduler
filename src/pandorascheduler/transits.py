@@ -214,7 +214,7 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         #             df[col] = lambda x: f'{x:.3f}'
         #     return df
 
-        vis_df['Time(MJD_UTC)'] = np.round(vis_df['Time(MJD_UTC)'], 6)
+        # vis_df['Time(MJD_UTC)'] = np.round(vis_df['Time(MJD_UTC)'], 8)
         vis_df['SAA_Crossing'] = np.round(vis_df['SAA_Crossing'], 1)
         vis_df['Visible'] = np.round(vis_df['Visible'], 1)
         vis_df['Earth_Sep'] = np.round(vis_df['Earth_Sep'], 3)
