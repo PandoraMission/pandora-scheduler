@@ -21,7 +21,7 @@ def Schedule(
     pandora_stop: str,
     target_list: str,
     obs_window: timedelta,
-    transit_cofverage_min: float,
+    transit_coverage_min: float,
     sched_wts: list,
     min_visibility: float,
     deprioritization_limit: float, 
@@ -1318,16 +1318,15 @@ def Schedule_all_scratch(
     for t in tqdm(range(len(t_list))):
         #Determine if there is overlap between target planets' transits and any companion planets
         try:
-            print('######### CHECK TRANSIT OVERLAP BUSINESS!!! #########')
-        # if 1 == 1: 
+            # print('######### CHECK TRANSIT OVERLAP BUSINESS!!! #########') 
             vis = pd.read_csv(f'{PACKAGEDIR}/data/targets/{ts_list[t]}/{t_list[t]}/Visibility for {t_list[t]}.csv')
             t_over=vis['Transit_Overlap']
+            # print(f'Overlap for {t_list[t]} and {ts_list[t]} exists')
         except KeyError:
-        # else:
             # transits.Transit_overlap(os.path.basename(primary_targ_list), f'{target_definition_files[1]}_targets.csv', ts_list[t])
             transits.Transit_overlap(os.path.basename(primary_targ_list), os.path.basename(primary_targ_list), ts_list[t])
         
-        #Determine if there is overlap between target planets' transits and South Atlantic Anomaly crossing
+        # #Determine if there is overlap between target planets' transits and South Atlantic Anomaly crossing
         try:
         # if 1 == 1:
             vis = pd.read_csv(f'{PACKAGEDIR}/data/targets/{ts_list[t]}/{t_list[t]}/Visibility for {t_list[t]}.csv')
@@ -1373,7 +1372,7 @@ if __name__ == "__main__":
     if update_target_list_as_per_json_files:
 
         # target_definition_files = ['exoplanet', 'auxiliary-exoplanet', 'auxiliary-standard', 'monitoring-standard', 'secondary-exoplanet', 'occultation-standard']
-        target_definition_files = ['exoplanet', 'auxiliary-standard', 'monitoring-standard', 'secondary-exoplanet', 'occultation-standard']
+        target_definition_files = ['exoplanet', 'auxiliary-standard', 'monitoring-standard', 'occultation-standard']
 
         for keyword_ in target_definition_files:
             fn_tmp = f"{PACKAGEDIR}/data/{keyword_}_targets.csv"
@@ -1401,7 +1400,7 @@ if __name__ == "__main__":
 
     # aux_key = None
 
-    run_ = 'vis_and_schedule'#'target_visibility'#'schedule_only'#
+    run_ = 'vis_and_schedule'#'schedule_only'#'target_visibility'#
     if run_ == 'schedule_only':
         Schedule(pandora_start, pandora_stop, primary_targ_list, obs_window, transit_coverage_min, sched_wts, min_visibility, deprioritization_limit, \
             aux_key = aux_key, aux_list=aux_targ_list, fname_tracker = fname_tracker, commissioning_time = commissioning_time_, \
