@@ -157,7 +157,7 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
 
     # st_name = t_name if t_name.startswith('Gaia') else t_name[:-2]
     
-    if t_name.endswith(('b', 'c', 'd', 'e', 'f')):
+    if t_name.endswith(('b', 'c', 'd', 'e', 'f')) and (t_name != 'EV_Lac'):
         st_name = t_name[:-2]
     else:
         st_name = t_name
