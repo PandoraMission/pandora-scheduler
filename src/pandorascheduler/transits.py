@@ -17,7 +17,7 @@ import json
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 
-print(PACKAGEDIR)
+# print(PACKAGEDIR)
 # from . import PACKAGEDIR
 
 def star_vis(sun_block:float, moon_block:float, earth_block:float, 
