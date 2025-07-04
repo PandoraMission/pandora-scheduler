@@ -557,7 +557,7 @@ def Schedule(
             #******ADD: functionality to force MTR prioritization and flag if nophase event causes the minimum schedule to not be met
        
 
-        ### Next look at each planet and determine if transit occurs in window
+        # ## Next look at each planet and determine if transit occurs in window
         # for i in range(len(tracker)):
         #     planet_name = tracker["Planet Name"][i]
 
@@ -705,42 +705,43 @@ def Schedule(
         ### Check if there's no transits occuring during the observing window
         ### Schedule auxiliary observation if possible
         if len(temp_df) == 0:
+            # print(f'--------> NO TRANSITS FOR {pandora_start} to {pandora_stop}')
 
-            if sched_df['Target'].iloc[-1].endswith(('b', 'c', 'd')):
-                star_name_tmp = sched_df['Target'].iloc[-1][0:-2]
-            else:
-                star_name_tmp = sched_df['Target'].iloc[-1]
-
-            if star_name_tmp == 'Free Time':# or star_name_tmp.startswith("TоO"):
-                start = stop
-                stop = start + obs_window
-                continue
-
-            try:
-            # if 1 ==1:
-                aux_fn = f"{PACKAGEDIR}/data/occultation-standard_targets.csv"
-                aux_targs = pd.read_csv(aux_fn).reset_index(drop=True)
-                ra_aux_no_transit = aux_targs[aux_targs["Star Name"] == star_name_tmp]["RA"].values[0]
-                dec_aux_no_transit = aux_targs[aux_targs["Star Name"] == star_name_tmp]["DEC"].values[0]
-            except:
+            # if sched_df['Target'].iloc[-1].endswith(('b', 'c', 'd')):
+            #     star_name_tmp = sched_df['Target'].iloc[-1][0:-2]
             # else:
-                if star_name_tmp.startswith("DR3"):
-                    star_name_tmp = star_name_tmp.replace('DR3_', 'Gaia DR3 ')
-                if star_name_tmp.startswith("TоO"):
-                    print(' ----> CHANGE NAME FOR ToO!!! <---- ')
-                    star_name_tmp = "Rigel"
-                star_sc = SkyCoord.from_name(star_name_tmp)
-                ra_aux_no_transit = star_sc.ra.deg
-                dec_aux_no_transit = star_sc.dec.deg
+            #     star_name_tmp = sched_df['Target'].iloc[-1]
+
+            # if star_name_tmp == 'Free Time':# or star_name_tmp.startswith("TоO"):
+            #     start = stop
+            #     stop = start + obs_window
+            #     continue
+
+            # try:
+            # # if 1 ==1:
+            #     aux_fn = f"{PACKAGEDIR}/data/occultation-standard_targets.csv"
+            #     aux_targs = pd.read_csv(aux_fn).reset_index(drop=True)
+            #     ra_aux_no_transit = aux_targs[aux_targs["Star Name"] == star_name_tmp]["RA"].values[0]
+            #     dec_aux_no_transit = aux_targs[aux_targs["Star Name"] == star_name_tmp]["DEC"].values[0]
+            # except:
+            # # else:
+            #     if star_name_tmp.startswith("DR3"):
+            #         star_name_tmp = star_name_tmp.replace('DR3_', 'Gaia DR3 ')
+            #     if star_name_tmp.startswith("TоO"):
+            #         print(' ----> CHANGE NAME FOR ToO!!! <---- ')
+            #         star_name_tmp = "Rigel"
+            #     star_sc = SkyCoord.from_name(star_name_tmp)
+            #     ra_aux_no_transit = star_sc.ra.deg
+            #     dec_aux_no_transit = star_sc.dec.deg
 
             aux_df, log_info, non_primary_obs_time, last_std_obs = Schedule_aux(start, stop, aux_key, \
-                prev_obs=[ra_aux_no_transit, dec_aux_no_transit], non_primary_obs_time=non_primary_obs_time, min_visibility = min_visibility, \
+                non_primary_obs_time=non_primary_obs_time, min_visibility = min_visibility, \
                     deprioritization_limit = deprioritization_limit, last_std_obs = last_std_obs)
             if aux_key:
                 print()
 
             if sched_df.empty:
-                sched_df = temp.copy()
+                sched_df = aux_df.copy()
             else:        
                 sched_df = pd.concat([sched_df, aux_df], axis=0)
 
@@ -803,20 +804,20 @@ def Schedule(
             # VK END
 
             if obs_rng[0] < obs_start:
-                try:
-                # if 1 ==1:
-                    ra_aux_partial_transit = target_list[target_list["Star Name"] == star_name].RA.values[0]
-                    dec_aux_partial_transit = target_list[target_list["Star Name"] == star_name].DEC.values[0]
-                except:
-                # else:
-                    print(f"{star_name} not in primary targets, just use SkyCoord")
-                    star_sc = SkyCoord.from_name(star_name)
-                    ra_aux_partial_transit = star_sc.ra.deg
-                    dec_aux_partial_transit = star_sc.dec.deg
+                # try:
+                # # if 1 ==1:
+                #     ra_aux_partial_transit = target_list[target_list["Star Name"] == star_name].RA.values[0]
+                #     dec_aux_partial_transit = target_list[target_list["Star Name"] == star_name].DEC.values[0]
+                # except:
+                # # else:
+                #     print(f"{star_name} not in primary targets, just use SkyCoord")
+                #     star_sc = SkyCoord.from_name(star_name)
+                #     ra_aux_partial_transit = star_sc.ra.deg
+                #     dec_aux_partial_transit = star_sc.dec.deg
 
                 # print(f"Observe non-primary for {start} to {obs_start}; primary is {star_name} and is initially schedule for {start} to {stop}")
                 aux_df, log_info, non_primary_obs_time, last_std_obs = Schedule_aux(start, obs_start, aux_key, \
-                    prev_obs=[ra_aux_partial_transit, dec_aux_partial_transit], non_primary_obs_time=non_primary_obs_time, \
+                    non_primary_obs_time=non_primary_obs_time, \
                         min_visibility = min_visibility, deprioritization_limit = deprioritization_limit, last_std_obs = last_std_obs)
                 if aux_key:
                     print()
@@ -935,7 +936,8 @@ def Schedule(
 
     return tracker
 
-def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visibility, deprioritization_limit, last_std_obs, **kwargs):
+# def Schedule_aux(start, stop, aux_key, prev_obs, non_primary_obs_time, min_visibility, deprioritization_limit, last_std_obs, **kwargs):
+def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, deprioritization_limit, last_std_obs, **kwargs):
 
     obs_rng = pd.date_range(start, stop, freq = "min")
 
@@ -1345,10 +1347,10 @@ if __name__ == "__main__":
 
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
-    pandora_start = "2025-11-15 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2026-11-15 00:00:00"#"2026-10-01 00:00:00"
-    sched_start= "2025-11-15 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-11-15 00:00:00"#"2026-10-01 00:00:00"
+    pandora_start = "2025-12-15 00:00:00"#"2025-09-01 00:00:00"
+    pandora_stop = "2026-12-15 00:00:00"#"2026-10-01 00:00:00"
+    sched_start= "2025-12-15 00:00:00"#"2025-09-01 00:00:00"
+    sched_stop= "2026-12-15 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0 # days
 
@@ -1399,6 +1401,7 @@ if __name__ == "__main__":
     # aux_key = None
 
     run_ = 'vis_and_schedule'#'schedule_only'#'target_visibility'#
+
     if run_ == 'schedule_only':
         Schedule(pandora_start, pandora_stop, primary_targ_list, obs_window, transit_coverage_min, sched_wts, min_visibility, deprioritization_limit, \
             aux_key = aux_key, aux_list=aux_targ_list, fname_tracker = fname_tracker, commissioning_time = commissioning_time_, \
