@@ -67,18 +67,28 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
     # gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep='\t')
     if gmat_file == 'GMAT_pandora_450_20230713.csv':
         gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep='\t+', engine = 'python')
+        keyword_gmat = 'Earth.UTCModJulian'
+        obs_name = 'Pandora'
     elif gmat_file == 'GMAT_pandora_600_20240512.txt':
         gmat_data = pd.read_fwf(f'{PACKAGEDIR}/data/{gmat_file}')
+        keyword_gmat = 'Earth.UTCModJulian'
+    elif gmat_file == 'GMAT_pandora_600_20250706_withdrag.txt':
+        gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep=',', engine = 'python')
+        keyword_gmat = 'Earth.A1ModJulian'
+        obs_name = 'Pandora'
+    elif gmat_file == 'GMAT_pandora_600_20250708_withdrag.txt':
+        gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep=',', engine = 'python')
+        keyword_gmat = 'Earth.UTCModJulian'
+        obs_name = 'Pandora'
 
     # Trim dataframe to slightly larger than date range of 
     # Pandora science lifetime defined as obs_start and obs_stop
-    gmat_data = gmat_data[(gmat_data['Earth.UTCModJulian']>=(t_jd_utc[0]-2430000.0)-0.0007) & 
-            (gmat_data['Earth.UTCModJulian']<=(t_jd_utc[-1]-2430000.0)+0.0007)]
+    gmat_data = gmat_data[(gmat_data[keyword_gmat]>=(t_jd_utc[0]-2430000.0)-0.0007) & 
+            (gmat_data[keyword_gmat]<=(t_jd_utc[-1]-2430000.0)+0.0007)]
 
     ### Convert GMAT times into standard MJD_UTC
     # Note: GMAT uses different offset for it's MJD (uses 2,430,000.0 rather than 2,400,000.5)
-    gmat_mjd_utc =np.array(gmat_data['Earth.UTCModJulian']) + 2430000.0 - 2400000.5
-
+    gmat_mjd_utc =np.array(gmat_data[keyword_gmat]) + 2430000.0 - 2400000.5
 
     ### Extract GMAT positions in MJ2000 Earth Centric (EC) cartesian coordinates
     # Earth Centric (EC) coordinates from GMAT
@@ -124,10 +134,6 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
     ### Pandora Latitude & Longitude
     gmat_lat = np.array(gmat_data[f'{obs_name}.Earth.Latitude'])
     gmat_lon = np.array(gmat_data[f'{obs_name}.Earth.Longitude'])
-    
-    
-    
-    
     
     gmat_lon_cont = np.copy(gmat_lon)
     for i in range(len(gmat_lon_cont)-1):
@@ -214,7 +220,7 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         #             df[col] = lambda x: f'{x:.3f}'
         #     return df
 
-        # vis_df['Time(MJD_UTC)'] = np.round(vis_df['Time(MJD_UTC)'], 8)
+        # vis_df['Time(MJD_UTC)'] = np.round(vis_df['Time(MJD_UTC)'], 6)
         vis_df['SAA_Crossing'] = np.round(vis_df['SAA_Crossing'], 1)
         vis_df['Visible'] = np.round(vis_df['Visible'], 1)
         vis_df['Earth_Sep'] = np.round(vis_df['Earth_Sep'], 3)
