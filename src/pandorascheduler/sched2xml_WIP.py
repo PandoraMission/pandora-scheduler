@@ -301,7 +301,7 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
         #     print(ii, jj)
 
         # VK BEGIN: BREAK OCCULTATION SEQUENCES LONGER THAN 90 MINUTES
-        break_occ_seq_longer_than_occultation_sequence_limit = False
+        break_occ_seq_longer_than_occultation_sequence_limit = True
         if break_occ_seq_longer_than_occultation_sequence_limit:
             start_tmp, stop_tmp = [], []
             for ii in range(len(oc_stops)):

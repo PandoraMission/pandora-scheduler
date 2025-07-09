@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from astropy.time import Time
 import pandas as pd
 import numpy as np
-fname = '/Users/vkostov/Documents/GitHub/pandora-scheduler/src/pandorascheduler/data/calendar_Pandora_Schedule_TEST.xml'#calendar_top20_4weeks_start_2025_09_03.xml'
+fname = '/home/pluto/Documents/GitHub/pandora-scheduler/src/pandorascheduler/data/calendar_Pandora_Schedule_TEST_wip.xml'#calendar_top20_4weeks_start_2025_09_03.xml'
 parser = etree.XMLParser(load_dtd=True, no_network=False)
 tree = etree.parse(fname, parser)
 root = tree.getroot()
@@ -17,6 +17,14 @@ for visit in root[1:]:
         df.loc[idx] = [visitid, seqid, target, Time(seq[1][2][0].text).jd, Time(seq[1][2][1].text).jd]
         idx += 1
 df = df.set_index('target')
+
+
+for ii, row in df[0:].iterrows():
+    obs_len = float(24*(row['stop'] - row['start']))
+    if obs_len > 1.5:
+        print(row['visitid'], row['seqid'], "%0.2f" % float(24*(row['stop'] - row['start'])))
+
+
 fig, ax = plt.subplots(figsize=(10, 5))
 targs = np.unique(np.asarray(df.index))
 for idx, targ in enumerate(targs):
