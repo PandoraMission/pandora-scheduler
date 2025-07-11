@@ -57,7 +57,10 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 nirda_subelement_ = ET.SubElement(nirda, xml_key)
                 nirda_subelement_.text = str(nirda_values)
             elif nirda_key == 'NIRDA_TargetID':
-                tmp_t_name = targ_info['Planet Name'].str.replace(r'\s+([bcd])$', r'\1', regex=True).iloc[0]
+                if pd.isnull(targ_info['Planet Name'].iloc[0]):
+                    tmp_t_name = targ_info['Star Name'].iloc[0]
+                else:
+                    tmp_t_name = targ_info['Planet Name'].str.replace(r'\s+([bcd])$', r'\1', regex=True).iloc[0]
                 nirda_subelement_ = ET.SubElement(nirda, xml_key)
                 nirda_subelement_.text = tmp_t_name#targ_info['Planet Name'].iloc[0]
             elif nirda_key == 'NIRDA_SC_Integrations':
@@ -82,7 +85,10 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 vda_subelement_.text = str(vda_values)
             elif vda_key == 'VDA_TargetID':
-                tmp_t_name = targ_info['Planet Name'].str.replace(r'\s+([bcd])$', r'\1', regex=True).iloc[0]
+                if pd.isnull(targ_info['Planet Name'].iloc[0]):
+                    tmp_t_name = targ_info['Star Name'].iloc[0]
+                else:
+                    tmp_t_name = targ_info['Planet Name'].str.replace(r'\s+([bcd])$', r'\1', regex=True).iloc[0]
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 vda_subelement_.text = tmp_t_name#targ_info['Planet Name'].iloc[0]
             elif vda_key == 'VDA_TargetRA':

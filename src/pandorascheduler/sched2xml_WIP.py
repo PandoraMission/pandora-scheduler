@@ -155,6 +155,10 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
 
     t_name = sch['Target'][i]
 
+    if np.isfinite(sch.loc[i]['Transit Coverage']):
+        exoplanet_tdf = True
+    else:
+        exoplanet_tdf = False
     # st_name = t_name if t_name.startswith('Gaia') else t_name[:-2]
     
     if t_name.endswith(('b', 'c', 'd', 'e', 'f')) and (t_name != 'EV_Lac'):
@@ -174,7 +178,7 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
     # if not t_name.startswith('Gaia'):# or t_name.startswith('Free'):
     # if t_name.endswith(('b', 'c', 'd', 'e', 'f')):
     # del v_data
-    if t_name in t_list['Planet Name'].values:
+    if t_name in t_list['Planet Name'].values and exoplanet_tdf:
         v_data = pd.read_csv(tar_vis_path+f'{st_name}/Visibility for {st_name}.csv')
         tmp_idx = t_list.index[t_list['Planet Name'] == t_name].tolist()
         targ_info = t_list.loc[[tmp_idx[0]]]#t_list.loc[(t_list['Planet Name'] == t_name)]
@@ -182,9 +186,9 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
         tv_data = pd.read_csv(tar_vis_path+f'{st_name}/{t_name}/Visibility for {t_name}.csv')
         tv_st = Time(tv_data['Transit_Start'], format='mjd', scale='utc').to_value('datetime')
         tv_sp = Time(tv_data['Transit_Stop'], format='mjd', scale='utc').to_value('datetime')
-    elif t_name in a_list['Star Name'].values:
+    elif exoplanet_tdf == False and t_name != 'Free Time' and t_name != 'STD':#t_name in a_list['Star Name'].values:
         v_data = pd.read_csv(aux_vis_path+f'{st_name}/Visibility for {t_name}.csv')
-        tmp_idx = a_list.index[a_list['Star Name'] == t_name].tolist()
+        tmp_idx = a_list.index[(a_list['Star Name'] == t_name) & (pd.isnull(a_list['Planet Name']))].tolist()
         targ_info = a_list.loc[[tmp_idx[0]]]#a_list.loc[(a_list['Star Name'] == t_name) & (a_list['Planet Name'].notna())]
         i_flag = 0
     elif t_name == 'Free Time':
