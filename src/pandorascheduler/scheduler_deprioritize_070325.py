@@ -13,6 +13,12 @@ import json
 from multiprocessing import Pool
 from functools import partial
 
+import warnings
+from erfa import ErfaWarning
+
+# Suppress only ERFA warnings
+warnings.filterwarnings('ignore', category=ErfaWarning)
+
 # from . import PACKAGEDIR
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -945,11 +951,42 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
 
     # Add standard stars!
     if (start - last_std_obs > timedelta(days = 7.)) and ((start + obs_std_dur) < stop):
+
+        std_fn = f"{PACKAGEDIR}/data/monitoring-standard_targets.csv"
+        std_targs = pd.read_csv(std_fn).reset_index(drop=True)
+        std_targs = std_targs.sort_values('Priority', ascending=False).reset_index(drop=True)
+        std_names = std_targs['Star Name']
+        std_ras = std_targs['RA']
+        std_decs = std_targs['DEC']
+        std_priority = std_targs['Priority']
+
+        # std_vis = []
+
+        for nn in range(len(std_names)):#, desc=f"Finding STD for {str(start)} to {str(start + obs_std_dur)} from monitoring-standard_targets.csv"):
+            vis_file = f"{PACKAGEDIR}/data/aux_targets/{std_names[nn]}/Visibility for {std_names[nn]}.csv"
+            vis = pd.read_csv(vis_file, usecols=["Time(MJD_UTC)", "Visible"])
+            time_mask = (Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') >= start) & \
+                        (Time(vis["Time(MJD_UTC)"], format='mjd', scale='utc') <= start + obs_std_dur)
+            vis_filtered = vis[time_mask]
+
+            if not vis_filtered.empty and vis_filtered['Visible'].all():
+                std_name = std_names[nn]
+                priority_std = std_priority[nn]
+                print(f"--------> {std_name} scheduled for STD observations with full visibility.")
+                break
+        
+        try:
+            std_name
+        except NameError:
+            std_name = 'WARNING: no visible standard star'
+            priority_std = 1.
+            print(f"    ----> WARNING: no visible standard star")
+
         # Schedule observations of a standard star 
-        STD = [["STD", start, start + obs_std_dur]]
+        STD_obs = [[f"{std_name} STD", start, start + obs_std_dur]]
         start += obs_std_dur
         last_std_obs = start
-        std_priority = 1.
+        std_priority = priority_std#1.
 
         from pandas import Timedelta
         existing_STD_time, existing_STD_priority = non_primary_obs_time.get("STD", (timedelta(), 0))
@@ -975,7 +1012,7 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
         aux_names = set(aux_targs['Star Name'])
 
         # Create a dictionary of name-priority pairs from non_primary_obs_time
-        non_primary_priorities = {name: priority[-1] for name, (_, priority) in non_primary_obs_time.items() if name != 'STD'}
+        non_primary_priorities = {name: priority[-1] for name, (_, priority) in non_primary_obs_time.items() if (not name.endswith(('STD')))}#name != 'STD'}#name.endswith(("STD"))
         mask = (aux_targs['Star Name'].isin(non_primary_priorities.keys())) & \
             (aux_targs['Priority'] != aux_targs['Star Name'].map(non_primary_priorities))
 
@@ -1158,7 +1195,7 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
     # except NameError:
     #     log_info = "No fuly or partially visible targets"
 
-    if (name != "STD"):
+    if (not name.endswith(('STD'))):# name != "STD"):
         # existing_time, existing_priority = non_primary_obs_time.get(name, (timedelta(), priority_tmp))
         # non_primary_obs_time[name] = (existing_time + (stop - start), priority_tmp)
 
@@ -1195,7 +1232,7 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
 
     try:
     # if 1 ==1:
-        sched = STD + sched
+        sched = STD_obs + sched
     except NameError:
     # else:
         no_std = True
@@ -1347,10 +1384,10 @@ if __name__ == "__main__":
 
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
-    pandora_start = "2025-12-15 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2026-12-15 00:00:00"#"2026-10-01 00:00:00"
-    sched_start= "2025-12-15 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2026-12-15 00:00:00"#"2026-10-01 00:00:00"
+    pandora_start = "2026-01-15 00:00:00"#"2025-09-01 00:00:00"
+    pandora_stop = "2027-01-15 00:00:00"#"2026-10-01 00:00:00"
+    sched_start= "2026-01-15 00:00:00"#"2025-09-01 00:00:00"
+    sched_stop= "2027-01-15 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0 # days
 

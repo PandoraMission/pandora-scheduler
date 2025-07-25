@@ -23,7 +23,7 @@ warnings.filterwarnings("ignore")
 # VK END
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path = f'{PACKAGEDIR}/data/Pandora_Schedule_0.8_0.0_0.2_2025-12-15_to_2026-12-15.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
+schedule_path = f'{PACKAGEDIR}/data/Pandora_Schedule_0.8_0.0_0.2_2026-01-15_to_2027-01-15.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
 tar_vis_path = f'{PACKAGEDIR}/data/targets/'
 aux_vis_path = f'{PACKAGEDIR}/data/aux_targets/'
 tar_path = f'{PACKAGEDIR}/data/exoplanet_targets.csv'#primary-exoplanet-extended_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
@@ -163,6 +163,10 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
     
     if t_name.endswith(('b', 'c', 'd', 'e', 'f')) and (t_name != 'EV_Lac'):
         st_name = t_name[:-2]
+    elif t_name.endswith(('STD')):
+        t_name = t_name[:-4]
+        st_name = t_name
+        # st_name = t_name[:-2]
     else:
         st_name = t_name
     
@@ -186,15 +190,15 @@ for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch)))
         tv_data = pd.read_csv(tar_vis_path+f'{st_name}/{t_name}/Visibility for {t_name}.csv')
         tv_st = Time(tv_data['Transit_Start'], format='mjd', scale='utc').to_value('datetime')
         tv_sp = Time(tv_data['Transit_Stop'], format='mjd', scale='utc').to_value('datetime')
-    elif exoplanet_tdf == False and t_name != 'Free Time' and t_name != 'STD':#t_name in a_list['Star Name'].values:
+    elif exoplanet_tdf == False and t_name != 'Free Time' and not t_name.startswith(('WARNING')):#t_name in a_list['Star Name'].values:
         v_data = pd.read_csv(aux_vis_path+f'{st_name}/Visibility for {t_name}.csv')
         tmp_idx = a_list.index[(a_list['Star Name'] == t_name) & (pd.isnull(a_list['Planet Name']))].tolist()
         targ_info = a_list.loc[[tmp_idx[0]]]#a_list.loc[(a_list['Star Name'] == t_name) & (a_list['Planet Name'].notna())]
         i_flag = 0
     elif t_name == 'Free Time':
         continue
-    elif t_name == 'STD':
-        print(f'-------> STD NEED VISIBILITY <--------')
+    elif t_name.startswith(('WARNING')):#t_name == 'STD':
+        print(f'-------> WARNING: need visible STD <--------')
         continue
     else:
         print(f"No visibility data for {t_name}. Stop code")
