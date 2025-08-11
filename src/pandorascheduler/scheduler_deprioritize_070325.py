@@ -186,6 +186,10 @@ def Schedule(
         [tracker, pandora_transits_left, schedule_transits_left], axis=1
     )
 
+    # tracker_bak = tracker.copy()
+    # tracker.iloc[2,4] = 34
+    # tracker.iloc[2,-1] = 34
+
     ### Calculate an initial priority number for each planet
     trans_priority = []
     for i in range(len(tracker)):
@@ -262,6 +266,10 @@ def Schedule(
                 "Comments",
             ],
         )
+
+        # tracker_bak = tracker.copy()
+        # tracker.iloc[14, 0] = tracker.iloc[13, 0]
+        # tracker.iloc[13, 0] = tracker_bak.iloc[14, 0]
 
         ### First check if a Target of Opportunity is within observing window
         overlap_nophase = obs_rng.intersection(nophase_starts)
@@ -772,6 +780,9 @@ def Schedule(
                 # logging.warning(temp_df["Planet Name"][0], "Transit Factor Warning", temp_df["Transit Factor"][0])
             else:
                 # Otherwise, sort by "Quality Factor" (descending) and then by "Transit Factor" (ascending)
+
+                if "HAT-P-12 b" in temp_df.iloc[:,0].values:
+                    aaaa = 9999
                 temp_df = temp_df.sort_values(
                     by=["Quality Factor", "Transit Factor"],
                     ascending=[False, True]
@@ -1384,10 +1395,10 @@ if __name__ == "__main__":
 
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
-    pandora_start = "2026-01-15 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2027-01-15 00:00:00"#"2026-10-01 00:00:00"
-    sched_start= "2026-01-15 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2027-01-15 00:00:00"#"2026-10-01 00:00:00"
+    pandora_start = "2026-02-05 00:00:00"#"2025-09-01 00:00:00"
+    pandora_stop = "2027-02-05 00:00:00"#"2026-10-01 00:00:00"
+    sched_start= "2026-02-05 00:00:00"#"2025-09-01 00:00:00"
+    sched_stop= "2027-02-05 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0 # days
 
@@ -1434,8 +1445,8 @@ if __name__ == "__main__":
     if not os.path.exists(f"{PACKAGEDIR}/data/aux_list_new.csv"):
         create_aux_list = helper_codes.create_aux_list(target_definition_files, PACKAGEDIR)
 
-    aux_key = 'sort_by_tdf_priority'
-    # aux_key = None
+    # aux_key = 'sort_by_tdf_priority'
+    aux_key = None
 
     run_ = 'vis_and_schedule'#'schedule_only'#'target_visibility'#
 

@@ -1055,6 +1055,7 @@ def check_if_transits_in_obs_window(tracker, temp_df, target_list, start, pandor
             planet_data = pd.read_csv(
                 f"{PACKAGEDIR}/data/targets/{star_name}/{planet_name}/Visibility for {planet_name}.csv"
             )
+
             planet_data = planet_data.drop(
                 planet_data.index[
                     (planet_data["Transit_Coverage"] < transit_coverage_min)
