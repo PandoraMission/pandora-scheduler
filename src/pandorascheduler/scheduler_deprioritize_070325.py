@@ -130,7 +130,7 @@ def Schedule(
         np.array(target_list["DEC"]), columns=["DEC"]
     )
 
-    tracker = pd.concat([planet_names, ras_tmp, decs_tmp, primary_target, transit_need, transit_have], axis=1)
+    tracker = pd.concat([planet_names, primary_target, transit_need, transit_have], axis=1)
 
     ### Check if previous observations already exist and if so update tracker
     if os.path.exists(f"{PACKAGEDIR}/data/Pandora_archive.csv") == True:
