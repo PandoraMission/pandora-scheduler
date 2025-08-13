@@ -1039,6 +1039,7 @@ def check_if_transits_in_obs_window(tracker, temp_df, target_list, start, pandor
     sched_start, sched_stop, obs_rng, obs_window, sched_wts, transit_coverage_min):
     for i in range(len(tracker)):
         planet_name = tracker["Planet Name"][i]
+        ra_tar, dec_tar = tracker["RA"][i], tracker["DEC"][i]
 
         if (
             tracker.loc[(tracker["Planet Name"] == planet_name), "Transits Needed"][
@@ -1149,6 +1150,8 @@ def check_if_transits_in_obs_window(tracker, temp_df, target_list, start, pandor
                     temp = [
                         [
                             planet_name,
+                            ra_tar, 
+                            dec_tar,
                             obs_start,
                             gap_time,
                             planet_data["Transit_Coverage"][j],
@@ -1163,6 +1166,8 @@ def check_if_transits_in_obs_window(tracker, temp_df, target_list, start, pandor
                         temp,
                         columns=[
                             "Planet Name",
+                            "RA",
+                            "DEC",
                             "Obs Start",
                             "Obs Gap Time",
                             "Transit Coverage",

@@ -122,15 +122,15 @@ def Schedule(
         np.array(target_list["Primary Target"]), columns=["Primary Target"]
     )
 
-    ras = pd.DataFrame(
+    ras_tmp = pd.DataFrame(
         np.array(target_list["RA"]), columns=["RA"]
     )
 
-    decs = pd.DataFrame(
+    decs_tmp = pd.DataFrame(
         np.array(target_list["DEC"]), columns=["DEC"]
     )
 
-    tracker = pd.concat([planet_names, ras, decs, primary_target, transit_need, transit_have], axis=1)
+    tracker = pd.concat([planet_names, ras_tmp, decs_tmp, primary_target, transit_need, transit_have], axis=1)
 
     ### Check if previous observations already exist and if so update tracker
     if os.path.exists(f"{PACKAGEDIR}/data/Pandora_archive.csv") == True:
@@ -216,6 +216,8 @@ def Schedule(
         [],
         columns=[
             "Target",
+            "RA",
+            "Dec",
             "Observation Start",
             "Observation Stop",
             "Transit Coverage",
@@ -789,8 +791,8 @@ def Schedule(
                 # logging.warning(temp_df["Planet Name"][0], "Transit Factor Warning", temp_df["Transit Factor"][0])
             else:
                 # Otherwise, sort by "Quality Factor" (descending) and then by "Transit Factor" (ascending)
-                # if "HAT-P-12 b" in temp_df.iloc[:,0].values:
-                #     aaaa = 9999
+                if "HAT-P-12 b" in temp_df.iloc[:,0].values:
+                    aaaa = 9999
                 temp_df = temp_df.sort_values(
                     by=["Quality Factor", "Transit Factor"],
                     ascending=[False, True]
@@ -807,6 +809,7 @@ def Schedule(
                 #     )
 
             planet_name = temp_df["Planet Name"][0]
+            ra_tmp, dec_tmp = temp_df["RA"][0], temp_df["DEC"][0]
             star_name = target_list["Star Name"][np.where(target_list["Planet Name"] == planet_name)[0][0]]
             obs_start = temp_df["Obs Start"][0]
             obs_stop = obs_start + timedelta(hours=24)
@@ -866,6 +869,8 @@ def Schedule(
             sched = [
                 [
                     planet_name,
+                    ra_tmp, 
+                    dec_tmp,
                     obs_start,
                     obs_stop,
                     trans_cover,
@@ -879,6 +884,8 @@ def Schedule(
                 sched,
                 columns=[
                     "Target",
+                    "RA",
+                    "DEC",
                     "Observation Start",
                     "Observation Stop",
                     "Transit Coverage",
@@ -990,6 +997,7 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
 
             if not vis_filtered.empty and vis_filtered['Visible'].all():
                 std_name = std_names[nn]
+                std_ra, std_dec = std_ras[nn], std_decs[nn]
                 priority_std = std_priority[nn]
                 print(f"--------> {std_name} scheduled for STD observations with full visibility.")
                 break
@@ -998,11 +1006,12 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
             std_name
         except NameError:
             std_name = 'WARNING: no visible standard star'
+            std_ra, std_dec = "NaN", "NaN"
             priority_std = 1.
             print(f"    ----> WARNING: no visible standard star")
 
         # Schedule observations of a standard star 
-        STD_obs = [[f"{std_name} STD", start, start + obs_std_dur]]
+        STD_obs = [[f"{std_name} STD", start, start + obs_std_dur, std_ra, std_dec]]
         start += obs_std_dur
         last_std_obs = start
         std_priority = priority_std#1.
@@ -1116,6 +1125,7 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
             else:
                 idx = np.random.randint(0,len(vis_all_targs))
             name = names[vis_all_targs[idx]]
+            ra_tmp, dec_tmp = ras[vis_all_targs[idx]], decs[vis_all_targs[idx]]
             priority_tmp = aux_priority[vis_all_targs[idx]]
             print(f"--------> {name} scheduled for non-primary observations with full visibility from {target_definition_files[tdf_idx]}.")
             # print()
@@ -1135,6 +1145,7 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
             # print(targ_vis, vis_perc, min_visibility)
             if vis_perc >= 100*min_visibility:
                 name = names[vis_any_targs[idx]]
+                ra_tmp, dec_tmp = ras[vis_any_targs[idx]], decs[vis_any_targs[idx]]
                 priority_tmp = aux_priority[vis_any_targs[idx]]
                 print(f"--------> No non-primary target with full visibility; {name} scheduled for non-primary observations with {vis_perc:.2f}% visibility from {target_definition_files[tdf_idx]}.")
             # print()
@@ -1247,7 +1258,7 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
             else:
                 non_primary_obs_time[name] = (np.array([new_time]), np.array([new_priority]))
 
-    sched = [[name, start, stop]]
+    sched = [[name, start, stop, ra_tmp, dec_tmp]]
 
     try:
     # if 1 ==1:
@@ -1258,7 +1269,7 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
 
     # print(f"Non-primary observed time: {non_primary_obs_time}")
 
-    aux_df = pd.DataFrame(sched, columns=["Target", "Observation Start", "Observation Stop"])
+    aux_df = pd.DataFrame(sched, columns=["Target", "Observation Start", "Observation Stop", "RA", "DEC"])
 
     return aux_df, log_info, non_primary_obs_time, last_std_obs
 
@@ -1453,8 +1464,8 @@ if __name__ == "__main__":
     if not os.path.exists(f"{PACKAGEDIR}/data/aux_list_new.csv"):
         create_aux_list = helper_codes.create_aux_list(target_definition_files, PACKAGEDIR)
 
-    # aux_key = 'sort_by_tdf_priority'
-    aux_key = None
+    aux_key = 'sort_by_tdf_priority'
+    # aux_key = None
 
     run_ = 'vis_and_schedule'#'schedule_only'#'target_visibility'#
 
