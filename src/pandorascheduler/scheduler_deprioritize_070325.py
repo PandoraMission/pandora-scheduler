@@ -121,7 +121,16 @@ def Schedule(
     primary_target = pd.DataFrame(
         np.array(target_list["Primary Target"]), columns=["Primary Target"]
     )
-    tracker = pd.concat([planet_names, primary_target, transit_need, transit_have], axis=1)
+
+    ras = pd.DataFrame(
+        np.array(target_list["RA"]), columns=["RA"]
+    )
+
+    decs = pd.DataFrame(
+        np.array(target_list["DEC"]), columns=["DEC"]
+    )
+
+    tracker = pd.concat([planet_names, ras, decs, primary_target, transit_need, transit_have], axis=1)
 
     ### Check if previous observations already exist and if so update tracker
     if os.path.exists(f"{PACKAGEDIR}/data/Pandora_archive.csv") == True:
@@ -230,7 +239,7 @@ def Schedule(
     non_primary_obs_time = {}
     # deprioritized_targets = set()
     all_target_obs_time = {}
-    last_std_obs = datetime(2025, 11, 1)
+    last_std_obs = datetime(2025, 12, 1)
     print()
     print(f'!!!!!!!!!!!!------->>>>>>CHANGE LAST STD OBS (currently {last_std_obs})!<<<<<<------!!!!!!')
     print()
@@ -773,16 +782,15 @@ def Schedule(
             continue                
 
         else: # THERE ARE TRANSITS DURING THE OBSERVING WINDOW
-            if (temp_df["Transit Factor"] < 2).any():
+            if (temp_df["Transit Factor"] <= 2).any():
                 temp_df = temp_df.sort_values(by=["Transit Factor"]).reset_index(
                     drop=True
                 )
                 # logging.warning(temp_df["Planet Name"][0], "Transit Factor Warning", temp_df["Transit Factor"][0])
             else:
                 # Otherwise, sort by "Quality Factor" (descending) and then by "Transit Factor" (ascending)
-
-                if "HAT-P-12 b" in temp_df.iloc[:,0].values:
-                    aaaa = 9999
+                # if "HAT-P-12 b" in temp_df.iloc[:,0].values:
+                #     aaaa = 9999
                 temp_df = temp_df.sort_values(
                     by=["Quality Factor", "Transit Factor"],
                     ascending=[False, True]
