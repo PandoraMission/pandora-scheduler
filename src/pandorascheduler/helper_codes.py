@@ -285,7 +285,7 @@ def update_target_list(targ_list, pl_names, which_targets):
     # updated_targ_list = filtered_targ_list.copy()
     updated_targ_list = targ_list.copy()
 
-    dir_tmp = '/home/pluto/Documents/GitHub/PandoraTargetList/target_definition_files/' + which_targets
+    dir_tmp = '/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files/' + which_targets
     json_files = glob.glob(f'{dir_tmp}/*.json')
 
     for file in json_files:
@@ -298,7 +298,7 @@ def update_target_list(targ_list, pl_names, which_targets):
         # Handle any potential NaN values in the original column
         updated_targ_list['Transit Epoch (BJD_TDB) - 2400000.5'] = updated_targ_list['Transit Epoch (BJD_TDB) - 2400000.5'].fillna(-999)
 
-    dir_tmp = '/home/pluto/Documents/GitHub/PandoraTargetList/target_definition_files/'
+    dir_tmp = '/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files/'
     with open(dir_tmp + 'nirda_readout_schemes.json', 'r') as file:
         nirda_settings = json.load(file)['data']
 
@@ -671,7 +671,7 @@ def print_element_from_xml(elem, level=0):
         print_element_from_xml(child, level + 1)
 
 def get_targets_table(which_targets):
-    directory = '/home/pluto/Documents/GitHub/PandoraTargetList/target_definition_files/' + which_targets
+    directory = '/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files/' + which_targets
     df = pd.DataFrame(parse_json_files(directory))
     df = df.sort_values('Planet Name')
     df = df.reset_index(drop=True)
@@ -793,7 +793,7 @@ def load_readout_schemes(filename):
 #
 #
 def process_target_files(keyword):
-    base_dir = '/home/pluto/Documents/GitHub/PandoraTargetList/target_definition_files/'  # Set this to your base directory if needed
+    base_dir = '/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files/'  # Set this to your base directory if needed
     directory = os.path.join(base_dir, keyword)
     
     if not os.path.exists(directory):
