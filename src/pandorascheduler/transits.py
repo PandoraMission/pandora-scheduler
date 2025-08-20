@@ -158,8 +158,6 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
     saa_lon_min = -90. * u.deg
     saa_cross   = np.zeros(len(p_lat))
     
-    
-    
     for i in range(len(p_lat)):
         if (saa_lat_min <= p_lat[i]) and (p_lat[i] <= saa_lat_max) and \
         (saa_lon_min <= p_lon[i]) and (p_lon[i] <= saa_lon_max):
@@ -220,7 +218,7 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         #             df[col] = lambda x: f'{x:.3f}'
         #     return df
 
-        vis_df['Time(MJD_UTC)'] = np.round(vis_df['Time(MJD_UTC)'], 6)
+        # vis_df['Time(MJD_UTC)'] = np.round(vis_df['Time(MJD_UTC)'], 6)
         vis_df['SAA_Crossing'] = np.round(vis_df['SAA_Crossing'], 1)
         vis_df['Visible'] = np.round(vis_df['Visible'], 1)
         vis_df['Earth_Sep'] = np.round(vis_df['Earth_Sep'], 3)
