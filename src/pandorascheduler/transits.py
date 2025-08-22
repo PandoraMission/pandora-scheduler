@@ -80,6 +80,11 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep=',', engine = 'python')
         keyword_gmat = 'Earth.UTCModJulian'
         obs_name = 'Pandora'
+    elif gmat_file == 'GMAT_pandora_600_20250820_withdrag.txt':
+        gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep=',', engine = 'python')
+        keyword_gmat = 'Earth.UTCModJulian'
+        obs_name = 'Pandora'
+
 
     # Trim dataframe to slightly larger than date range of 
     # Pandora science lifetime defined as obs_start and obs_stop
@@ -109,18 +114,15 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         sun_vectors_ec[:, i] = np.interp(t_mjd_utc, gmat_mjd_utc, sun_vectors_gmat[:, i])
         moon_vectors_ec[:, i] = np.interp(t_mjd_utc, gmat_mjd_utc, moon_vectors_gmat[:, i])
 
-
     ### Coordinate shift to Pandora Centric (PC) reference frame
     earth_vectors_pc = earth_vectors_ec-pandora_vectors_ec
     sun_vectors_pc = sun_vectors_ec-pandora_vectors_ec
     moon_vectors_pc = moon_vectors_ec-pandora_vectors_ec
 
-
     ### Create SkyCoord for angular seperation calculations
     earth_vectors_pc = SkyCoord(earth_vectors_pc, unit='km', representation_type='cartesian') 
     sun_vectors_pc = SkyCoord(sun_vectors_pc, unit='km', representation_type='cartesian')
     moon_vectors_pc = SkyCoord(moon_vectors_pc, unit='km', representation_type='cartesian')  
-
 
     ### Define Constraints for each Solar system body
     Sun_constraint   = sun_block   * u.deg
@@ -218,7 +220,8 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         #             df[col] = lambda x: f'{x:.3f}'
         #     return df
 
-        vis_df['Time(MJD_UTC)'] = np.round(vis_df['Time(MJD_UTC)'], 6)
+        if "exoplanet" not in targ_list:
+            vis_df['Time(MJD_UTC)'] = np.round(vis_df['Time(MJD_UTC)'], 6)
         vis_df['SAA_Crossing'] = np.round(vis_df['SAA_Crossing'], 1)
         vis_df['Visible'] = np.round(vis_df['Visible'], 1)
         vis_df['Earth_Sep'] = np.round(vis_df['Earth_Sep'], 3)
@@ -478,10 +481,6 @@ def Transit_overlap(target_list:str, partner_list:str, star_name:str):
             save_dir   = f'{PACKAGEDIR}/data/targets/' + star_name + '/' + planet_name + '/'
             save_fname = 'Visibility for ' + planet_name + '.csv'
             planet_data.to_csv((save_dir + save_fname), sep=',', index=False)
-
-
-
-
 
 
 def SAA_overlap(planet_name:str, star_name:str):
