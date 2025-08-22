@@ -1394,3 +1394,31 @@ def update_coordinates_astropy(ra0, dec0, pm_ra, pm_dec):
     new_coord = coord.apply_space_motion(new_obstime=Time(t1))
     
     return new_coord.ra.degree, new_coord.dec.degree
+
+def check_visibility():
+
+    targ = ['TOI-270', 'TOI-2076', 'TOI-942', 'TOI-244', 'HD_73583', 'HAT-P-12']
+    fig, axs = plt.subplots(len(targ), 1, figsize=(20, 8))
+    # fig.tight_layout(pad=0.5)
+
+    for ii, tt in enumerate(targ):
+        tf_vis = pd.read_csv(f"/Users/vkostov/Documents/GitHub/pandora-scheduler/src/pandorascheduler/data/targets/{tt}/Visibility for {tt}.csv")
+        time_mjd = tf_vis['Time(MJD_UTC)'].values
+        vis = tf_vis['Visible'].values
+        
+        nbins = 100
+        
+        axs[ii].plot(np.mean(time_mjd[:-(time_mjd.size % nbins)].reshape(-1, nbins), axis=1),
+                    np.mean(vis[:-(vis.size % nbins)].reshape(-1, nbins), axis=1), '.-', ms=0.1, label=tt)
+        axs[ii].set_xlim(min(time_mjd), max(time_mjd))
+        axs[ii].legend()
+        
+        if ii < len(targ) - 1:  # Remove x-axis labels for all but the last subplot
+            axs[ii].set_xticks([])
+        
+        # axs[ii].set_yticks([])
+
+        # plt.tight_layout()
+
+    plt.subplots_adjust(hspace=0.1) 
+    plt.show()
