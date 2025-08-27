@@ -1415,11 +1415,11 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2026-02-05 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2027-02-05 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2027-02-04 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2026-02-05 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2027-02-05 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2027-02-04 00:00:00"#"2026-10-01 00:00:00"
 
-    commissioning_time_ = 0 # days
+    commissioning_time_ = 30 # days
 
     # sched_wts[transit coverage, saa overlap, schedule factor]
     # sched_wts = [0.5, 0.25, 0.25]
@@ -1432,7 +1432,7 @@ if __name__ == "__main__":
     # blocks = [91., 40., 63.]
     blocks = [91., 25., 63.]
     gmat_file = 'GMAT_pandora_600_20250820_withdrag.txt'#'GMAT_pandora_600_20250708_withdrag.txt'#'GMAT_pandora_600_20250706_withdrag.txt'#'GMAT_pandora_600_20240512.txt'#'GMAT_pandora_450_20230713.csv'#
-    obs_name = 'Pandora_600km_20240518'#'Pandora_450km_20230713'#
+    obs_name = 'Pandora'#_600km_20240518'#'Pandora_450km_20230713'#
 
     update_target_list_as_per_json_files = True
     if update_target_list_as_per_json_files:
@@ -1465,7 +1465,7 @@ if __name__ == "__main__":
         create_aux_list = helper_codes.create_aux_list(target_definition_files, PACKAGEDIR)
 
     aux_key = 'sort_by_tdf_priority'
-    # aux_key = None
+    aux_key = None
 
     run_ = 'vis_and_schedule'#'schedule_only'#'target_visibility'#
 
