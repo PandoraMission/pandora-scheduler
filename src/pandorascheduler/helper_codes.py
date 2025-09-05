@@ -24,6 +24,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
     obs_seq_id = ET.SubElement(o_seq, "ID")
     obs_seq_id.text = obs_seq_ID
 
+    # observational_parameters, params_NIRDA, params_VDA = params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec)
     observational_parameters, params_NIRDA, params_VDA = params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec)
 
     obs_parameters = ET.SubElement(o_seq, "Observational_Parameters")
@@ -189,6 +190,7 @@ def params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec):
         "ExposureTime_us": 200000,
         }
 
+    # return observational_parameters, params_NIRDA, params_VDA
     return observational_parameters, params_NIRDA, params_VDA
 
 def remove_short_sequences(array, sequence_too_short):
