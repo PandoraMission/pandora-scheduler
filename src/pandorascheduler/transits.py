@@ -283,7 +283,7 @@ def transit_timing(target_list:str, planet_name:str, star_name:str):
     # VK note: Jason Eastman's website (barycorr.bjd2utc) is broken as of 2024-01-05. 
     # Instead, use the implementation from https://github.com/shbhuk/barycorrpy/issues/54, i.e.: 
 
-    observer_location = EarthLocation(lat = 0.*u.deg, lon = 0.*u.deg, height=450*u.km)
+    observer_location = EarthLocation(lat = 0.*u.deg, lon = 0.*u.deg, height=600*u.km)
     bjd_tdb = Time(epoch_BJD_TDB, format='jd', scale='tdb', location=observer_location)
 
     # From BJD_TDB to JD_TDB

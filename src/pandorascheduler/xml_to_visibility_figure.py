@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from astropy.time import Time
 import pandas as pd
 import numpy as np
-fname = '/home/pluto/Documents/GitHub/pandora-scheduler/src/pandorascheduler/data/Pandora_science_calendar.xml'#calendar_top20_4weeks_start_2025_09_03.xml'
+fname = '/Users/vkostov/Documents/GitHub/pandora-scheduler/src/pandorascheduler/data/Pandora_science_calendar.xml'#calendar_top20_4weeks_start_2025_09_03.xml'
 parser = etree.XMLParser(load_dtd=True, no_network=False)
 tree = etree.parse(fname, parser)
 root = tree.getroot()
