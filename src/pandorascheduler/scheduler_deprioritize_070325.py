@@ -1415,9 +1415,9 @@ if __name__ == "__main__":
     # Specify observing parameters
     obs_window = timedelta(hours=24.0)
     pandora_start = "2026-02-05 00:00:00"#"2025-09-01 00:00:00"
-    pandora_stop = "2027-02-05 00:00:00"#"2026-10-01 00:00:00"
+    pandora_stop = "2026-05-05 00:00:00"#"2026-10-01 00:00:00"
     sched_start= "2026-02-05 00:00:00"#"2025-09-01 00:00:00"
-    sched_stop= "2027-02-05 00:00:00"#"2026-10-01 00:00:00"
+    sched_stop= "2026-05-05 00:00:00"#"2026-10-01 00:00:00"
 
     commissioning_time_ = 0 #30 # days
 
@@ -1436,7 +1436,6 @@ if __name__ == "__main__":
 
     update_target_list_as_per_json_files = True
     if update_target_list_as_per_json_files:
-
         # target_definition_files = ['exoplanet', 'auxiliary-exoplanet', 'auxiliary-standard', 'monitoring-standard', 'secondary-exoplanet', 'occultation-standard']
         target_definition_files = ['exoplanet', 'auxiliary-standard', 'monitoring-standard', 'occultation-standard']
 

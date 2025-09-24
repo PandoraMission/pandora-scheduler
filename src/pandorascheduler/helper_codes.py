@@ -101,17 +101,12 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
             elif vda_key == 'VDA_StarRoiDetMethod':
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 vda_subelement_.text = str(targ_info['StarRoiDetMethod'].iloc[0])
-
             elif vda_key == 'VDA_MaxNumStarRois' and targ_info['StarRoiDetMethod'].iloc[0] == 0:
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 vda_subelement_.text = str(0)
-            
             elif vda_key == 'VDA_MaxNumStarRois' and targ_info['StarRoiDetMethod'].iloc[0] == 1:
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 vda_subelement_.text = str(9)
-
-
-
             elif vda_key == 'VDA_numPredefinedStarRois' and targ_info['StarRoiDetMethod'].iloc[0] != 1:
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 try:
@@ -846,6 +841,9 @@ def process_target_files(keyword):
                 items.append((new_key, v))
         return dict(items)
 
+    # if keyword == 'auxiliary-standard':
+    #     aaa = 333.
+
     data_list = []
     for filename in tqdm(os.listdir(directory)):
         if filename.endswith('_target_definition.json'):
@@ -907,7 +905,10 @@ def process_target_files(keyword):
                 for key, value in vda_schemes[vda_setting].items():
                     flat_data[f'VDA_{key}'] = value
             
-            if not filename.startswith('DR3') or keyword != 'monitoring-standard':
+            # if not filename.startswith('DR3') or keyword != 'monitoring-standard':
+            # if keyword != 'monitoring-standard' or keyword !='occultation-standard':
+            # if keyword != 'monitoring-standard' and keyword !='occultation-standard':
+            if keyword not in ('monitoring-standard', 'occultation-standard'):
                 # Separate the last lowercase letter with a space
                 planet_name = re.sub(r'([a-z])$', r' \1', flat_data.get('Planet Name', ''))
                 flat_data['Planet Name'] = planet_name
@@ -919,6 +920,8 @@ def process_target_files(keyword):
                     flat_data['Transit Epoch (BJD_TDB-2400000.5)'] = flat_data['Transit Epoch (BJD_TDB)'] - 2400000.5
             else:
                 flat_data['Star Simbad Name'] = flat_data.get('Star Name', '')
+                flat_data['Planet Name'] = flat_data.get('Star Name', '')
+                flat_data['Planet Simbad Name'] = flat_data.get('Star Name', '')
 
             flat_data['RA'], flat_data['DEC']= update_coordinates_astropy(flat_data['RA'], flat_data['DEC'], flat_data['pm_RA'], flat_data['pm_DEC'])
             
@@ -931,7 +934,8 @@ def process_target_files(keyword):
     df = pd.DataFrame(data_list)
     
     # Determine columns based on whether it's a Gaia DR3 file or not
-    if df['Original Filename'].str.startswith('DR3').any() or keyword in ('auxiliary-standard', 'monitoring-standard'):#keyword == 'monitoring-standard':
+    # if df['Original Filename'].str.startswith('DR3').any() or keyword in ('auxiliary-standard', 'monitoring-standard'):#keyword == 'monitoring-standard':
+    if keyword in ('auxiliary-standard', 'monitoring-standard', 'occultation-standard'):
         columns_order = ['Star Name', 'Star Simbad Name']
         columns_order.extend([col for col in df.columns if col not in columns_order and col != 'Priority'])
         columns_order.append('Priority')
