@@ -104,11 +104,11 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
 
             elif vda_key == 'VDA_MaxNumStarRois' and targ_info['StarRoiDetMethod'].iloc[0] == 0:
                 vda_subelement_ = ET.SubElement(vda, xml_key)
-                vda_subelement_.text = str(0.)
+                vda_subelement_.text = str(0)
             
             elif vda_key == 'VDA_MaxNumStarRois' and targ_info['StarRoiDetMethod'].iloc[0] == 1:
                 vda_subelement_ = ET.SubElement(vda, xml_key)
-                vda_subelement_.text = str(9.)
+                vda_subelement_.text = str(9)
 
 
 
