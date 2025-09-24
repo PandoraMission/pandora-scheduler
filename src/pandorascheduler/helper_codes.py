@@ -25,7 +25,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
     obs_seq_id.text = obs_seq_ID
 
     # observational_parameters, params_NIRDA, params_VDA = params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec)
-    observational_parameters, params_NIRDA, params_VDA = params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec)
+    observational_parameters = params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec)
 
     obs_parameters = ET.SubElement(o_seq, "Observational_Parameters")
     ### Observational Parameters
@@ -75,9 +75,9 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
     vda = ET.SubElement(payload_parameters, "AcquireVisCamScienceData")
     vda_columns = targ_info.columns[targ_info.columns.str.startswith('VDA_')]
     # columns_to_ignore = ['VDA_IntegrationTime']
-    columns_to_ignore = ['VDA_NumTotalFramesRequested', 'VDA_TargetID', 'VDA_TargetRA', 'VDA_TargetDEC', \
+    columns_to_ignore = ['VDA_NumExposuresMax', 'VDA_NumTotalFramesRequested', 'VDA_TargetID', 'VDA_TargetRA', 'VDA_TargetDEC', \
         'VDA_StarRoiDetMethod', 'VDA_numPredefinedStarRois', 'VDA_PredefinedStarRoiRa', 'VDA_PredefinedStarRoiDec', \
-            'VDA_IntegrationTime_s']
+            'VDA_IntegrationTime_s', 'VDA_MaxNumStarRois']
     # for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
     for vda_key, vda_values in targ_info[vda_columns].iloc[0].items():
         if pd.notna(vda_values):  # This condition checks if the value is not NaN
@@ -101,6 +101,17 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
             elif vda_key == 'VDA_StarRoiDetMethod':
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 vda_subelement_.text = str(targ_info['StarRoiDetMethod'].iloc[0])
+
+            elif vda_key == 'VDA_MaxNumStarRois' and targ_info['StarRoiDetMethod'].iloc[0] == 0:
+                vda_subelement_ = ET.SubElement(vda, xml_key)
+                vda_subelement_.text = str(0.)
+            
+            elif vda_key == 'VDA_MaxNumStarRois' and targ_info['StarRoiDetMethod'].iloc[0] == 1:
+                vda_subelement_ = ET.SubElement(vda, xml_key)
+                vda_subelement_.text = str(9.)
+
+
+
             elif vda_key == 'VDA_numPredefinedStarRois' and targ_info['StarRoiDetMethod'].iloc[0] != 1:
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 try:
@@ -191,7 +202,7 @@ def params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec):
         }
 
     # return observational_parameters, params_NIRDA, params_VDA
-    return observational_parameters, params_NIRDA, params_VDA
+    return observational_parameters
 
 def remove_short_sequences(array, sequence_too_short):
     A = array#[1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]

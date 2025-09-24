@@ -791,8 +791,8 @@ def Schedule(
                 # logging.warning(temp_df["Planet Name"][0], "Transit Factor Warning", temp_df["Transit Factor"][0])
             else:
                 # Otherwise, sort by "Quality Factor" (descending) and then by "Transit Factor" (ascending)
-                if "HAT-P-12 b" in temp_df.iloc[:,0].values:
-                    aaaa = 9999
+                # if "HAT-P-12 b" in temp_df.iloc[:,0].values:
+                #     aaaa = 9999
                 temp_df = temp_df.sort_values(
                     by=["Quality Factor", "Transit Factor"],
                     ascending=[False, True]

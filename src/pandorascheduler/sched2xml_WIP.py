@@ -138,9 +138,9 @@ meta=ET.SubElement(cal, 'Meta',
                    Valid_From=f"{sch['Observation Start'][0]}",
                    Expires=f"{sch['Observation Stop'][len(sch)-1]}",
                    Calendar_Weights='0.8, 0.0, 0.2',
-                   Ephemeris='sma=6828.14, ecc=0.0, inc=97.2188, aop=0.0, raan=303.263, ta=0.0',
-                   Keepout_Angles='90.0, 25.0, 63.0',
-                   Observation_Sequence_Duration_hrs = f'{dt}',
+                #    Ephemeris='sma=6828.14, ecc=0.0, inc=97.2188, aop=0.0, raan=303.263, ta=0.0',
+                   Keepout_Angles='91.0, 25.0, 63.0',
+                   Observation_Sequence_Duration_hrs_max = f'{dt}',
                    Removed_Sequences_Shorter_Than_min = f'{too_short_sequences}',
                    Created=f'{str(hcc.round_to_nearest_second(datetime.now()))}',
 #                   Author="P Bonney",
@@ -149,7 +149,7 @@ meta=ET.SubElement(cal, 'Meta',
 #
 #
 #
-for i in tqdm(range(len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(5)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
