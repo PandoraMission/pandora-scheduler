@@ -171,10 +171,11 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
     #Cycle through host star targets
     for i in tqdm(range(len(target_data['Star Simbad Name']))):
         
-        star_name    = target_data['Star Name'][i]
+        star_name = target_data['Star Name'][i]
         star_name_sc = target_data['Star Simbad Name'][i]
-        if star_name_sc.startswith("DR3"):
-            star_name_sc = star_name_sc.replace('DR3_', 'Gaia DR3 ')
+        # if star_name_sc.startswith("DR3"):
+        if "occultation-standard" in targ_list:
+            star_name_sc = star_name_sc.replace('G', 'Gaia DR3 ')
 
         star_sc = SkyCoord.from_name(star_name_sc)
         logging.info('Analyzing constraints for:', star_name)
