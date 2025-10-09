@@ -173,7 +173,7 @@ for i in tqdm(range(10)):#len(sch))):#, position = 0, leave = True):#len(sch))):
     #set visit number and visit element
     visit=ET.SubElement(cal,'Visit')
     id0 = ET.SubElement(visit, "ID")
-    id0.text = f'{("0"*(4-len(str(i))))+str(i)}'
+    id0.text = f'{("0"*(4-len(str(i))))+str(i+1)}'
     
     start = datetime.strptime(sch['Observation Start'][i], "%Y-%m-%d %H:%M:%S")
     stop = datetime.strptime(sch['Observation Stop'][i], "%Y-%m-%d %H:%M:%S")

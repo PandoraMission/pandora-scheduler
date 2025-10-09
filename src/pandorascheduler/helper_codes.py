@@ -101,19 +101,19 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
             elif vda_key == 'VDA_StarRoiDetMethod':
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 vda_subelement_.text = str(targ_info['StarRoiDetMethod'].iloc[0])
-            elif vda_key == 'VDA_MaxNumStarRois' and targ_info['StarRoiDetMethod'].iloc[0] == 0:
-                vda_subelement_ = ET.SubElement(vda, xml_key)
-                vda_subelement_.text = str(0)
             elif vda_key == 'VDA_MaxNumStarRois' and targ_info['StarRoiDetMethod'].iloc[0] == 1:
                 vda_subelement_ = ET.SubElement(vda, xml_key)
+                vda_subelement_.text = str(0)
+            elif vda_key == 'VDA_MaxNumStarRois' and targ_info['StarRoiDetMethod'].iloc[0] == 2:
+                vda_subelement_ = ET.SubElement(vda, xml_key)
                 vda_subelement_.text = str(9)
-            elif vda_key == 'VDA_numPredefinedStarRois' and targ_info['StarRoiDetMethod'].iloc[0] != 1:
+            elif vda_key == 'VDA_numPredefinedStarRois' and targ_info['StarRoiDetMethod'].iloc[0] != 2:
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 try:
                     vda_subelement_.text = str(targ_info['numPredefinedStarRois'].iloc[0])
                 except:
                     vda_subelement_.text = str('-999')
-            elif vda_key == 'VDA_PredefinedStarRoiRa' and targ_info['StarRoiDetMethod'].iloc[0] != 1:
+            elif vda_key == 'VDA_PredefinedStarRoiRa' and targ_info['StarRoiDetMethod'].iloc[0] != 2:
                 roi_coord_columns = [col for col in targ_info.columns if col.startswith('ROI_coord_') and col != 'ROI_coord_epoch']
                 roi_coord_values = targ_info[roi_coord_columns].dropna(axis = 1)
                 import ast
@@ -123,7 +123,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 for jj in range(all_columns.shape[0]):
                     vda_subelement_tmp = ET.SubElement(vda_subelement_, f'RA{jj+1}')
                     vda_subelement_tmp.text = f'{all_columns[jj,0]:.6f}'
-            elif vda_key == 'VDA_PredefinedStarRoiDec' and targ_info['StarRoiDetMethod'].iloc[0] != 1:
+            elif vda_key == 'VDA_PredefinedStarRoiDec' and targ_info['StarRoiDetMethod'].iloc[0] != 2:
                 roi_coord_columns = [col for col in targ_info.columns if col.startswith('ROI_coord_') and col != 'ROI_coord_epoch']
                 roi_coord_values = targ_info[roi_coord_columns].dropna(axis = 1)
                 import ast
