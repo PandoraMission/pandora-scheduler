@@ -1464,7 +1464,7 @@ if __name__ == "__main__":
         create_aux_list = helper_codes.create_aux_list(target_definition_files, PACKAGEDIR)
 
     aux_key = 'sort_by_tdf_priority'
-    aux_key = None
+    # aux_key = None
 
     run_ = 'vis_and_schedule'#'schedule_only'#'target_visibility'#
 
