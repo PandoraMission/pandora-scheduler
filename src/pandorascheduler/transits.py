@@ -65,25 +65,38 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
     ### Read in GMAT results
     logging.info('Importing GMAT data')
     # gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep='\t')
-    if gmat_file == 'GMAT_pandora_450_20230713.csv':
-        gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep='\t+', engine = 'python')
-        keyword_gmat = 'Earth.UTCModJulian'
-        obs_name = 'Pandora'
-    elif gmat_file == 'GMAT_pandora_600_20240512.txt':
-        gmat_data = pd.read_fwf(f'{PACKAGEDIR}/data/{gmat_file}')
-        keyword_gmat = 'Earth.UTCModJulian'
-    elif gmat_file == 'GMAT_pandora_600_20250706_withdrag.txt':
-        gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep=',', engine = 'python')
+    gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep=',', engine = 'python')
+    if gmat_file == 'GMAT_pandora_600_20250706_withdrag.txt':
         keyword_gmat = 'Earth.A1ModJulian'
         obs_name = 'Pandora'
-    elif gmat_file == 'GMAT_pandora_600_20250708_withdrag.txt':
+    else:
         gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep=',', engine = 'python')
         keyword_gmat = 'Earth.UTCModJulian'
         obs_name = 'Pandora'
-    elif gmat_file == 'GMAT_pandora_600_20250820_withdrag.txt':
-        gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep=',', engine = 'python')
-        keyword_gmat = 'Earth.UTCModJulian'
-        obs_name = 'Pandora'
+
+    # if gmat_file == 'GMAT_pandora_450_20230713.csv':
+    #     gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep='\t+', engine = 'python')
+    #     keyword_gmat = 'Earth.UTCModJulian'
+    #     obs_name = 'Pandora'
+    # elif gmat_file == 'GMAT_pandora_600_20240512.txt':
+    #     gmat_data = pd.read_fwf(f'{PACKAGEDIR}/data/{gmat_file}')
+    #     keyword_gmat = 'Earth.UTCModJulian'
+    # elif gmat_file == 'GMAT_pandora_600_20250706_withdrag.txt':
+    #     gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep=',', engine = 'python')
+    #     keyword_gmat = 'Earth.A1ModJulian'
+    #     obs_name = 'Pandora'
+    # elif gmat_file == 'GMAT_pandora_600_20250708_withdrag.txt':
+    #     gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep=',', engine = 'python')
+    #     keyword_gmat = 'Earth.UTCModJulian'
+    #     obs_name = 'Pandora'
+    # elif gmat_file == 'GMAT_pandora_600_20250820_withdrag.txt':
+    #     gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep=',', engine = 'python')
+    #     keyword_gmat = 'Earth.UTCModJulian'
+    #     obs_name = 'Pandora'
+    # elif gmat_file == 'Pandora-600km-withoutdrag-20251018.txt':
+    #     gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep=',', engine = 'python')
+    #     keyword_gmat = 'Earth.UTCModJulian'
+    #     obs_name = 'Pandora'
 
 
     # Trim dataframe to slightly larger than date range of 

@@ -112,7 +112,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 try:
                     vda_subelement_.text = str(targ_info['numPredefinedStarRois'].iloc[0])
                 except:
-                    vda_subelement_.text = str('-999')
+                    vda_subelement_.text = str('-9999')
             elif vda_key == 'VDA_PredefinedStarRoiRa' and targ_info['StarRoiDetMethod'].iloc[0] != 2:
                 roi_coord_columns = [col for col in targ_info.columns if col.startswith('ROI_coord_') and col != 'ROI_coord_epoch']
                 roi_coord_values = targ_info[roi_coord_columns].dropna(axis = 1)

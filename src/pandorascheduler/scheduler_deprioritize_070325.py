@@ -1431,7 +1431,7 @@ if __name__ == "__main__":
     #Mission requirements: >= 91 deg avoidance for Sun, >= 20 deg avoidance for Moon and Earth limbs
     # blocks = [91., 40., 63.]
     blocks = [91., 25., 63.]
-    gmat_file = 'GMAT_pandora_600_20250820_withdrag.txt'#'GMAT_pandora_600_20250708_withdrag.txt'#'GMAT_pandora_600_20250706_withdrag.txt'#'GMAT_pandora_600_20240512.txt'#'GMAT_pandora_450_20230713.csv'#
+    gmat_file = 'Pandora-600km-withoutdrag-20251018.txt'#'GMAT_pandora_600_20250708_withdrag.txt'#'GMAT_pandora_600_20250706_withdrag.txt'#'GMAT_pandora_600_20240512.txt'#'GMAT_pandora_450_20230713.csv'#
     obs_name = 'Pandora'#_600km_20240518'#'Pandora_450km_20230713'#
 
     update_target_list_as_per_json_files = True
