@@ -136,7 +136,8 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
             elif vda_key == 'VDA_NumTotalFramesRequested':
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 # vda_subelement_.text = str(np.round(diff_in_sec/targ_info['VDA_IntegrationTime_s'].iloc[0]).astype(int))
-                vda_subelement_.text = str((diff_in_sec/targ_info['VDA_IntegrationTime_s'].iloc[0]//targ_info['VDA_FramesPerCoadd'].iloc[0]).astype(int))
+                # vda_subelement_.text = str((diff_in_sec/targ_info['VDA_IntegrationTime_s'].iloc[0]//targ_info['VDA_FramesPerCoadd'].iloc[0]).astype(int))
+                vda_subelement_.text = str((diff_in_sec/(1e-6*targ_info['VDA_ExposureTime_us'].iloc[0])//targ_info['VDA_FramesPerCoadd'].iloc[0]).astype(int))
             # elif vda_key == 'VDA_NumExposuresMax':
             #     vda_subelement_ = ET.SubElement(vda, xml_key)
             #     # vda_subelement_.text = str(np.round(diff_in_sec/targ_info['VDA_IntegrationTime_s'].iloc[0]).astype(int))
