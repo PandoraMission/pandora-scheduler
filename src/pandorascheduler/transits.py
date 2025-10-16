@@ -187,7 +187,8 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         star_name = target_data['Star Name'][i]
         star_name_sc = target_data['Star Simbad Name'][i]
         # if star_name_sc.startswith("DR3"):
-        if "occultation-standard" in targ_list:
+        # if "occultation-standard" in targ_list:
+        if star_name_sc.startswith("G") and not star_name_sc.startswith("GJ") and not star_name_sc.startswith("GD"):
             star_name_sc = star_name_sc.replace('G', 'Gaia DR3 ')
 
         star_sc = SkyCoord.from_name(star_name_sc)
