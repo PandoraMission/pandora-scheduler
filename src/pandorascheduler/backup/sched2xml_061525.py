@@ -23,20 +23,18 @@ warnings.filterwarnings("ignore")
 # VK END
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path = f'{PACKAGEDIR}/data/Pandora_Schedule_0.8_0.0_0.2_2026-02-05_to_2027-02-05.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
+schedule_path = f'{PACKAGEDIR}/data/Pandora_Schedule_0.8_0.0_0.2_2025-11-15.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
 tar_vis_path = f'{PACKAGEDIR}/data/targets/'
 aux_vis_path = f'{PACKAGEDIR}/data/aux_targets/'
-tar_path = f'{PACKAGEDIR}/data/exoplanet_targets.csv'#primary-exoplanet-extended_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
+tar_path = f'{PACKAGEDIR}/data/primary-exoplanet-extended_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
 # tar_path_ALL = f'{PACKAGEDIR}/data/primary-exoplanet-extended_targets.csv'#Pandora_Target_List_Top40_16Feb2024_Top40_SDM.csv'
 aux_path = f'{PACKAGEDIR}/data/aux_list_new.csv'
 t_list = pd.read_csv(tar_path)
 a_list = pd.read_csv(aux_path)
 sch = pd.read_csv(schedule_path)
 
-# target_definition_files = ['primary-exoplanet-extended', 'auxiliary-exoplanet-reduced', 'auxiliary-standard', 'occultation-standard', \
-#     'monitoring-standard', 'secondary-exoplanet']
-target_definition_files = ['exoplanet', 'auxiliary-exoplanet', 'auxiliary-standard', 'monitoring-standard', 'secondary-exoplanet', 'occultation-standard']
-target_definition_files = ['exoplanet', 'auxiliary-standard', 'monitoring-standard', 'occultation-standard']
+target_definition_files = ['primary-exoplanet-extended', 'auxiliary-exoplanet-reduced', 'auxiliary-standard', 'occultation-standard', \
+    'monitoring-standard', 'secondary-exoplanet']
 
 t_list = pd.read_csv(f"{PACKAGEDIR}/data/{target_definition_files[0]}_targets.csv")
 
@@ -63,65 +61,253 @@ def sch_occ_new(starts, stops, st, sp, list_path, sort_key=None, prev_obs = None
     starts=Time(starts, format='datetime').to_value('mjd')
     stops=Time(stops, format='datetime').to_value('mjd')
     
-
-    # if sort_key == None:
-    #     #No occluded target scheduling, free time
-    #     starts=starts.to_value('datetime')
-    #     stops=stops.to_value('datetime')
-    #     free = [["Free Time",datetime.strftime(starts[s], "%Y-%m-%dT%H:%M:%SZ"),datetime.strftime(stops[s], "%Y/%m/%d, %H:%M:%S"), '', ''] for s in range(len(starts))]
-    #     o_df = pd.DataFrame(free, columns=["Target", "start", "stop", "RA", "DEC"])
+    if sort_key == None:
+        #No occluded target scheduling, free time
+        starts=starts.to_value('datetime')
+        stops=stops.to_value('datetime')
+        free = [["Free Time",datetime.strftime(starts[s], "%Y-%m-%dT%H:%M:%SZ"),datetime.strftime(stops[s], "%Y/%m/%d, %H:%M:%S"), '', ''] for s in range(len(starts))]
+        o_df = pd.DataFrame(free, columns=["Target", "start", "stop", "RA", "DEC"])
     
-    # else:       
-    #     o_list = pd.read_csv(list_path)
-    #     ras=o_list['RA']
-    #     decs=o_list['DEC']
+    else:       
+        o_list = pd.read_csv(list_path)
+        ras=o_list['RA']
+        decs=o_list['DEC']
         
-    #     if sort_key == 'closest':
-    #         #sort name list based on minimized sky distance
-    #         #prev_obs must be specified as an array consisting of ra and dec (in degrees) for the previous observation
-    #         #this seeks to minimize slew distance to an occultation target, though actual slew sims are not performed
-    #         try:
-    #             po_sc=SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
-    #             oc_sc=[SkyCoord(unit='deg', ra=ras[n], dec=decs[n]) for n in range(len(ras))]
+        if sort_key == 'closest':
+            #sort name list based on minimized sky distance
+            #prev_obs must be specified as an array consisting of ra and dec (in degrees) for the previous observation
+            #e.g. [359.10775132017, -49.28901740485]
+            #this seeks to minimize slew distance to an occultation target, though actual slew sims are not performed
+            try:
+                po_sc=SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
+                oc_sc=[SkyCoord(unit='deg', ra=ras[n], dec=decs[n]) for n in range(len(ras))]
 
-    #             dif=[oc_sc[n].separation(po_sc).deg for n in range(len(oc_sc))]
-    #             o_list['sky_dif'] = dif
-    #             o_list = o_list.sort_values(by='sky_dif').reset_index(drop=True)
+                dif=[oc_sc[n].separation(po_sc).deg for n in range(len(oc_sc))]
+                o_list['sky_dif'] = dif
+                o_list = o_list.sort_values(by='sky_dif').reset_index(drop=True)
                 
-    #         except NameError:
-    #             print('No previous observation was specified, defaulting to random auxiliary target.')
-    #             o_list.sample(frac=1).reset_index(drop=True)
-    #     else:
-    #         #default sort is random
-    #         o_list.sample(frac=1).reset_index(drop=True)
+            except NameError:
+                print('No previous observation was specified, defaulting to random auxiliary target.')
+                o_list.sample(frac=1).reset_index(drop=True)
+        else:
+            #default sort is random
+            o_list.sample(frac=1).reset_index(drop=True)
         
-    o_list = pd.read_csv(list_path)
-    v_names = o_list['Star Name']
-    v_names=np.array(v_names)
-    #For prioritization via flag later
-    o_flag = o_list['Priority']#['Flag']
-    #Reload these
-    ras=o_list['RA']
-    decs=o_list['DEC']
+        v_names = o_list['Star Name']
+        v_names=np.array(v_names)
+        #For prioritization via flag later
+        o_flag = o_list['Priority']#['Flag']
+        #Reload these
+        ras=o_list['RA']
+        decs=o_list['DEC']
 
-    multi_target_occultation = True#False
+        multi_target_occultation = True#False
 
-    d_flag = False
+        d_flag = False
 
-    if multi_target_occultation:
-        if (list_path == tar_path):# or (list_path == tar_path_ALL):
-            path_ = f"{PACKAGEDIR}/data/targets"
-            try_occ_targets = 'target list'
-        elif list_path == aux_path:
-            path_ = f"{PACKAGEDIR}/data/aux_targets"
-            try_occ_targets = 'aux list'
+        if multi_target_occultation:
+            if (list_path == tar_path):# or (list_path == tar_path_ALL):
+                path_ = f"{PACKAGEDIR}/data/targets"
+                try_occ_targets = 'target list'
+            elif list_path == aux_path:
+                path_ = f"{PACKAGEDIR}/data/aux_targets"
+                try_occ_targets = 'aux list'
+            
+            # importlib.reload(helper_codes)
+            o_df, d_flag = helper_codes.schedule_occultation_targets(v_names, starts, stops, st, sp, path_, o_df, o_list, try_occ_targets)#, position)
+
+        return o_df, d_flag
+
+def sch_occ(starts, stops, list_path, sort_key=None, prev_obs = None):#, position = 0):#**kwargs):
+    
+    #build empty dataframe except for starts and stops
+    e_sched = [['',datetime.strftime(starts[s], "%Y-%m-%dT%H:%M:%SZ"),datetime.strftime(stops[s], "%Y-%m-%dT%H:%M:%SZ"), '', ''] for s in range(len(starts))]
+    o_df = pd.DataFrame(e_sched,columns=["Target","start","stop", "RA", "DEC"])
+    
+    #convert to mjd to compare with visibility data
+    starts=Time(starts, format='datetime').to_value('mjd')
+    stops=Time(stops, format='datetime').to_value('mjd')
+    
+    if sort_key == None:
+        #No occluded target scheduling, free time
+        starts=starts.to_value('datetime')
+        stops=stops.to_value('datetime')
+        free = [["Free Time",datetime.strftime(starts[s], "%Y-%m-%dT%H:%M:%SZ"),datetime.strftime(stops[s], "%Y/%m/%d, %H:%M:%S"), '', ''] for s in range(len(starts))]
+        o_df = pd.DataFrame(free, columns=["Target", "start", "stop", "RA", "DEC"])
+    
+    else:       
+        o_list = pd.read_csv(list_path)
+        ras=o_list['RA']
+        decs=o_list['DEC']
         
-        # importlib.reload(helper_codes)
-        o_df, d_flag = helper_codes.schedule_occultation_targets(v_names, starts, stops, st, sp, path_, o_df, o_list, try_occ_targets)#, position)
+        if sort_key == 'closest':
+            #sort name list based on minimized sky distance
+            #prev_obs must be specified as an array consisting of ra and dec (in degrees) for the previous observation
+            #e.g. [359.10775132017, -49.28901740485]
+            #this seeks to minimize slew distance to an occultation target, though actual slew sims are not performed
+            try:
+                po_sc=SkyCoord(unit='deg', ra=prev_obs[0], dec=prev_obs[1])
+                oc_sc=[SkyCoord(unit='deg', ra=ras[n], dec=decs[n]) for n in range(len(ras))]
+
+                dif=[oc_sc[n].separation(po_sc).deg for n in range(len(oc_sc))]
+                o_list['sky_dif'] = dif
+                o_list = o_list.sort_values(by='sky_dif').reset_index(drop=True)
+                
+            except NameError:
+                print('No previous observation was specified, defaulting to random auxiliary target.')
+                o_list.sample(frac=1).reset_index(drop=True)
+        else:
+            #default sort is random
+            o_list.sample(frac=1).reset_index(drop=True)
+        
+        v_names = o_list['Star Name']
+        v_names=np.array(v_names)
+        #For prioritization via flag later
+        o_flag = o_list['Priority']
+        #Reload these
+        ras=o_list['RA']
+        decs=o_list['DEC']
+
+        multi_target_occultation = True#False
+
+        d_flag = False
+
+        # if multi_target_occultation:
+        #     if (list_path == tar_path) or (list_path == tar_path_ALL):
+        #         path_ = f"{PACKAGEDIR}/data/targets"
+        #         try_occ_targets = 'target list'
+        #     elif list_path == aux_path:
+        #         path_ = f"{PACKAGEDIR}/data/aux_targets"
+        #         try_occ_targets = 'aux list'
+            
+        #     # importlib.reload(helper_codes)
+        #     o_df, d_flag = helper_codes.schedule_occultation_targets(v_names, starts, stops, path_, o_df, o_list, try_occ_targets)#, position)
+
+        # return o_df, d_flag
+
+            # if d_flag_copy:
+            #     return o_df_copy.drop(columns=['Visibility']), d_flag_copy
+        
+        #empty dataframe to hold visibility information for multiple targets
+        v_ = np.asarray(np.zeros(len(starts)), dtype=bool)
+        v_df = pd.DataFrame([v_])
+        vis_df = pd.DataFrame(columns=range(len(starts))).astype(bool)
+        d_flag = False
+        for n in range(len(v_names)):
+            try:
+                if (list_path == tar_path) or (list_path == tar_path_ALL):
+                    vis=pd.read_csv(f"{PACKAGEDIR}/data/targets/{v_names[n]}/Visibility for {v_names[n]}.csv")
+                elif list_path == aux_path:
+                    vis=pd.read_csv(f"{PACKAGEDIR}/data/aux_targets/{v_names[n]}/Visibility for {v_names[n]}.csv")
+                vis_ = vis['Time(MJD_UTC)']
+                
+                #array to hold visibility info for this target
+                v_ar = np.asarray(np.zeros(len(starts)), dtype=bool)
+                v_ar_any = np.asarray(np.zeros(len(starts)), dtype=bool)
+                #iterate through occultation periods and see if v_names[n] is visible for all of them
+                vis_f = False
+                for s in range(len(starts)):
+                    #get occultation time window
+                    win = vis.index[(vis_ >= starts[s]) & (vis_ <= stops[s])].tolist()
+                    if np.all(vis['Visible'][win] == 1):# or vis_ratio >= 0.6: 
+                        # UNCOMMENT THE REST OF THE LINE ABOVE FOR TARGETS THAT ARE NOT VISIBLE FOR MANY HOURS AND ALLOW "OCCULTATION"
+                        # TARGET TO BE CONSIDERED AS VISIBLE >= 60% OF 90 MINUTES!!!
+                        v_ar[s] = True               
+                    else:
+                        vis_f = True
+
+                    # VK START
+                    # CHECK THE FRACTION OF TIME OCCULTATION TARGET IS VISIBILE DURING OCCULTATION 
+                    if len(vis['Visible'][win]) > 0.:
+                        vis_ratio = len(vis['Visible'][win][vis['Visible'][win] == 1])/len(vis['Visible'][win])
+                    # VK END
+
+                    # print(v_names[n], Time(starts[s], format="mjd", scale="utc").to_value("datetime").strftime("%H:%M:%S"), \
+                    #     Time(stops[s], format="mjd", scale="utc").to_value("datetime").strftime("%H:%M:%S"), vis_ratio)
+                            # len(vis['Visible'][win][vis['Visible'][win] == 1]), len(vis['Visible'][win]))#np.asarray(vis['Visible'][win]))
+
+                # vis_df.loc[len(vis_df)] = v_ar
+                # vis_df_sum = np.sum(np.asarray(vis_df), axis = 0)
+                # print(n, vis_df_sum)
+                # if np.all(vis_df_sum > 0):
+                #     stop
+
+                #if not visible for all times, check if any entry in v_df and this one cover the total occultation time
+                if vis_f:
+                    if not d_flag:
+
+                        # vis_df_sum = np.sum(np.asarray(vis_df), axis = 0)
+                        # # print(n, vis_df_sum)
+                        # if np.all(vis_df_sum > 0):
+                        #     d_flag = True
+                        # else:
+                        #     vis_df.loc[len(vis_df)] = v_ar
+
+                        v_arr=np.asarray(v_df)
+                        overlap=np.where([np.all((v_arr+np.asarray(v_ar, dtype=bool))[i]) for i in range(len(v_arr))])[0]
+                        if len(overlap) > 0:
+                            #at least one entry has visibility that covers the total time along with the current target
+                            #take both and enter them in o_df in their respective times, prefering the closer one
+                            m=overlap[0]
+                            v1=v_arr[m]
+                            for s in range(len(starts)):
+                                if v1[s]:
+                                    o_df['Target'][s]=v_names[m]
+                                    o_df['RA'][s]=str(ras[m])
+                                    o_df['DEC'][s]=str(decs[m])
+                                else:
+                                    o_df['Target'][s]=v_names[n]
+                                    o_df['RA'][s]=str(ras[n])
+                                    o_df['DEC'][s]=str(decs[n])
+                            d_flag=True
+                        else:
+                            #add the current visibility array to the master list
+                            v_df.loc[len(v_df.index)] = v_ar
+                            # vis_df.loc[len(vis_df)] = v_ar
+                    else:
+                        # break
+                        continue
+                
+                else:
+                    #If we made it here, the target is visible for the entire occultation time
+                    #since the list is already sorted, break and use this one!
+                    #add to the list of visible targets (not necessary, but keeps functionality with prev code)
+                    o_df['Target'][:]=v_names[n]
+                    o_df['RA'][:]=str(ras[n])
+                    o_df['DEC'][:]=str(decs[n])
+                    d_flag=True
+                    # print(st_name, ': ', n, v_names[n], v_names[n], 'Occ target visible ALL')
+                    break
+                    # THIS BREAK DOESNT SEEM TO WORK!!!! REPLACE WITH return o_df, d_flag
+                    # return o_df, d_flag
+
+                # print(f"{st_name}: {n} ({v_names[n]}) not 100% visible, try next on the list")
+            
+            #If a target(s) on the list don't have visibility data, ignore them!
+            except FileNotFoundError:
+                continue    
+        
+        #if there were not <=2 occultation targets that covered the time (cya clause)
+        if not d_flag:
+            #only if considering aux targets, real last ditch effort here
+            if list_path.endswith('aux_list.csv'):# or st_name.startswith('Gaia'):
+                #check one last time to make sure there are no gaps
+                v_arr=np.asarray(v_df)
+                if np.all([np.any(v_arr[i]) for i in range(len(v_arr))]):
+                    #iterate and set the nearest that is visible for each window as the occultation target
+                    for m in range(len(v_arr)):
+                        # VK START: IT LOOKS LIKE THE i IN v_arr[i] IS NOT PART OF THIS FOR LOOP. MAYBE A BUG?
+                        #n=np.where(v_arr[i])[0][0]
+                        # CHANGE i TO m
+                        # VK END
+                        n=np.where(v_arr[m])[0][0]
+                        o_df['Target'][s]=v_names[n]
+                        o_df['RA'][s]=str(ras[n])
+                        o_df['DEC'][s]=str(decs[n])
+                    d_flag=True
+                    print('More than two auxiliary targets were needed to cover the occultation time.')
 
     return o_df, d_flag
-
-
 
 #max time for an observation sequence
 obs_sequence_duration = 90 # minutes
@@ -138,9 +324,9 @@ meta=ET.SubElement(cal, 'Meta',
                    Valid_From=f"{sch['Observation Start'][0]}",
                    Expires=f"{sch['Observation Stop'][len(sch)-1]}",
                    Calendar_Weights='0.8, 0.0, 0.2',
-                #    Ephemeris='sma=6828.14, ecc=0.0, inc=97.2188, aop=0.0, raan=303.263, ta=0.0',
-                   Keepout_Angles='91.0, 25.0, 63.0',
-                   Observation_Sequence_Duration_hrs_max = f'{dt}',
+                   Ephemeris='sma=6828.14, ecc=0.0, inc=97.2188, aop=0.0, raan=303.263, ta=0.0',
+                   Keepout_Angles='90.0, 25.0, 63.0',
+                   Observation_Sequence_Duration_hrs = f'{dt}',
                    Removed_Sequences_Shorter_Than_min = f'{too_short_sequences}',
                    Created=f'{str(hcc.round_to_nearest_second(datetime.now()))}',
 #                   Author="P Bonney",
@@ -149,31 +335,23 @@ meta=ET.SubElement(cal, 'Meta',
 #
 #
 #
-for i in tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(0,10)):#len(sch))):#1,2)):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
     t_name = sch['Target'][i]
 
-    if np.isfinite(sch.loc[i]['Transit Coverage']):
-        exoplanet_tdf = True
-    else:
-        exoplanet_tdf = False
     # st_name = t_name if t_name.startswith('Gaia') else t_name[:-2]
     
-    if t_name.endswith(('b', 'c', 'd', 'e', 'f')) and (t_name != 'EV_Lac'):
+    if t_name.endswith(('b', 'c', 'd', 'e', 'f')):
         st_name = t_name[:-2]
-    elif t_name.endswith(('STD')):
-        t_name = t_name[:-4]
-        st_name = t_name
-        # st_name = t_name[:-2]
     else:
         st_name = t_name
     
     #set visit number and visit element
     visit=ET.SubElement(cal,'Visit')
     id0 = ET.SubElement(visit, "ID")
-    id0.text = f'{("0"*(4-len(str(i))))+str(i+1)}'
+    id0.text = f'{("0"*(4-len(str(i))))+str(i)}'
     
     start = datetime.strptime(sch['Observation Start'][i], "%Y-%m-%d %H:%M:%S")
     stop = datetime.strptime(sch['Observation Stop'][i], "%Y-%m-%d %H:%M:%S")
@@ -181,8 +359,7 @@ for i in tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#
     #Get visibility data, replace if then with the flag later
     # if not t_name.startswith('Gaia'):# or t_name.startswith('Free'):
     # if t_name.endswith(('b', 'c', 'd', 'e', 'f')):
-    # del v_data
-    if t_name in t_list['Planet Name'].values and exoplanet_tdf:
+    if t_name in t_list['Planet Name'].values:
         v_data = pd.read_csv(tar_vis_path+f'{st_name}/Visibility for {st_name}.csv')
         tmp_idx = t_list.index[t_list['Planet Name'] == t_name].tolist()
         targ_info = t_list.loc[[tmp_idx[0]]]#t_list.loc[(t_list['Planet Name'] == t_name)]
@@ -190,20 +367,16 @@ for i in tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#
         tv_data = pd.read_csv(tar_vis_path+f'{st_name}/{t_name}/Visibility for {t_name}.csv')
         tv_st = Time(tv_data['Transit_Start'], format='mjd', scale='utc').to_value('datetime')
         tv_sp = Time(tv_data['Transit_Stop'], format='mjd', scale='utc').to_value('datetime')
-    elif exoplanet_tdf == False and t_name != 'Free Time' and not t_name.startswith(('WARNING')):#t_name in a_list['Star Name'].values:
+    elif t_name in a_list['Star Name'].values:
         v_data = pd.read_csv(aux_vis_path+f'{st_name}/Visibility for {t_name}.csv')
-        tmp_idx = a_list.index[(a_list['Star Name'] == t_name)].tolist()# & (pd.isnull(a_list['Planet Name']))].tolist()
-        targ_info = pd.DataFrame(a_list.loc[tmp_idx[0]]).T#a_list.loc[[tmp_idx[0]]]#a_list.loc[(a_list['Star Name'] == t_name) & (a_list['Planet Name'].notna())]
+        tmp_idx = a_list.index[a_list['Star Name'] == t_name].tolist()
+        targ_info = a_list.loc[[tmp_idx[0]]]#a_list.loc[(a_list['Star Name'] == t_name) & (a_list['Planet Name'].notna())]
         i_flag = 0
     elif t_name == 'Free Time':
         continue
-    elif t_name.startswith(('WARNING')):#t_name == 'STD':
-        print(f'-------> WARNING: need visible STD <--------')
+    elif t_name == 'STD':
+        print(f'-------> STD NEED VISIBILITY <--------')
         continue
-    else:
-        print(f"No visibility data for {t_name}. Stop code")
-        break
-        xxxx
     # elif:
     #     v_data = pd.read_csv(aux_vis_path+f'{t_name}/Visibility for {t_name}.csv')
     #     targ_info = a_list.loc[(a_list['Star Name'] == t_name) & (a_list['Planet Name'].notna())]#a_list.loc[(a_list['Star Name'] == t_name)]
@@ -247,7 +420,7 @@ for i in tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#
     #if full visibility
     def full_visibility():
         # print('Target is visible for the entire visit')
-        tqdm.write(f'{st} to {sp}: No occultations needed; {t_name} is visible for the entire visit')
+        tqdm.write(f'{st} to {sp}: No occultations needed; target is visible for the entire visit')
         
         #break observation sequence into <= 90 minute blocks
         n = (sp - st)/dt
@@ -309,7 +482,7 @@ for i in tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#
         #     print(ii, jj)
 
         # VK BEGIN: BREAK OCCULTATION SEQUENCES LONGER THAN 90 MINUTES
-        break_occ_seq_longer_than_occultation_sequence_limit = True
+        break_occ_seq_longer_than_occultation_sequence_limit = False
         if break_occ_seq_longer_than_occultation_sequence_limit:
             start_tmp, stop_tmp = [], []
             for ii in range(len(oc_stops)):
@@ -331,16 +504,18 @@ for i in tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#
             # logging.info(f"Searching for occultation targets from {st} to {sp}")
             # tqdm.write(f"{st} to {sp}: Searching for occultation targets from {st} to {sp}")
             # # Try to find a target from aux_list
-            # info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, aux_path, sort_key = 'closest', prev_obs = [ra,dec])
+            # info, flag = sch_occ(oc_starts, oc_stops, aux_path, sort_key = 'closest', prev_obs = [ra,dec])
             # if flag:
             #     tqdm.write(f"{st} to {sp}:     Found occultation target from aux list")
             # # logging.info(f"From aux list? {flag}")
+
             # oc_flag=1
+
             # if not flag:
             #     # If still not found, try tar_path
-            #     info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, tar_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
+            #     info, flag = sch_occ(oc_starts, oc_stops, tar_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
             #     if flag:
-            #          tqdm.write(f"{st} to {sp}:         Found occultation target from target list itself")
+            #          tqdm.write(f"{st} to {sp}:         Found occultation target from aux list")
             #     # logging.info(f"From tar list? {flag}")
 
             # Try to find a target from tar_list
@@ -349,6 +524,7 @@ for i in tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#
                 tqdm.write(f"{st} to {sp}:     Found occultation target from target list itself")
             # logging.info(f"From target list itself? {flag}")
             oc_flag=1
+
             if not flag:
                 # If still not found, try tar_path
                 info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, aux_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
@@ -601,7 +777,7 @@ dom = minidom.parseString(etstr)
 
 #dom = xml.dom.minidom.parseString(etstr)
 pretty_xml_as_string = dom.toprettyxml()
-f=open(f'{PACKAGEDIR}/data/Pandora_science_calendar.xml','w+')#test.xml', 'w+')
+f=open(f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_TEST.xml','w+')#test.xml', 'w+')
 f.write(pretty_xml_as_string)
 f.close()
 

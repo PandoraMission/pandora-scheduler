@@ -24,7 +24,8 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
     obs_seq_id = ET.SubElement(o_seq, "ID")
     obs_seq_id.text = obs_seq_ID
 
-    observational_parameters, params_NIRDA, params_VDA = params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec)
+    # observational_parameters, params_NIRDA, params_VDA = params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec)
+    observational_parameters = params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec)
 
     obs_parameters = ET.SubElement(o_seq, "Observational_Parameters")
     ### Observational Parameters
@@ -46,7 +47,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
     ### Payload Parameters
     payload_parameters = ET.SubElement(o_seq, "Payload_Parameters")
     ### NIRDA Parameters
-    nirda = ET.SubElement(payload_parameters, "AcquireVisCamScienceData")
+    nirda = ET.SubElement(payload_parameters, "AcquireInfCamImages")
     nirda_columns = targ_info.columns[targ_info.columns.str.startswith('NIRDA_')]
     columns_to_ignore = ['IncludeFieldSolnsInResp', 'NIRDA_TargetID', 'NIRDA_SC_Integrations', 'NIRDA_FramesPerIntegration', 'NIRDA_IntegrationTime_s']
     for nirda_key, nirda_values in targ_info[nirda_columns].iloc[0].items():
@@ -57,7 +58,10 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 nirda_subelement_ = ET.SubElement(nirda, xml_key)
                 nirda_subelement_.text = str(nirda_values)
             elif nirda_key == 'NIRDA_TargetID':
-                tmp_t_name = targ_info['Planet Name'].str.replace(r'\s+([bcd])$', r'\1', regex=True).iloc[0]
+                if pd.isnull(targ_info['Planet Name'].iloc[0]):
+                    tmp_t_name = targ_info['Star Name'].iloc[0]
+                else:
+                    tmp_t_name = targ_info['Planet Name'].str.replace(r'\s+([bcd])$', r'\1', regex=True).iloc[0]
                 nirda_subelement_ = ET.SubElement(nirda, xml_key)
                 nirda_subelement_.text = tmp_t_name#targ_info['Planet Name'].iloc[0]
             elif nirda_key == 'NIRDA_SC_Integrations':
@@ -68,12 +72,12 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
         #     logging.info(f"Searching for occultation targets from {st} to {sp}")
 
     ### VDA Parameters:
-    vda = ET.SubElement(payload_parameters, "AcquireInfCamImages")
+    vda = ET.SubElement(payload_parameters, "AcquireVisCamScienceData")
     vda_columns = targ_info.columns[targ_info.columns.str.startswith('VDA_')]
     # columns_to_ignore = ['VDA_IntegrationTime']
-    columns_to_ignore = ['VDA_NumTotalFramesRequested', 'VDA_TargetID', 'VDA_TargetRA', 'VDA_TargetDEC', \
+    columns_to_ignore = ['VDA_NumExposuresMax', 'VDA_NumTotalFramesRequested', 'VDA_TargetID', 'VDA_TargetRA', 'VDA_TargetDEC', \
         'VDA_StarRoiDetMethod', 'VDA_numPredefinedStarRois', 'VDA_PredefinedStarRoiRa', 'VDA_PredefinedStarRoiDec', \
-            'VDA_IntegrationTime_s']
+            'VDA_IntegrationTime_s', 'VDA_MaxNumStarRois']
     # for vda_key, vda_values in zip(params_VDA.keys(), params_VDA.values()):
     for vda_key, vda_values in targ_info[vda_columns].iloc[0].items():
         if pd.notna(vda_values):  # This condition checks if the value is not NaN
@@ -82,7 +86,10 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 vda_subelement_.text = str(vda_values)
             elif vda_key == 'VDA_TargetID':
-                tmp_t_name = targ_info['Planet Name'].str.replace(r'\s+([bcd])$', r'\1', regex=True).iloc[0]
+                if pd.isnull(targ_info['Planet Name'].iloc[0]):
+                    tmp_t_name = targ_info['Star Name'].iloc[0]
+                else:
+                    tmp_t_name = targ_info['Planet Name'].str.replace(r'\s+([bcd])$', r'\1', regex=True).iloc[0]
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 vda_subelement_.text = tmp_t_name#targ_info['Planet Name'].iloc[0]
             elif vda_key == 'VDA_TargetRA':
@@ -94,13 +101,19 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
             elif vda_key == 'VDA_StarRoiDetMethod':
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 vda_subelement_.text = str(targ_info['StarRoiDetMethod'].iloc[0])
-            elif vda_key == 'VDA_numPredefinedStarRois' and targ_info['StarRoiDetMethod'].iloc[0] != 1:
+            elif vda_key == 'VDA_MaxNumStarRois' and targ_info['StarRoiDetMethod'].iloc[0] == 1:
+                vda_subelement_ = ET.SubElement(vda, xml_key)
+                vda_subelement_.text = str(0)
+            elif vda_key == 'VDA_MaxNumStarRois' and targ_info['StarRoiDetMethod'].iloc[0] == 2:
+                vda_subelement_ = ET.SubElement(vda, xml_key)
+                vda_subelement_.text = str(9)
+            elif vda_key == 'VDA_numPredefinedStarRois' and targ_info['StarRoiDetMethod'].iloc[0] != 2:
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 try:
                     vda_subelement_.text = str(targ_info['numPredefinedStarRois'].iloc[0])
                 except:
-                    vda_subelement_.text = str('-999')
-            elif vda_key == 'VDA_PredefinedStarRoiRa' and targ_info['StarRoiDetMethod'].iloc[0] != 1:
+                    vda_subelement_.text = str('-9999')
+            elif vda_key == 'VDA_PredefinedStarRoiRa' and targ_info['StarRoiDetMethod'].iloc[0] != 2:
                 roi_coord_columns = [col for col in targ_info.columns if col.startswith('ROI_coord_') and col != 'ROI_coord_epoch']
                 roi_coord_values = targ_info[roi_coord_columns].dropna(axis = 1)
                 import ast
@@ -110,7 +123,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 for jj in range(all_columns.shape[0]):
                     vda_subelement_tmp = ET.SubElement(vda_subelement_, f'RA{jj+1}')
                     vda_subelement_tmp.text = f'{all_columns[jj,0]:.6f}'
-            elif vda_key == 'VDA_PredefinedStarRoiDec' and targ_info['StarRoiDetMethod'].iloc[0] != 1:
+            elif vda_key == 'VDA_PredefinedStarRoiDec' and targ_info['StarRoiDetMethod'].iloc[0] != 2:
                 roi_coord_columns = [col for col in targ_info.columns if col.startswith('ROI_coord_') and col != 'ROI_coord_epoch']
                 roi_coord_values = targ_info[roi_coord_columns].dropna(axis = 1)
                 import ast
@@ -122,7 +135,13 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                     vda_subelement_tmp.text = f'{all_columns[jj,1]:.6f}'
             elif vda_key == 'VDA_NumTotalFramesRequested':
                 vda_subelement_ = ET.SubElement(vda, xml_key)
-                vda_subelement_.text = str(np.round(diff_in_sec/targ_info['VDA_IntegrationTime_s'].iloc[0]).astype(int))
+                # vda_subelement_.text = str(np.round(diff_in_sec/targ_info['VDA_IntegrationTime_s'].iloc[0]).astype(int))
+                # vda_subelement_.text = str((diff_in_sec/targ_info['VDA_IntegrationTime_s'].iloc[0]//targ_info['VDA_FramesPerCoadd'].iloc[0]).astype(int))
+                vda_subelement_.text = str((diff_in_sec/(1e-6*targ_info['VDA_ExposureTime_us'].iloc[0])//targ_info['VDA_FramesPerCoadd'].iloc[0]*targ_info['VDA_FramesPerCoadd'].iloc[0]).astype(int))
+            # elif vda_key == 'VDA_NumExposuresMax':
+            #     vda_subelement_ = ET.SubElement(vda, xml_key)
+            #     # vda_subelement_.text = str(np.round(diff_in_sec/targ_info['VDA_IntegrationTime_s'].iloc[0]).astype(int))
+            #     vda_subelement_.text = str((diff_in_sec/targ_info['VDA_IntegrationTime_s'].iloc[0]//targ_info['VDA_FramesPerCoadd'].iloc[0]).astype(int))
             
             pass
         # else:
@@ -183,7 +202,8 @@ def params_obs_NIRDA_VDA(t_name, priority, start, stop, ra, dec):
         "ExposureTime_us": 200000,
         }
 
-    return observational_parameters, params_NIRDA, params_VDA
+    # return observational_parameters, params_NIRDA, params_VDA
+    return observational_parameters
 
 def remove_short_sequences(array, sequence_too_short):
     A = array#[1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]
@@ -827,6 +847,9 @@ def process_target_files(keyword):
                 items.append((new_key, v))
         return dict(items)
 
+    # if keyword == 'auxiliary-standard':
+    #     aaa = 333.
+
     data_list = []
     for filename in tqdm(os.listdir(directory)):
         if filename.endswith('_target_definition.json'):
@@ -888,7 +911,10 @@ def process_target_files(keyword):
                 for key, value in vda_schemes[vda_setting].items():
                     flat_data[f'VDA_{key}'] = value
             
-            if not filename.startswith('DR3') or keyword != 'monitoring-standard':
+            # if not filename.startswith('DR3') or keyword != 'monitoring-standard':
+            # if keyword != 'monitoring-standard' or keyword !='occultation-standard':
+            # if keyword != 'monitoring-standard' and keyword !='occultation-standard':
+            if keyword not in ('monitoring-standard', 'occultation-standard'):
                 # Separate the last lowercase letter with a space
                 planet_name = re.sub(r'([a-z])$', r' \1', flat_data.get('Planet Name', ''))
                 flat_data['Planet Name'] = planet_name
@@ -900,6 +926,8 @@ def process_target_files(keyword):
                     flat_data['Transit Epoch (BJD_TDB-2400000.5)'] = flat_data['Transit Epoch (BJD_TDB)'] - 2400000.5
             else:
                 flat_data['Star Simbad Name'] = flat_data.get('Star Name', '')
+                flat_data['Planet Name'] = flat_data.get('Star Name', '')
+                flat_data['Planet Simbad Name'] = flat_data.get('Star Name', '')
 
             flat_data['RA'], flat_data['DEC']= update_coordinates_astropy(flat_data['RA'], flat_data['DEC'], flat_data['pm_RA'], flat_data['pm_DEC'])
             
@@ -912,7 +940,8 @@ def process_target_files(keyword):
     df = pd.DataFrame(data_list)
     
     # Determine columns based on whether it's a Gaia DR3 file or not
-    if df['Original Filename'].str.startswith('DR3').any() or keyword in ('auxiliary-standard', 'monitoring-standard'):#keyword == 'monitoring-standard':
+    # if df['Original Filename'].str.startswith('DR3').any() or keyword in ('auxiliary-standard', 'monitoring-standard'):#keyword == 'monitoring-standard':
+    if keyword in ('auxiliary-standard', 'monitoring-standard', 'occultation-standard'):
         columns_order = ['Star Name', 'Star Simbad Name']
         columns_order.extend([col for col in df.columns if col not in columns_order and col != 'Priority'])
         columns_order.append('Priority')
@@ -1033,6 +1062,7 @@ def check_if_transits_in_obs_window(tracker, temp_df, target_list, start, pandor
     sched_start, sched_stop, obs_rng, obs_window, sched_wts, transit_coverage_min):
     for i in range(len(tracker)):
         planet_name = tracker["Planet Name"][i]
+        ra_tar, dec_tar = tracker["RA"][i], tracker["DEC"][i]
 
         if (
             tracker.loc[(tracker["Planet Name"] == planet_name), "Transits Needed"][
@@ -1049,6 +1079,7 @@ def check_if_transits_in_obs_window(tracker, temp_df, target_list, start, pandor
             planet_data = pd.read_csv(
                 f"{PACKAGEDIR}/data/targets/{star_name}/{planet_name}/Visibility for {planet_name}.csv"
             )
+
             planet_data = planet_data.drop(
                 planet_data.index[
                     (planet_data["Transit_Coverage"] < transit_coverage_min)
@@ -1142,6 +1173,8 @@ def check_if_transits_in_obs_window(tracker, temp_df, target_list, start, pandor
                     temp = [
                         [
                             planet_name,
+                            ra_tar, 
+                            dec_tar,
                             obs_start,
                             gap_time,
                             planet_data["Transit_Coverage"][j],
@@ -1156,6 +1189,8 @@ def check_if_transits_in_obs_window(tracker, temp_df, target_list, start, pandor
                         temp,
                         columns=[
                             "Planet Name",
+                            "RA",
+                            "DEC",
                             "Obs Start",
                             "Obs Gap Time",
                             "Transit Coverage",
@@ -1382,3 +1417,31 @@ def update_coordinates_astropy(ra0, dec0, pm_ra, pm_dec):
     new_coord = coord.apply_space_motion(new_obstime=Time(t1))
     
     return new_coord.ra.degree, new_coord.dec.degree
+
+def check_visibility():
+
+    targ = ['TOI-270', 'TOI-2076', 'TOI-942', 'TOI-244', 'HD_73583', 'HAT-P-12']
+    fig, axs = plt.subplots(len(targ), 1, figsize=(20, 8))
+    # fig.tight_layout(pad=0.5)
+
+    for ii, tt in enumerate(targ):
+        tf_vis = pd.read_csv(f"/Users/vkostov/Documents/GitHub/pandora-scheduler/src/pandorascheduler/data/targets/{tt}/Visibility for {tt}.csv")
+        time_mjd = tf_vis['Time(MJD_UTC)'].values
+        vis = tf_vis['Visible'].values
+        
+        nbins = 100
+        
+        axs[ii].plot(np.mean(time_mjd[:-(time_mjd.size % nbins)].reshape(-1, nbins), axis=1),
+                    np.mean(vis[:-(vis.size % nbins)].reshape(-1, nbins), axis=1), '.-', ms=0.1, label=tt)
+        axs[ii].set_xlim(min(time_mjd), max(time_mjd))
+        axs[ii].legend()
+        
+        if ii < len(targ) - 1:  # Remove x-axis labels for all but the last subplot
+            axs[ii].set_xticks([])
+        
+        # axs[ii].set_yticks([])
+
+        # plt.tight_layout()
+
+    plt.subplots_adjust(hspace=0.1) 
+    plt.show()
