@@ -11,7 +11,7 @@ import tqdm as tqdm
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 
 # Parse the XML file
-fname = f'{PACKAGEDIR}/data/calendar_Pandora_Schedule_TEST_wip.xml'
+fname = f'{PACKAGEDIR}/data/Pandora_science_calendar.xml'
 tree = ET.parse(fname)
 root = tree.getroot()
 
@@ -35,10 +35,15 @@ def check_visibility(target, start_time, stop_time):
 
     # st_name = target[:-2] if target.endswith('b') or target.endswith('c') else target
 
-    if not target.startswith('DR3'):
+    try:
         v_data = pd.read_csv(tar_vis_path+f'{st_name}/Visibility for {st_name}.csv')
-    else:
+    except:
         v_data = pd.read_csv(aux_vis_path+f'{target}/Visibility for {target}.csv')
+
+    # if not target.startswith('DR3'):
+    #     v_data = pd.read_csv(tar_vis_path+f'{st_name}/Visibility for {st_name}.csv')
+    # else:
+    #     v_data = pd.read_csv(aux_vis_path+f'{target}/Visibility for {target}.csv')
 
     # Filter data for the observation period
     mask = (v_data['Time(MJD_UTC)'] >= start_mjd) & (v_data['Time(MJD_UTC)'] <= stop_mjd)
