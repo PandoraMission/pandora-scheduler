@@ -1424,13 +1424,13 @@ if __name__ == "__main__":
     # sched_wts[transit coverage, saa overlap, schedule factor]
     # sched_wts = [0.5, 0.25, 0.25]
     sched_wts = [0.8, 0.0, 0.2]
-    transit_coverage_min = 0.5
+    transit_coverage_min = 0.4
     deprioritization_limit = 48 # hours
     min_visibility = 0.5 # for non-primary targets
     
     #Mission requirements: >= 91 deg avoidance for Sun, >= 20 deg avoidance for Moon and Earth limbs
     # blocks = [91., 40., 63.]
-    blocks = [91., 25., 63.]
+    blocks = [91., 25., 86.]
     gmat_file = 'Pandora-600km-withoutdrag-20251018.txt'#'GMAT_pandora_600_20250708_withdrag.txt'#'GMAT_pandora_600_20250706_withdrag.txt'#'GMAT_pandora_600_20240512.txt'#'GMAT_pandora_450_20230713.csv'#
     obs_name = 'Pandora'#_600km_20240518'#'Pandora_450km_20230713'#
 
