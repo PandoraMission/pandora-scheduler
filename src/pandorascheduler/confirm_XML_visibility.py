@@ -59,8 +59,6 @@ def create_visit_figure(visit_data, visit_id, target):
     unique_targets = list(dict.fromkeys(d['target'] for d in visit_data))
     target_to_y = {target: i for i, target in enumerate(unique_targets)}
 
-    
-
     # for data in visit_data:
     for i, data in enumerate(visit_data):
         visible_ = np.asarray(data['visibility']) == 1.
@@ -147,7 +145,8 @@ def create_visit_figure(visit_data, visit_id, target):
 
     # Save the figure as a PNG file
     try:
-        output_file = os.path.join(output_dir, f'visit_{visit_id}_visibility_for_{target}.png')
+        # output_file = os.path.join(output_dir, f'visit_{visit_id}_visibility_for_{target}.png')
+        output_file = os.path.join(output_dir, f'visit_{visit_id}_visibility.png')
         plt.savefig(output_file, dpi=300, bbox_inches='tight')
         plt.close(fig)
         # print(f"Figure for Visit {visit_id} saved as {output_file}")
