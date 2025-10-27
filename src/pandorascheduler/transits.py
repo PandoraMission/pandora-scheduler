@@ -66,14 +66,13 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
     logging.info('Importing GMAT data')
     # gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep='\t')
     gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep=',', engine = 'python')
+    obs_name = 'Pandora'
     if gmat_file == 'GMAT_pandora_600_20250706_withdrag.txt':
         keyword_gmat = 'Earth.A1ModJulian'
-        obs_name = 'Pandora'
     else:
         gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep=',', engine = 'python')
         keyword_gmat = 'Earth.UTCModJulian'
-        obs_name = 'Pandora'
-
+        
     # if gmat_file == 'GMAT_pandora_450_20230713.csv':
     #     gmat_data = pd.read_csv(f'{PACKAGEDIR}/data/{gmat_file}', sep='\t+', engine = 'python')
     #     keyword_gmat = 'Earth.UTCModJulian'
@@ -128,9 +127,9 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         moon_vectors_ec[:, i] = np.interp(t_mjd_utc, gmat_mjd_utc, moon_vectors_gmat[:, i])
 
     ### Coordinate shift to Pandora Centric (PC) reference frame
-    earth_vectors_pc = earth_vectors_ec-pandora_vectors_ec
-    sun_vectors_pc = sun_vectors_ec-pandora_vectors_ec
-    moon_vectors_pc = moon_vectors_ec-pandora_vectors_ec
+    earth_vectors_pc = earth_vectors_ec - pandora_vectors_ec
+    sun_vectors_pc = sun_vectors_ec - pandora_vectors_ec
+    moon_vectors_pc = moon_vectors_ec - pandora_vectors_ec
 
     ### Create SkyCoord for angular seperation calculations
     earth_vectors_pc = SkyCoord(earth_vectors_pc, unit='km', representation_type='cartesian') 

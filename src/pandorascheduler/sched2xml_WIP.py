@@ -29,8 +29,10 @@ aux_vis_path = f'{PACKAGEDIR}/data/aux_targets/'
 tar_path = f'{PACKAGEDIR}/data/exoplanet_targets.csv'#primary-exoplanet-extended_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
 # tar_path_ALL = f'{PACKAGEDIR}/data/primary-exoplanet-extended_targets.csv'#Pandora_Target_List_Top40_16Feb2024_Top40_SDM.csv'
 aux_path = f'{PACKAGEDIR}/data/aux_list_new.csv'
+occ_path = f'{PACKAGEDIR}/data/occultation-standard_targets.csv'
 t_list = pd.read_csv(tar_path)
 a_list = pd.read_csv(aux_path)
+occ_list = pd.read_csv(occ_path)
 sch = pd.read_csv(schedule_path)
 
 # target_definition_files = ['primary-exoplanet-extended', 'auxiliary-exoplanet-reduced', 'auxiliary-standard', 'occultation-standard', \
@@ -115,6 +117,9 @@ def sch_occ_new(starts, stops, st, sp, list_path, sort_key=None, prev_obs = None
         elif list_path == aux_path:
             path_ = f"{PACKAGEDIR}/data/aux_targets"
             try_occ_targets = 'aux list'
+        elif list_path == occ_path:
+            path_ = f"{PACKAGEDIR}/data/aux_targets"
+            try_occ_targets = 'occ list'
         
         # importlib.reload(helper_codes)
         o_df, d_flag = helper_codes.schedule_occultation_targets(v_names, starts, stops, st, sp, path_, o_df, o_list, try_occ_targets)#, position)
@@ -149,7 +154,7 @@ meta=ET.SubElement(cal, 'Meta',
 #
 #
 #
-for i in tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(10)):#len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -327,7 +332,7 @@ for i in tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#
 
 
         #find an occultation target for this visit that will always be visible
-        def find_occultation_target(oc_starts, oc_stops, st, sp, tar_path, aux_path, ra, dec):
+        def find_occultation_target(oc_starts, oc_stops, st, sp, tar_path, aux_path, ra, dec, use_tar_list_for_occultations):
             # logging.info(f"Searching for occultation targets from {st} to {sp}")
             # tqdm.write(f"{st} to {sp}: Searching for occultation targets from {st} to {sp}")
             # # Try to find a target from aux_list
@@ -343,17 +348,20 @@ for i in tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#
             #          tqdm.write(f"{st} to {sp}:         Found occultation target from target list itself")
             #     # logging.info(f"From tar list? {flag}")
 
+            if use_tar_list_for_occultations:
             # Try to find a target from tar_list
-            info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, tar_path, sort_key = 'closest', prev_obs=[ra,dec])
-            if flag:
-                tqdm.write(f"{st} to {sp}:     Found occultation target from target list itself")
-            # logging.info(f"From target list itself? {flag}")
-            oc_flag=1
-            if not flag:
-                # If still not found, try tar_path
+                info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, tar_path, sort_key = 'closest', prev_obs=[ra,dec])
+                if flag:
+                    tqdm.write(f"{st} to {sp}:     Found occultation target from target list itself")
+                # logging.info(f"From target list itself? {flag}")
+                oc_flag=1
+            else:
+                # if not flag:
+                    # If still not found, try tar_path
                 info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, aux_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
                 if flag:
-                     tqdm.write(f"{st} to {sp}:         Found occultation target from aux list")
+                    prefix = "/Users/vkostov/Documents/GitHub/pandora-scheduler/src/pandorascheduler/data/"
+                    tqdm.write(f"{st} to {sp}:         Found occultation target from {os.path.relpath(aux_path, prefix)}")
                 # logging.info(f"From tar list? {flag}")
             
             if flag:
@@ -369,7 +377,10 @@ for i in tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#
                 # logging.warning(f"No suitable occultation targets found for period {st} to {sp}")
                 return None
 
-        info, flag = find_occultation_target(oc_starts, oc_stops,  st, sp, tar_path, aux_path, ra, dec)
+        use_tar_list_for_occultations = False
+
+        # info, flag = find_occultation_target(oc_starts, oc_stops,  st, sp, tar_path, aux_path, ra, dec, use_tar_list_for_occultations)
+        info, flag = find_occultation_target(oc_starts, oc_stops,  st, sp, tar_path, occ_path, ra, dec, use_tar_list_for_occultations)
 
         # #find an occultation target for this visit that will always be visible
         # # VK BEGIN: there is no "nearest" in

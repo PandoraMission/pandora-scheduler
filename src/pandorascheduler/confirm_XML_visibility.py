@@ -11,7 +11,7 @@ import tqdm as tqdm
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 
 # Parse the XML file
-fname = f'{PACKAGEDIR}/data/Pandora_science_calendar.xml'
+fname = f'{PACKAGEDIR}/data/Pandora_science_calendar_102325.xml'
 tree = ET.parse(fname)
 root = tree.getroot()
 
@@ -59,18 +59,23 @@ def create_visit_figure(visit_data, visit_id, target):
     unique_targets = list(dict.fromkeys(d['target'] for d in visit_data))
     target_to_y = {target: i for i, target in enumerate(unique_targets)}
 
-    
-
     # for data in visit_data:
     for i, data in enumerate(visit_data):
         visible_ = np.asarray(data['visibility']) == 1.
         times = np.asarray(data['times'])
         y_value = target_to_y[data['target']]
+        priority = data['priority']
+        if priority == '0':
+            color_ = 'gray'
+        elif priority == '1':
+            color_ = 'r'
+        elif priority == '2':
+            color_ = 'orange'
 
         vis_times = data['times']
         vis_values = [i+1 if v else None for v in data['visibility']]
         # ax.scatter(vis_times, [y_value] * len(vis_times), color='green', marker='.', s=2)
-        ax.plot(times, [y_value] * len(times), color='green', linewidth=1)
+        ax.plot(times, [y_value] * len(times), color = color_, linewidth=1)
 
         if not(all(visible_)):
             for t in times[~visible_]:
@@ -140,7 +145,8 @@ def create_visit_figure(visit_data, visit_id, target):
 
     # Save the figure as a PNG file
     try:
-        output_file = os.path.join(output_dir, f'visit_{visit_id}_visibility_for_{target}.png')
+        # output_file = os.path.join(output_dir, f'visit_{visit_id}_visibility_for_{target}.png')
+        output_file = os.path.join(output_dir, f'visit_{visit_id}_visibility.png')
         plt.savefig(output_file, dpi=300, bbox_inches='tight')
         plt.close(fig)
         # print(f"Figure for Visit {visit_id} saved as {output_file}")
@@ -160,6 +166,8 @@ for visit in tqdm.tqdm(root.findall('ns:Visit', namespace)):
     for obs_seq in visit.findall('ns:Observation_Sequence', namespace):
         target_elem = obs_seq.find('./ns:Observational_Parameters/ns:Target', namespace)
         target = target_elem.text if target_elem is not None and target_elem.text else "No target"
+
+        priority = obs_seq.find('./ns:Observational_Parameters/ns:Priority', namespace).text
         
         start_elem = obs_seq.find('./ns:Observational_Parameters/ns:Timing/ns:Start', namespace)
         stop_elem = obs_seq.find('./ns:Observational_Parameters/ns:Timing/ns:Stop', namespace)
@@ -182,6 +190,7 @@ for visit in tqdm.tqdm(root.findall('ns:Visit', namespace)):
         
         visit_data.append({
             'target': target,
+            'priority': priority, 
             'start': datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%SZ"),
             'stop': datetime.strptime(stop_time, "%Y-%m-%dT%H:%M:%SZ"),
             'visibility': visibility,
