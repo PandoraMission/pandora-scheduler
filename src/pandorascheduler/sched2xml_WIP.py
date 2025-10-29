@@ -360,7 +360,7 @@ for i in tqdm(range(10)):#len(sch))):#, position = 0, leave = True):#len(sch))):
                     # If still not found, try tar_path
                 info, flag = sch_occ_new(oc_starts, oc_stops, st, sp, aux_path, sort_key = 'closest', prev_obs = [ra,dec])#, position = 2)
                 if flag:
-                    prefix = "/Users/vkostov/Documents/GitHub/pandora-scheduler/src/pandorascheduler/data/"
+                    prefix = f"{PACKAGEDIR}/data/"
                     tqdm.write(f"{st} to {sp}:         Found occultation target from {os.path.relpath(aux_path, prefix)}")
                 # logging.info(f"From tar list? {flag}")
             
