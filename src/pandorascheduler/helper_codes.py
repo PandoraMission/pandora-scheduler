@@ -619,37 +619,57 @@ def schedule_occultation_targets(v_names, starts, stops, st, sp, path, o_df, o_l
     if 'Visibility' not in o_df.columns:
         o_df['Visibility'] = np.nan
 
-    for v_name in tqdm(v_names, desc=f"{st} to {sp}: Searching for occultation target from {try_occ_targets}", leave = False):#, position=position):#, leave=leave):#, leave=(position != 0)):#desc="Processing targets"):
-    # for v_name in v_names:
+    for v_name in tqdm(v_names, desc=f"{st} to {sp}: Searching for an occultation target from {try_occ_targets}", leave = False):#, position=position):#, leave=leave):#, leave=(position != 0)):#desc="Processing targets"):
         # Process visibility for this target
         vis = pd.read_csv(find_file(v_name))#f"{path}/{v_name}/Visibility for {v_name}.csv")
         vis_times = vis['Time(MJD_UTC)']
         visibility = vis['Visible']
 
-        for s, (start, stop) in enumerate(zip(starts, stops)):
-            if pd.isna(schedule.loc[start, 'Target']):
-                # Check if the target is visible for the entire interval
-                interval_mask = (vis_times >= start) & (vis_times <= stop)
-
-                # print(Time(start, format='mjd').datetime.strftime("%Y-%m-%dT%H:%M:%SZ"), \
-                #     Time(stop, format='mjd').datetime.strftime("%Y-%m-%dT%H:%M:%SZ"), v_name, visibility[interval_mask].values.astype(int))
-                
-                if np.all(visibility[interval_mask] == 1):
+        interval_mask = (vis_times >= starts[0]) & (vis_times <= stops[-1])
+        if np.all(visibility[interval_mask] == 1):
+            for s, (start, stop) in enumerate(zip(starts, stops)):
+                if pd.isna(schedule.loc[start, 'Target']):
                     schedule.loc[start, 'Target'] = v_name
                     schedule.loc[start, 'Visibility'] = 1
-                    
-                    # Update o_df
+
                     idx, = np.where(o_list["Star Name"] == v_name)
                     if len(idx) > 0:
                         o_df.loc[s, 'Target'] = v_name
                         o_df.loc[s, 'RA'] = o_list.loc[idx[0], "RA"]
                         o_df.loc[s, 'DEC'] = o_list.loc[idx[0], "DEC"]
                         o_df.loc[s, 'Visibility'] = 1
-                else:
-                    # If the target is not visible for the entire interval, mark it as 0
-                    if pd.isna(schedule.loc[start, 'Visibility']):
-                        schedule.loc[start, 'Visibility'] = 0
-                        o_df.loc[s, 'Visibility'] = 0
+        else:
+            continue
+            # if pd.isna(schedule.loc[start, 'Visibility']):
+            #     schedule.loc[start, 'Visibility'] = 0
+            #     o_df.loc[s, 'Visibility'] = 0
+
+        if not schedule['Target'].isna().any():
+            return o_df, True
+
+
+
+        # for s, (start, stop) in enumerate(zip(starts, stops)):
+        #     if pd.isna(schedule.loc[start, 'Target']):
+        #         # Check if the target is visible for the entire interval
+        #         interval_mask = (vis_times >= start) & (vis_times <= stop)
+                
+        #         if np.all(visibility[interval_mask] == 1):
+        #             schedule.loc[start, 'Target'] = v_name
+        #             schedule.loc[start, 'Visibility'] = 1
+                    
+        #             # Update o_df
+        #             idx, = np.where(o_list["Star Name"] == v_name)
+        #             if len(idx) > 0:
+        #                 o_df.loc[s, 'Target'] = v_name
+        #                 o_df.loc[s, 'RA'] = o_list.loc[idx[0], "RA"]
+        #                 o_df.loc[s, 'DEC'] = o_list.loc[idx[0], "DEC"]
+        #                 o_df.loc[s, 'Visibility'] = 1
+        #         else:
+        #             # If the target is not visible for the entire interval, mark it as 0
+        #             if pd.isna(schedule.loc[start, 'Visibility']):
+        #                 schedule.loc[start, 'Visibility'] = 0
+        #                 o_df.loc[s, 'Visibility'] = 0
 
         # print(v_name, o_df)
 
