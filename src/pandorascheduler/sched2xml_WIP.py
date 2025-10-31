@@ -65,7 +65,6 @@ def sch_occ_new(starts, stops, st, sp, list_path, sort_key=None, prev_obs = None
     starts=Time(starts, format='datetime').to_value('mjd')
     stops=Time(stops, format='datetime').to_value('mjd')
     
-
     # if sort_key == None:
     #     #No occluded target scheduling, free time
     #     starts=starts.to_value('datetime')
@@ -154,7 +153,7 @@ meta=ET.SubElement(cal, 'Meta',
 #
 #
 #
-for i in tqdm(range(1,10)):#len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in range(36,37):#tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
