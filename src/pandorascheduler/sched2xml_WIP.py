@@ -58,12 +58,12 @@ save_csv = False
 def sch_occ_new(starts, stops, st, sp, list_path, sort_key=None, prev_obs = None):#, position = 0):#**kwargs):
     
     #build empty dataframe except for starts and stops
-    e_sched = [['',datetime.strftime(starts[s], "%Y-%m-%dT%H:%M:%SZ"),datetime.strftime(stops[s], "%Y-%m-%dT%H:%M:%SZ"), '', ''] for s in range(len(starts))]
-    o_df = pd.DataFrame(e_sched,columns=["Target","start","stop", "RA", "DEC"])
+    e_sched = [['',datetime.strftime(starts[s], "%Y-%m-%dT%H:%M:%SZ"), datetime.strftime(stops[s], "%Y-%m-%dT%H:%M:%SZ"), '', ''] for s in range(len(starts))]
+    o_df = pd.DataFrame(e_sched, columns=["Target", "start", "stop", "RA", "DEC"])
     
     #convert to mjd to compare with visibility data
-    starts=Time(starts, format='datetime').to_value('mjd')
-    stops=Time(stops, format='datetime').to_value('mjd')
+    starts = Time(starts, format='datetime').to_value('mjd')
+    stops = Time(stops, format='datetime').to_value('mjd')
     
     # if sort_key == None:
     #     #No occluded target scheduling, free time
@@ -153,7 +153,7 @@ meta=ET.SubElement(cal, 'Meta',
 #
 #
 #
-for i in range(36,37):#tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(100)):#len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
