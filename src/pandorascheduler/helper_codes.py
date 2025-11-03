@@ -687,6 +687,64 @@ def schedule_occultation_targets(v_names, starts, stops, st, sp, path, o_df, o_l
     o_df.loc[o_df['Visibility'].isna(), 'Visibility'] = 0
 
     return o_df, False
+#
+#
+#
+def schedule_occultation_targets_new(v_names, starts, stops, st, sp, path, o_df, o_list, try_occ_targets):
+    schedule = pd.DataFrame({'Stop': stops, 'Target': np.nan, 'Visibility': np.nan}, index=starts)
+    
+    if 'Visibility' not in o_df.columns:
+        o_df['Visibility'] = np.nan
+    
+    # Create a mapping of star names to their RA and DEC
+    star_info = {row['Star Name']: (row['RA'], row['DEC']) for _, row in o_list.iterrows()}
+    
+    def process_target(v_name, single_target=False):
+        vis = pd.read_csv(find_file(v_name))
+        vis_times, visibility = vis['Time(MJD_UTC)'], vis['Visible']
+        
+        if single_target:
+            interval_mask = (vis_times >= starts[0]) & (vis_times <= stops[-1])
+            if not np.all(visibility[interval_mask] == 1):
+                return False
+            
+            for s, (start, stop) in enumerate(zip(starts, stops)):
+                if pd.isna(schedule.loc[start, 'Target']):
+                    schedule.loc[start, ['Target', 'Visibility']] = v_name, 1
+                    if v_name in star_info:
+                        o_df.loc[s, ['Target', 'RA', 'DEC', 'Visibility']] = [v_name, *star_info[v_name], 1]
+            return True
+        else:
+            for s, (start, stop) in enumerate(zip(starts, stops)):
+                if pd.isna(schedule.loc[start, 'Target']):
+                    interval_mask = (vis_times >= start) & (vis_times <= stop)
+                    if np.all(visibility[interval_mask] == 1):
+                        schedule.loc[start, ['Target', 'Visibility']] = v_name, 1
+                        if v_name in star_info:
+                            o_df.loc[s, ['Target', 'RA', 'DEC', 'Visibility']] = [v_name, *star_info[v_name], 1]
+                    elif pd.isna(schedule.loc[start, 'Visibility']):
+                        schedule.loc[start, 'Visibility'] = 0
+                        o_df.loc[s, 'Visibility'] = 0
+        return False
+
+    # Try to find a single target for all intervals
+    for v_name in tqdm(v_names, desc=f"{st} to {sp}: Searching for a single occultation target from {try_occ_targets}", leave=False):
+        if process_target(v_name, single_target=True):
+            return o_df, True
+
+    # If no single target found, try multiple targets
+    for v_name in tqdm(v_names, desc=f"{st} to {sp}: Searching for multiple occultation targets from {try_occ_targets}", leave=False):
+        process_target(v_name)
+        if not schedule['Target'].isna().any():
+            return o_df, True
+
+    # Fill remaining slots with 'No target' and Visibility 0
+    mask = schedule['Target'].isna()
+    schedule.loc[mask, ['Target', 'Visibility']] = 'No target', 0
+    o_df.loc[o_df['Target'].isna(), 'Target'] = 'No target'
+    o_df.loc[o_df['Visibility'].isna(), 'Visibility'] = 0
+
+    return o_df, False
 
 def break_long_visibility_changes(arr, max_sequence = 90):
     result = [arr[0]]

@@ -121,7 +121,8 @@ def sch_occ_new(starts, stops, st, sp, list_path, sort_key=None, prev_obs = None
             try_occ_targets = 'occ list'
         
         # importlib.reload(helper_codes)
-        o_df, d_flag = helper_codes.schedule_occultation_targets(v_names, starts, stops, st, sp, path_, o_df, o_list, try_occ_targets)#, position)
+        # o_df, d_flag = helper_codes.schedule_occultation_targets(v_names, starts, stops, st, sp, path_, o_df, o_list, try_occ_targets)#, position)
+        o_df, d_flag = helper_codes.schedule_occultation_targets_new(v_names, starts, stops, st, sp, path_, o_df, o_list, try_occ_targets)#, position)
 
     return o_df, d_flag
 
