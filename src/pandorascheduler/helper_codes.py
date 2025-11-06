@@ -960,7 +960,11 @@ def process_target_files(keyword):
                 flat_data['Priority'] = priority_
                 flat_data['Number of Hours Requested'] = int(data[data["target"] == original_filename]["hours_req"].values[0])
             elif keyword in ('occultation-standard'):
-                flat_data['Priority'] = 0.1 # Default priority
+                priority_fn = os.path.join(directory, f"{keyword}_priorities.csv")
+                metadata, data = read_priority_csv(priority_fn)
+                priority_ = data[data["target"] == original_filename]["priority"].values[0]
+                flat_data['Priority'] = priority_
+                # flat_data['Priority'] = 0.1 # Default priority
                 # flat_data['Number of Transits to Capture'] = 0
 
             # if (keyword == "primary-exoplanet") or (keyword == "secondary-exoplanet"):
@@ -1017,7 +1021,8 @@ def process_target_files(keyword):
         print(f"No valid JSON files found in {directory}")
         return None
 
-    df = pd.DataFrame(data_list)
+    # df = pd.DataFrame(data_list)
+    df = pd.DataFrame(data_list).sort_values(by="Priority", ascending=False)
     
     # Determine columns based on whether it's a Gaia DR3 file or not
     # if df['Original Filename'].str.startswith('DR3').any() or keyword in ('auxiliary-standard', 'monitoring-standard'):#keyword == 'monitoring-standard':
@@ -1488,7 +1493,7 @@ def update_coordinates_astropy(ra0, dec0, pm_ra, pm_dec):
     import astropy.units as u
 
     t0 = Time('J2016.0')
-    t1 = Time('2025-11-15')
+    t1 = Time('2026-01-05')
     coord = SkyCoord(ra=ra0*u.degree, dec=dec0*u.degree, 
                      pm_ra_cosdec=pm_ra*u.mas/u.yr, 
                      pm_dec=pm_dec*u.mas/u.yr, 

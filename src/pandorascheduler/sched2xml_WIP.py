@@ -24,20 +24,22 @@ warnings.filterwarnings("ignore")
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 schedule_path = f'{PACKAGEDIR}/data/Pandora_Schedule_0.8_0.0_0.2_2026-02-05_to_2027-02-05.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
+
 tar_vis_path = f'{PACKAGEDIR}/data/targets/'
 aux_vis_path = f'{PACKAGEDIR}/data/aux_targets/'
+
 tar_path = f'{PACKAGEDIR}/data/exoplanet_targets.csv'#primary-exoplanet-extended_targets.csv'#Pandora_Target_List_Top20_14May2024.csv'#target_list_top20_16Feb2024.csv'
-# tar_path_ALL = f'{PACKAGEDIR}/data/primary-exoplanet-extended_targets.csv'#Pandora_Target_List_Top40_16Feb2024_Top40_SDM.csv'
-aux_path = f'{PACKAGEDIR}/data/aux_list_new.csv'
-occ_path = f'{PACKAGEDIR}/data/occultation-standard_targets.csv'
 t_list = pd.read_csv(tar_path)
+
+aux_path = f'{PACKAGEDIR}/data/all_targets.csv'
 a_list = pd.read_csv(aux_path)
+
+occ_path = f'{PACKAGEDIR}/data/occultation-standard_targets.csv'
 occ_list = pd.read_csv(occ_path)
+
 sch = pd.read_csv(schedule_path)
 
-# target_definition_files = ['primary-exoplanet-extended', 'auxiliary-exoplanet-reduced', 'auxiliary-standard', 'occultation-standard', \
-#     'monitoring-standard', 'secondary-exoplanet']
-target_definition_files = ['exoplanet', 'auxiliary-exoplanet', 'auxiliary-standard', 'monitoring-standard', 'secondary-exoplanet', 'occultation-standard']
+# target_definition_files = ['exoplanet', 'auxiliary-exoplanet', 'auxiliary-standard', 'monitoring-standard', 'secondary-exoplanet', 'occultation-standard']
 target_definition_files = ['exoplanet', 'auxiliary-standard', 'monitoring-standard', 'occultation-standard']
 
 t_list = pd.read_csv(f"{PACKAGEDIR}/data/{target_definition_files[0]}_targets.csv")
@@ -154,7 +156,7 @@ meta=ET.SubElement(cal, 'Meta',
 #
 #
 #
-for i in tqdm(range(100)):#len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(10)):#len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -208,7 +210,6 @@ for i in tqdm(range(100)):#len(sch))):#, position = 0, leave = True):#len(sch)))
     else:
         print(f"No visibility data for {t_name}. Stop code")
         break
-        xxxx
     # elif:
     #     v_data = pd.read_csv(aux_vis_path+f'{t_name}/Visibility for {t_name}.csv')
     #     targ_info = a_list.loc[(a_list['Star Name'] == t_name) & (a_list['Planet Name'].notna())]#a_list.loc[(a_list['Star Name'] == t_name)]
