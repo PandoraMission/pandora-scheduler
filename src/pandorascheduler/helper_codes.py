@@ -118,6 +118,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 roi_coord_values = targ_info[roi_coord_columns].dropna(axis = 1)
                 import ast
                 all_columns = np.asarray([ast.literal_eval(item) for item in roi_coord_values.values[0]])
+                all_columns[0,:] = [targ_info["RA"].iloc[0], targ_info["DEC"].iloc[0]]
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 # vda_subelement_.text = str(all_columns[:,0])
                 for jj in range(all_columns.shape[0]):
@@ -128,6 +129,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 roi_coord_values = targ_info[roi_coord_columns].dropna(axis = 1)
                 import ast
                 all_columns = np.asarray([ast.literal_eval(item) for item in roi_coord_values.values[0]])
+                all_columns[0,:] = [targ_info["RA"].iloc[0], targ_info["DEC"].iloc[0]]
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 # vda_subelement_.text = str(all_columns[:,1])
                 for jj in range(all_columns.shape[0]):
@@ -619,26 +621,46 @@ def schedule_occultation_targets(v_names, starts, stops, st, sp, path, o_df, o_l
     if 'Visibility' not in o_df.columns:
         o_df['Visibility'] = np.nan
 
-    for v_name in tqdm(v_names, desc=f"{st} to {sp}: Searching for occultation target from {try_occ_targets}", leave = False):#, position=position):#, leave=leave):#, leave=(position != 0)):#desc="Processing targets"):
-    # for v_name in v_names:
+    for v_name in tqdm(v_names, desc = f"{st} to {sp}: Searching for a single occultation target from {try_occ_targets}", leave = False):#, position=position):#, leave=leave):#, leave=(position != 0)):#desc="Processing targets"):
         # Process visibility for this target
         vis = pd.read_csv(find_file(v_name))#f"{path}/{v_name}/Visibility for {v_name}.csv")
         vis_times = vis['Time(MJD_UTC)']
         visibility = vis['Visible']
 
+        interval_mask = (vis_times >= starts[0]) & (vis_times <= stops[-1])
+        if np.all(visibility[interval_mask] == 1):
+            for s, (start, stop) in enumerate(zip(starts, stops)):
+                if pd.isna(schedule.loc[start, 'Target']):
+                    schedule.loc[start, 'Target'] = v_name
+                    schedule.loc[start, 'Visibility'] = 1
+
+                    idx, = np.where(o_list["Star Name"] == v_name)
+                    if len(idx) > 0:
+                        o_df.loc[s, 'Target'] = v_name
+                        o_df.loc[s, 'RA'] = o_list.loc[idx[0], "RA"]
+                        o_df.loc[s, 'DEC'] = o_list.loc[idx[0], "DEC"]
+                        o_df.loc[s, 'Visibility'] = 1
+
+            if not schedule['Target'].isna().any():
+                return o_df, True
+        # else:
+        #     continue
+            # if pd.isna(schedule.loc[start, 'Visibility']):
+            #     schedule.loc[start, 'Visibility'] = 0
+            #     o_df.loc[s, 'Visibility'] = 0
+
+    for v_name in tqdm(v_names, desc = f"{st} to {sp}: Searching for multiple occultation targets from {try_occ_targets}", leave = False):
+        vis = pd.read_csv(find_file(v_name))#f"{path}/{v_name}/Visibility for {v_name}.csv")
+        vis_times = vis['Time(MJD_UTC)']
+        visibility = vis['Visible']
         for s, (start, stop) in enumerate(zip(starts, stops)):
             if pd.isna(schedule.loc[start, 'Target']):
-                # Check if the target is visible for the entire interval
                 interval_mask = (vis_times >= start) & (vis_times <= stop)
-
-                # print(Time(start, format='mjd').datetime.strftime("%Y-%m-%dT%H:%M:%SZ"), \
-                #     Time(stop, format='mjd').datetime.strftime("%Y-%m-%dT%H:%M:%SZ"), v_name, visibility[interval_mask].values.astype(int))
                 
                 if np.all(visibility[interval_mask] == 1):
                     schedule.loc[start, 'Target'] = v_name
                     schedule.loc[start, 'Visibility'] = 1
-                    
-                    # Update o_df
+
                     idx, = np.where(o_list["Star Name"] == v_name)
                     if len(idx) > 0:
                         o_df.loc[s, 'Target'] = v_name
@@ -663,6 +685,64 @@ def schedule_occultation_targets(v_names, starts, stops, st, sp, path, o_df, o_l
     schedule.loc[mask, 'Target'] = 'No target'
     schedule.loc[mask, 'Visibility'] = 0
     
+    o_df.loc[o_df['Target'].isna(), 'Target'] = 'No target'
+    o_df.loc[o_df['Visibility'].isna(), 'Visibility'] = 0
+
+    return o_df, False
+#
+#
+#
+def schedule_occultation_targets_new(v_names, starts, stops, st, sp, path, o_df, o_list, try_occ_targets):
+    schedule = pd.DataFrame({'Stop': stops, 'Target': np.nan, 'Visibility': np.nan}, index=starts)
+    
+    if 'Visibility' not in o_df.columns:
+        o_df['Visibility'] = np.nan
+    
+    # Create a mapping of star names to their RA and DEC
+    star_info = {row['Star Name']: (row['RA'], row['DEC']) for _, row in o_list.iterrows()}
+    
+    def process_target(v_name, single_target=False):
+        vis = pd.read_csv(find_file(v_name))
+        vis_times, visibility = vis['Time(MJD_UTC)'], vis['Visible']
+        
+        if single_target:
+            interval_mask = (vis_times >= starts[0]) & (vis_times <= stops[-1])
+            if not np.all(visibility[interval_mask] == 1):
+                return False
+            
+            for s, (start, stop) in enumerate(zip(starts, stops)):
+                if pd.isna(schedule.loc[start, 'Target']):
+                    schedule.loc[start, ['Target', 'Visibility']] = v_name, 1
+                    if v_name in star_info:
+                        o_df.loc[s, ['Target', 'RA', 'DEC', 'Visibility']] = [v_name, *star_info[v_name], 1]
+            return True
+        else:
+            for s, (start, stop) in enumerate(zip(starts, stops)):
+                if pd.isna(schedule.loc[start, 'Target']):
+                    interval_mask = (vis_times >= start) & (vis_times <= stop)
+                    if np.all(visibility[interval_mask] == 1):
+                        schedule.loc[start, ['Target', 'Visibility']] = v_name, 1
+                        if v_name in star_info:
+                            o_df.loc[s, ['Target', 'RA', 'DEC', 'Visibility']] = [v_name, *star_info[v_name], 1]
+                    elif pd.isna(schedule.loc[start, 'Visibility']):
+                        schedule.loc[start, 'Visibility'] = 0
+                        o_df.loc[s, 'Visibility'] = 0
+        return False
+
+    # Try to find a single target for all intervals
+    for v_name in tqdm(v_names, desc=f"{st} to {sp}: Searching for a single occultation target from {try_occ_targets}", leave=False):
+        if process_target(v_name, single_target=True):
+            return o_df, True
+
+    # If no single target found, try multiple targets
+    for v_name in tqdm(v_names, desc=f"{st} to {sp}: Searching for multiple occultation targets from {try_occ_targets}", leave=False):
+        process_target(v_name)
+        if not schedule['Target'].isna().any():
+            return o_df, True
+
+    # Fill remaining slots with 'No target' and Visibility 0
+    mask = schedule['Target'].isna()
+    schedule.loc[mask, ['Target', 'Visibility']] = 'No target', 0
     o_df.loc[o_df['Target'].isna(), 'Target'] = 'No target'
     o_df.loc[o_df['Visibility'].isna(), 'Visibility'] = 0
 
@@ -882,7 +962,11 @@ def process_target_files(keyword):
                 flat_data['Priority'] = priority_
                 flat_data['Number of Hours Requested'] = int(data[data["target"] == original_filename]["hours_req"].values[0])
             elif keyword in ('occultation-standard'):
-                flat_data['Priority'] = 0.1 # Default priority
+                priority_fn = os.path.join(directory, f"{keyword}_priorities.csv")
+                metadata, data = read_priority_csv(priority_fn)
+                priority_ = data[data["target"] == original_filename]["priority"].values[0]
+                flat_data['Priority'] = priority_
+                # flat_data['Priority'] = 0.1 # Default priority
                 # flat_data['Number of Transits to Capture'] = 0
 
             # if (keyword == "primary-exoplanet") or (keyword == "secondary-exoplanet"):
@@ -939,7 +1023,8 @@ def process_target_files(keyword):
         print(f"No valid JSON files found in {directory}")
         return None
 
-    df = pd.DataFrame(data_list)
+    # df = pd.DataFrame(data_list)
+    df = pd.DataFrame(data_list).sort_values(by="Priority", ascending=False)
     
     # Determine columns based on whether it's a Gaia DR3 file or not
     # if df['Original Filename'].str.startswith('DR3').any() or keyword in ('auxiliary-standard', 'monitoring-standard'):#keyword == 'monitoring-standard':
@@ -1410,7 +1495,7 @@ def update_coordinates_astropy(ra0, dec0, pm_ra, pm_dec):
     import astropy.units as u
 
     t0 = Time('J2016.0')
-    t1 = Time('2025-11-15')
+    t1 = Time('2026-01-05')
     coord = SkyCoord(ra=ra0*u.degree, dec=dec0*u.degree, 
                      pm_ra_cosdec=pm_ra*u.mas/u.yr, 
                      pm_dec=pm_dec*u.mas/u.yr, 
