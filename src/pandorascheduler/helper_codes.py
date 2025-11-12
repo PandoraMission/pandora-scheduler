@@ -118,6 +118,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 roi_coord_values = targ_info[roi_coord_columns].dropna(axis = 1)
                 import ast
                 all_columns = np.asarray([ast.literal_eval(item) for item in roi_coord_values.values[0]])
+                all_columns[0,:] = [targ_info["RA"].iloc[0], targ_info["DEC"].iloc[0]]
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 # vda_subelement_.text = str(all_columns[:,0])
                 for jj in range(all_columns.shape[0]):
@@ -128,6 +129,7 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 roi_coord_values = targ_info[roi_coord_columns].dropna(axis = 1)
                 import ast
                 all_columns = np.asarray([ast.literal_eval(item) for item in roi_coord_values.values[0]])
+                all_columns[0,:] = [targ_info["RA"].iloc[0], targ_info["DEC"].iloc[0]]
                 vda_subelement_ = ET.SubElement(vda, xml_key)
                 # vda_subelement_.text = str(all_columns[:,1])
                 for jj in range(all_columns.shape[0]):
