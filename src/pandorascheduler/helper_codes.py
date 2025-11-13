@@ -1002,7 +1002,8 @@ def process_target_files(keyword):
             # if keyword != 'monitoring-standard' and keyword !='occultation-standard':
             if keyword not in ('monitoring-standard', 'occultation-standard'):
                 # Separate the last lowercase letter with a space
-                planet_name = re.sub(r'([a-z])$', r' \1', flat_data.get('Planet Name', ''))
+                # planet_name = re.sub(r'([a-z])$', r' \1', flat_data.get('Planet Name', ''))
+                planet_name = flat_data.get('Planet Name', '')
                 flat_data['Planet Name'] = planet_name
                 flat_data['Planet Simbad Name'] = planet_name
                 flat_data['Star Simbad Name'] = flat_data.get('Star Name', '')

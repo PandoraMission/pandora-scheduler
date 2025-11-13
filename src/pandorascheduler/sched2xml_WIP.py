@@ -156,7 +156,7 @@ meta=ET.SubElement(cal, 'Meta',
 #
 #
 #
-for i in tqdm(range(5)):#len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
+for i in tqdm(range(2,3)):#len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
     logging.basicConfig(level=logging.INFO, format='%(message)s')#format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -169,11 +169,10 @@ for i in tqdm(range(5)):#len(sch))):#, position = 0, leave = True):#len(sch))):#
     # st_name = t_name if t_name.startswith('Gaia') else t_name[:-2]
     
     if t_name.endswith(('b', 'c', 'd', 'e', 'f')) and (t_name != 'EV_Lac'):
-        st_name = t_name[:-2]
+        st_name = t_name[:-1]
     elif t_name.endswith(('STD')):
         t_name = t_name[:-4]
         st_name = t_name
-        # st_name = t_name[:-2]
     else:
         st_name = t_name
     
