@@ -61,7 +61,8 @@ def observation_sequence(visit, obs_seq_ID, t_name, priority, start, stop, ra, d
                 if pd.isnull(targ_info['Planet Name'].iloc[0]):
                     tmp_t_name = targ_info['Star Name'].iloc[0]
                 else:
-                    tmp_t_name = targ_info['Planet Name'].str.replace(r'\s+([bcd])$', r'\1', regex=True).iloc[0]
+                    # tmp_t_name = targ_info['Planet Name'].str.replace(r'\s+([bcd])$', r'\1', regex=True).iloc[0]
+                    tmp_t_name = targ_info['Planet Name'].iloc[0]
                 nirda_subelement_ = ET.SubElement(nirda, xml_key)
                 nirda_subelement_.text = tmp_t_name#targ_info['Planet Name'].iloc[0]
             elif nirda_key == 'NIRDA_SC_Integrations':
@@ -1002,7 +1003,8 @@ def process_target_files(keyword):
             # if keyword != 'monitoring-standard' and keyword !='occultation-standard':
             if keyword not in ('monitoring-standard', 'occultation-standard'):
                 # Separate the last lowercase letter with a space
-                planet_name = re.sub(r'([a-z])$', r' \1', flat_data.get('Planet Name', ''))
+                # planet_name = re.sub(r'([a-z])$', r' \1', flat_data.get('Planet Name', ''))
+                planet_name = flat_data.get('Planet Name', '')
                 flat_data['Planet Name'] = planet_name
                 flat_data['Planet Simbad Name'] = planet_name
                 flat_data['Star Simbad Name'] = flat_data.get('Star Name', '')
