@@ -20,6 +20,8 @@ import helper_codes_aux as hcc
 
 warnings.filterwarnings("ignore")
 
+PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
+schedule_path = f'{PACKAGEDIR}/data/Pandora_Schedule_0.8_0.0_0.2_2026-02-05_to_2026-03-05.csv'#Pandora_Schedule_2026-02-05_to_2027-02-05_111825.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
 
@@ -104,6 +106,10 @@ meta=ET.SubElement(cal, 'Meta',
                    Created=f'{str(hcc.round_to_nearest_second(datetime.now()))}',
                    Delivery_Id='',
                    )
+#
+#
+#
+for i in tqdm(range(len(sch))):#, position = 0, leave = True):#len(sch))):#3)):#len(18,19)):#
 
 for i in tqdm(range(len(sch))):
 
