@@ -20,11 +20,6 @@ import helper_codes_aux as hcc
 
 warnings.filterwarnings("ignore")
 
-<<<<<<< HEAD
-PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
-schedule_path = f'{PACKAGEDIR}/data/Pandora_Schedule_0.8_0.0_0.2_2026-02-05_to_2026-03-05.csv'#Pandora_Schedule_2026-02-05_to_2027-02-05_111825.csv'#Pandora_Schedule_2025-08-04_to_2026-08-03_last.csv'#Pandora_Schedule_2025-08-04_3months_29Aug2024.csv'#Pandora_Schedule_2025-08-04_2months.csv'#Pandora_Schedule_2025-08-04.csv'
-=======
->>>>>>> 4d6c002 (new file)
 logging.basicConfig(level=logging.INFO, format='%(message)s')
 logger = logging.getLogger(__name__)
 
