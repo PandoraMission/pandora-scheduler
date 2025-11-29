@@ -730,8 +730,15 @@ def schedule_occultation_targets_new(v_names, starts, stops, st, sp, path, o_df,
         vis_times, visibility = vis['Time(MJD_UTC)'], vis['Visible']
 
         if single_target:
-            interval_mask = (vis_times >= starts[0]) & (vis_times <= stops[-1])
-            if not np.all(visibility[interval_mask] == 1):
+            # Check if visible for ALL intervals individually (less strict)
+            all_visible = True
+            for start, stop in zip(starts, stops):
+                interval_mask = (vis_times >= start) & (vis_times <= stop)
+                if not np.all(visibility[interval_mask] == 1):
+                    all_visible = False
+                    break
+            
+            if not all_visible:
                 return False
 
             for s, (start, stop) in enumerate(zip(starts, stops)):
