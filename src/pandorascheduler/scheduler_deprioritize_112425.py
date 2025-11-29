@@ -955,4 +955,8 @@ if __name__ == "__main__":
             Schedule_all_scratch(blocks, pandora_start, pandora_stop, primary_targ_list, aux_targ_list, target_definition_files, \
                 obs_window, transit_coverage_min, sched_wts = sched_wts, aux_key=aux_key, \
                     fname_tracker = fname_tracker, commissioning_time=commissioning_time_, \
+<<<<<<< HEAD
                         sched_start = sched_start, sched_stop = sched_stop, output_dir=output_dir)
+=======
+                        sched_start = sched_start, sched_stop = sched_stop, output_dir=output_dir)
+>>>>>>> 4d6c002 (new file)
