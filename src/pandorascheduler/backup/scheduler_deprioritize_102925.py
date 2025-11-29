@@ -642,10 +642,7 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
 
     obs_rng = pd.date_range(start, stop, freq = "min")
 
-<<<<<<< Updated upstream:src/pandorascheduler/backup/scheduler_deprioritize_102925.py
-=======
     # hard coded standard frequency and duration.
->>>>>>> Stashed changes:src/pandorascheduler/scheduler_deprioritize_102925.py
     obs_std_dur = timedelta(hours = 0.5) 
 
     # Add standard stars!

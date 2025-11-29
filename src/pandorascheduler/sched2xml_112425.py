@@ -200,8 +200,9 @@ for i in tqdm(range(len(sch))):
         if int(n) < n:
             sps.append(sp)
 
-        if sps[-1] == v_time[-1]:
-            sps[-1] = v_time[-2]
+        # TB: I don't think this is needed.
+        # if sps[-1] == v_time[-1]:
+        #     sps[-1] = v_time[-2]
 
         sps_all = [st, *sps]
         for s in range(len(sps_all) - 1):

@@ -250,8 +250,6 @@ def Schedule(
     
     while stop <= sched_stop:
 
-        print(f"Start/Stop: {start}, {stop}")
-
         logger.debug("Evaluating window %s to %s", start, stop)
         tracker = tracker.sort_values(by=['Primary Target', 'Transit Priority'], ascending=[False, True]).reset_index(drop=True)
         obs_rng = pd.date_range(start, stop, freq="min")
@@ -587,7 +585,6 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
                 std_name = std_names[nn]
                 std_ra, std_dec = std_ras[nn], std_decs[nn]
                 priority_std = std_priority[nn]
-                print(f"--------> {std_name} scheduled for STD observations with full visibility.")
                 logger.info(
                     "%s scheduled for STD observations with full visibility",
                     std_name,
@@ -600,7 +597,6 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
             std_name = 'WARNING: no visible standard star'
             std_ra, std_dec = "NaN", "NaN"
             priority_std = 1.
-            print(f"    ----> WARNING: no visible standard star for {start} to {start + obs_std_dur}")
             logger.warning(
                 "No visible standard star between %s and %s",
                 start,
@@ -685,7 +681,6 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
             name = names[vis_all_targs[idx]]
             ra_tmp, dec_tmp = ras[vis_all_targs[idx]], decs[vis_all_targs[idx]]
             priority_tmp = aux_priority[vis_all_targs[idx]]
-            print(f"--------> {name} scheduled for non-primary observations with full visibility from {target_definition_files[tdf_idx]}.")
             logger.info(
                 "%s scheduled for non-primary observations with full visibility from %s",
                 name,
@@ -702,7 +697,6 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
                 name = names[vis_any_targs[idx]]
                 ra_tmp, dec_tmp = ras[vis_any_targs[idx]], decs[vis_any_targs[idx]]
                 priority_tmp = aux_priority[vis_any_targs[idx]]
-                print(f"--------> No non-primary target with full visibility; {name} scheduled for non-primary observations with {vis_perc:.2f}% visibility from {target_definition_files[tdf_idx]}.")
                 logger.info(
                     "No non-primary target with full visibility; %s scheduled at %.2f%% visibility from %s",
                     name,
@@ -712,7 +706,6 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
                 log_info=f"No non-primary target with full visibility; {name} scheduled for non-primary observations with {vis_perc:.2f}% visibility from {target_definition_files[tdf_idx]}."
                 break
             else:
-                print(f"No non-primary target with visibility greater than {100*min_visibility}% from {target_definition_files[tdf_idx]}, try next target list...")
                 logger.warning(
                     "No non-primary target with visibility greater than %.2f%% from %s",
                     100 * min_visibility,
@@ -741,7 +734,6 @@ def Schedule_aux(start, stop, aux_key, non_primary_obs_time, min_visibility, dep
         total_time = np.sum(non_primary_obs_time[name][0]) if isinstance(non_primary_obs_time[name][0], np.ndarray) else non_primary_obs_time[name][0]
 
         if total_time > timedelta(hours=deprioritization_limit):
-            print(f"----------------------------> Deprioritize {name} <----------------------------")
             logger.warning("Deprioritizing %s due to accumulated auxiliary time", name)
             new_priority = 0.95 * aux_priority[len(names) - 1]
             if isinstance(non_primary_obs_time[name][0], np.ndarray):
@@ -894,9 +886,9 @@ if __name__ == "__main__":
 
     obs_window = timedelta(hours=24.0)
     pandora_start = "2026-02-05 00:00:00"
-    pandora_stop = "2026-05-05 00:00:00"
+    pandora_stop = "2027-02-05 00:00:00"
     sched_start= "2026-02-05 00:00:00"
-    sched_stop= "2026-05-05 00:00:00"
+    sched_stop= "2027-02-05 00:00:00"
 
     commissioning_time_ = 0  # days
 
@@ -908,9 +900,6 @@ if __name__ == "__main__":
     blocks = [91., 25., 86.]
     gmat_file = 'Pandora-600km-withoutdrag-20251018.txt'
     obs_name = 'Pandora'
-
-    output_dir = OUTPUT_DIR
-    os.makedirs(output_dir, exist_ok=True)
 
     output_dir = OUTPUT_DIR
     os.makedirs(output_dir, exist_ok=True)
@@ -935,7 +924,6 @@ if __name__ == "__main__":
         create_aux_list = helper_codes.create_aux_list(target_definition_files, PACKAGEDIR)
 
     aux_key = 'sort_by_tdf_priority'
-    # aux_targets = None
 
     run_ = 'vis_and_schedule'
 
@@ -955,8 +943,4 @@ if __name__ == "__main__":
             Schedule_all_scratch(blocks, pandora_start, pandora_stop, primary_targ_list, aux_targ_list, target_definition_files, \
                 obs_window, transit_coverage_min, sched_wts = sched_wts, aux_key=aux_key, \
                     fname_tracker = fname_tracker, commissioning_time=commissioning_time_, \
-<<<<<<< HEAD
                         sched_start = sched_start, sched_stop = sched_stop, output_dir=output_dir)
-=======
-                        sched_start = sched_start, sched_stop = sched_stop, output_dir=output_dir)
->>>>>>> 4d6c002 (new file)
