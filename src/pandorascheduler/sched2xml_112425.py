@@ -90,7 +90,7 @@ def sch_occ_new(starts, stops, visit_start, visit_stop, list_path, sort_key=None
 
 #max time for an observation sequence
 obs_sequence_duration = 90 # minutes
-occ_sequence_limit = 30 # minutes
+occ_sequence_limit = 50 # minutes
 obs_seq_duration, occ_seq_limit = helper_codes.general_parameters(obs_sequence_duration, occ_sequence_limit)
 dt = timedelta(minutes = obs_seq_duration)
 occultation_sequence_limit = timedelta(minutes = occ_seq_limit + 1.)
