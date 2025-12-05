@@ -60,7 +60,7 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
     dt_iso_utc = pd.date_range(obs_start, obs_stop, freq='min')
     t_jd_utc   = Time(dt_iso_utc.to_julian_date(), format='jd', scale='utc').value
     t_mjd_utc  = Time(t_jd_utc-2400000.5, format='mjd', scale='utc').value
-
+    datetime_utc = Time(t_jd_utc-2400000.5, format='mjd', scale='utc').to_datetime()
 
     ### Read in GMAT results
     logging.info('Importing GMAT data')
@@ -190,6 +190,7 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         if star_name_sc.startswith("G") and not star_name_sc.startswith("GJ") and not star_name_sc.startswith("GD"):
             star_name_sc = star_name_sc.replace('G', 'Gaia DR3 ')
 
+        # star_sc = SkyCoord.from_name(star_name_sc)
         star_sc = SkyCoord(ra=target_data["RA"].iloc[i]*u.degree, dec=target_data["DEC"].iloc[i]*u.degree, frame="icrs")
         logging.info('Analyzing constraints for:', star_name)
         
@@ -216,13 +217,16 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         Earth_req = Earth_sep*u.deg > Earth_constraint
         all_req = Sun_req * Moon_req * Earth_req
         
-        
         #Save results for each star to csv file
-        data = np.vstack((t_mjd_utc, saa_cross, all_req, Earth_sep, Moon_sep, Sun_sep))
-        data = data.T.reshape(-1,6)
-        vis_df = pd.DataFrame(data, columns = ['Time(MJD_UTC)', 'SAA_Crossing', \
-            'Visible','Earth_Sep','Moon_Sep','Sun_Sep'])
-        
+        data = np.vstack((t_mjd_utc, datetime_utc, saa_cross, all_req, Earth_sep, Moon_sep, Sun_sep))
+        data = data.T.reshape(-1,7)
+        vis_df = pd.DataFrame(data, columns = ['Time(MJD_UTC)', 'Time_UTC', \
+            'SAA_Crossing', 'Visible','Earth_Sep','Moon_Sep','Sun_Sep'])
+
+        # Round Time_UTC to the nearest second
+        vis_df['Time_UTC'] = pd.to_datetime(vis_df['Time_UTC'])
+        vis_df['Time_UTC'] = vis_df['Time_UTC'].dt.round('s')
+
         # def custom_float_format(df):
         #     formatters = {}
         #     for col in df.columns:
@@ -234,17 +238,34 @@ def star_vis(sun_block:float, moon_block:float, earth_block:float,
         #             df[col] = lambda x: f'{x:.3f}'
         #     return df
 
-        if "exoplanet" not in targ_list:
-            vis_df['Time(MJD_UTC)'] = np.round(vis_df['Time(MJD_UTC)'], 6)
-        vis_df['SAA_Crossing'] = np.round(vis_df['SAA_Crossing'], 1)
-        vis_df['Visible'] = np.round(vis_df['Visible'], 1)
-        vis_df['Earth_Sep'] = np.round(vis_df['Earth_Sep'], 3)
-        vis_df['Moon_Sep'] = np.round(vis_df['Moon_Sep'], 3)
-        vis_df['Sun_Sep'] = np.round(vis_df['Sun_Sep'], 3)
+        # if "exoplanet" not in targ_list:
+        #     vis_df['Time(MJD_UTC)'] = np.round(vis_df['Time(MJD_UTC)'], 6)
+        # vis_df['SAA_Crossing'] = np.round(vis_df['SAA_Crossing'], 1)
 
-        # formatters = custom_float_format(vis_df)
-        # vis_df.to_csv(save_name, sep=',', index=False, float_format=custom_float_format)
-        ## vis_df.to_csv(save_name, sep=',', index=False, float_format='%.nf')
+        # vis_df['Visible'] = np.round(vis_df['Visible'], 1)
+        # vis_df['Earth_Sep'] = np.round(vis_df['Earth_Sep'], 3)
+        # vis_df['Moon_Sep'] = np.round(vis_df['Moon_Sep'], 3)
+        # vis_df['Sun_Sep'] = np.round(vis_df['Sun_Sep'], 3)
+
+        # Apply custom rounding to each column
+
+        if "exoplanet" not in targ_list:
+            round_by = 6
+        else: 
+            round_by = 10
+
+        sig_digits = {
+            'Time(MJD_UTC)': round_by,
+            'Visible': 1, 
+            'SAA_Crossing': 1,
+            'Earth_Sep': 3,
+            'Moon_Sep': 3,
+            'Sun_Sep': 3
+        }
+
+        for col, sig in sig_digits.items():
+            vis_df[col] = vis_df[col].apply(lambda x: round(x, sig))
+
         vis_df.to_csv((save_name), sep=',', index=False)
 
 
@@ -346,7 +367,6 @@ def transit_timing(target_list:str, planet_name:str, star_name:str):
                                         microseconds=end_transits[i].microsecond)
     all_transits = np.arange(len(start_transits))
 
-
     ### Calculate which transits are visible to Pandora
     dt_vis_times = [] 
     for i in range(len(dt_iso_utc)):
@@ -372,10 +392,33 @@ def transit_timing(target_list:str, planet_name:str, star_name:str):
     if os.path.exists(save_dir) != True:
         os.makedirs(save_dir)
 
+    start_datetimes = Start_transits.to_value("datetime")
+    end_datetimes = End_transits.to_value("datetime")
+
+    # Round to nearest second
+    def round_to_second(dt):
+        if dt.microsecond >= 500000:
+            return dt.replace(microsecond=0) + timedelta(seconds=1)
+        return dt.replace(microsecond=0)
+
+    for idx in range(len(start_datetimes)):
+        start_datetimes[idx] = round_to_second(start_datetimes[idx])
+        end_datetimes[idx] = round_to_second(end_datetimes[idx])
+
+    # for idx in range(len(start_datetimes)):
+    #     start_datetimes[idx] = start_datetimes[idx] - timedelta(
+    #         seconds=start_datetimes[idx].second,
+    #         microseconds=start_datetimes[idx].microsecond,
+    #     )
+    #     end_datetimes[idx] = end_datetimes[idx] - timedelta(
+    #         seconds=end_datetimes[idx].second,
+    #         microseconds=end_datetimes[idx].microsecond,
+    #     )
+
     ### Save transit data to Visibility file
-    transit_data = np.vstack((all_transits, Start_transits.value, End_transits.value, transit_coverage))
-    transit_data = transit_data.T.reshape(-1, 4)
-    transit_df = pd.DataFrame(transit_data, columns = ['Transits','Transit_Start','Transit_Stop','Transit_Coverage'])
+    transit_data = np.vstack((all_transits, Start_transits.value, End_transits.value, start_datetimes, end_datetimes, transit_coverage))
+    transit_data = transit_data.T.reshape(-1, 6)
+    transit_df = pd.DataFrame(transit_data, columns = ['Transits','Transit_Start','Transit_Stop','Transit_Start_UTC','Transit_Stop_UTC','Transit_Coverage'])
 
     output_file_name = 'Visibility for ' + planet_name + '.csv'
     transit_df.to_csv((save_dir + output_file_name), sep=',', index=False)
@@ -464,6 +507,7 @@ def Transit_overlap(target_list:str, partner_list:str, star_name:str):
                     logging.info('Checking ', planet_name, ' against: ', planet_partner)
                 
                 for n in range(len(All_start_transits[planet_name].dropna())):
+                    
                     transit_overlap = 0.
                     for p in range(len(All_start_transits[planet_partner].dropna())):
                         if (All_start_transits[planet_partner][p] < All_start_transits[planet_name][n] and
@@ -483,8 +527,10 @@ def Transit_overlap(target_list:str, partner_list:str, star_name:str):
                             pset = set(partner_rng)
                             tset = set(transit_rng)
                             overlap_times = pset.intersection(tset)
+                            # transit_overlap = len(overlap_times)/len(transit_rng)
+                            # # overlap['Transit_Overlap'][n] = transit_overlap
+                            # overlap.loc[n, 'Transit_Overlap'] = transit_overlap
                             transit_overlap += len(overlap_times)/len(transit_rng)
-
                             overlap.loc[n, 'Transit_Overlap'] = np.min((transit_overlap, 1.0))
                        
     ###         Update pandas dataframe and save csv
