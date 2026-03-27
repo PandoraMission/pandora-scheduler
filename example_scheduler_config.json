@@ -26,7 +26,8 @@
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
   "generate_occultation_xml": true,
-  "enable_occultation_pass1": true,
+  "skip_xml": false,
+  "enable_occultation_pass1": false,
   "requested_occ_time_override": true,
   "allow_occ_startracker_violation": true,
 

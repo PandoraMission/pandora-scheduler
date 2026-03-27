@@ -851,6 +851,14 @@ def main() -> int:
             ),
             True,
         )
+        skip_xml = _as_bool(
+            _get_val(
+                "skip_xml",
+                True if args.skip_xml else None,
+                None,
+            ),
+            False,
+        )
         requested_occ_time_override = _as_bool(
             _get_val(
                 "requested_occ_time_override",
@@ -977,7 +985,7 @@ def main() -> int:
 
         # 4. Generate Science Calendar XML
         xml_path = None
-        if not args.skip_xml and result.schedule_csv:
+        if not skip_xml and result.schedule_csv:
             # Use the same config object to create calendar settings
             # Ensure we point to the correct data directory (where manifests are)
             data_dir = output_dir / data_subdir
@@ -990,6 +998,7 @@ def main() -> int:
             xml_path = generate_science_calendar(
                 inputs=inputs,
                 config=config,
+                output_path=output_dir / "Pandora_science_calendar.xml",
             )
             logger.info(f"Science calendar written to: {xml_path}")
 
