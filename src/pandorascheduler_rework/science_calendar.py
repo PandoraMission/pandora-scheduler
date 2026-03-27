@@ -850,8 +850,45 @@ class _ScienceCalendarBuilder:
                     occ_row = occ_df.iloc[oc_index]
                     used_fallback_row = True
 
-                occ_target = str(occ_row["Target"])
-                next_value = self._occ_chunk_end(current, seg_stop, occ_target)
+                occ_target = str(occ_row["Target"]).strip()
+                next_value = self._occ_chunk_end(
+                    current,
+                    seg_stop,
+                    occ_target if occ_target and occ_target.lower() != "no target" else None,
+                )
+
+                if not occ_target or occ_target.lower() == "no target":
+                    fallback = self._select_fallback_occultation_target(
+                        ra_value,
+                        dec_value,
+                        seg_start=current,
+                        seg_stop=next_value,
+                    )
+                    if fallback is not None:
+                        fb_target, fb_ra, fb_dec, fb_info = fallback
+                        seq_counter = self._emit_occultation_sequences(
+                            visit_element,
+                            seq_counter,
+                            fb_target,
+                            current,
+                            next_value,
+                            fb_ra,
+                            fb_dec,
+                            fb_info,
+                            reference_ra=ra_value,
+                            reference_dec=dec_value,
+                        )
+                    else:
+                        LOGGER.debug(
+                            "No scheduled occultation target for %s–%s and no fallback "
+                            "candidate was visible",
+                            current,
+                            next_value,
+                        )
+                    if used_fallback_row:
+                        oc_index += 1
+                    current = next_value
+                    continue
 
                 # Check if this occultation target has exceeded its time limit
                 current_occ_time = self.occultation_obs_time.get(
