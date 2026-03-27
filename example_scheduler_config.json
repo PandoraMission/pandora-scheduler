@@ -39,6 +39,10 @@
   "enable_occultation_pass1": false,
   "requested_occ_time_override": true,
   "allow_occ_startracker_violation": true,
+
+  "schedule_csv": "output_test1_short/Pandora_Schedule_0.8_0.0_0.2_2026-04-01_to_2026-04-15.csv",
+  "schedule_csv_row_limit": 10,
+
   "extra_inputs": {
     "target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",
     "target_definition_files": [
@@ -48,7 +52,5 @@
       "occultation-standard"
     ],
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260303-VF-20260303-EX-20270403-R001.txt"
-  },
-  "schedule_csv": "output_test1_short/Pandora_Schedule_0.8_0.0_0.2_2026-04-01_to_2026-04-15.csv",
-  "schedule_csv_row_limit": 10
+  }
 }
