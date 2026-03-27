@@ -54,12 +54,15 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+import pandas as pd
+
 from pandorascheduler_rework.config import PandoraSchedulerConfig, resolve_data_subdir
 from pandorascheduler_rework.pipeline import SchedulerResult, build_schedule
 from pandorascheduler_rework.science_calendar import (
     ScienceCalendarInputs,
     generate_science_calendar,
 )
+from pandorascheduler_rework.utils.io import read_csv_cached
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -84,19 +87,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--start",
         type=str,
-        required=True,
+        required=False,
         help="Schedule window start date (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)",
     )
     parser.add_argument(
         "--end",
         type=str,
-        required=True,
+        required=False,
         help="Schedule window end date (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)",
     )
     parser.add_argument(
         "--output",
         type=Path,
-        required=True,
+        required=False,
         help="Output directory for generated files",
     )
 
@@ -118,6 +121,16 @@ def parse_args() -> argparse.Namespace:
         "--generate-visibility",
         action="store_true",
         help="Generate visibility catalogs before scheduling (requires target manifests)",
+    )
+
+    parser.add_argument(
+        "--schedule-csv",
+        type=Path,
+        help=(
+            "Use an existing schedule CSV and generate only the science calendar XML. "
+            "If --start/--end are omitted, the window is inferred from the CSV. "
+            "If --output is omitted, the CSV parent directory is used."
+        ),
     )
 
     # Visibility configuration (if generating)
@@ -396,6 +409,27 @@ def parse_datetime(date_str: str) -> datetime:
             )
 
 
+def _derive_window_from_schedule(schedule_csv: Path) -> tuple[datetime, datetime]:
+    """Infer schedule window bounds from an existing schedule CSV."""
+    schedule_df = read_csv_cached(str(schedule_csv))
+    if schedule_df is None or schedule_df.empty:
+        raise ValueError(f"Schedule CSV is empty or unreadable: {schedule_csv}")
+
+    if not {"Observation Start", "Observation Stop"}.issubset(schedule_df.columns):
+        raise ValueError(
+            "Schedule CSV is missing required columns 'Observation Start'/'Observation Stop'"
+        )
+
+    starts = pd.to_datetime(schedule_df["Observation Start"], errors="coerce")
+    stops = pd.to_datetime(schedule_df["Observation Stop"], errors="coerce")
+    starts = starts.dropna()
+    stops = stops.dropna()
+    if starts.empty or stops.empty:
+        raise ValueError(f"Could not infer schedule bounds from {schedule_csv}")
+
+    return starts.min().to_pydatetime(), stops.max().to_pydatetime()
+
+
 def print_summary(result: SchedulerResult, xml_path: Optional[Path]) -> None:
     """Print a summary of the scheduling run."""
     try:
@@ -615,9 +649,6 @@ def main() -> int:
         profiler.enable()
 
     try:
-        logger.info(f"Scheduling window: {args.start} to {args.end}")
-        logger.info(f"Output directory: {args.output}")
-
         # 1. Load Configuration
         json_config = {}
         if args.config:
@@ -674,6 +705,39 @@ def main() -> int:
 
         # Resolve visibility GMAT file (CLI overrides JSON)
         visibility_gmat = args.gmat_ephemeris or extra_inputs.get("visibility_gmat")
+
+        # Resolve XML-only schedule input (CLI overrides JSON)
+        schedule_csv_input = args.schedule_csv or json_config.get("schedule_csv")
+        schedule_csv_input = (
+            Path(str(schedule_csv_input)).expanduser().resolve()
+            if schedule_csv_input is not None
+            else None
+        )
+        xml_only_from_schedule = schedule_csv_input is not None
+
+        if xml_only_from_schedule and not schedule_csv_input.exists():
+            logger.error("Schedule CSV not found: %s", schedule_csv_input)
+            return 1
+
+        if xml_only_from_schedule:
+            if args.output is None:
+                args.output = schedule_csv_input.parent
+            if args.start is None or args.end is None:
+                inferred_start, inferred_end = _derive_window_from_schedule(schedule_csv_input)
+                if args.start is None:
+                    args.start = inferred_start.strftime("%Y-%m-%d %H:%M:%S")
+                if args.end is None:
+                    args.end = inferred_end.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            if args.start is None or args.end is None:
+                logger.error("--start and --end are required unless --schedule-csv is provided")
+                return 1
+            if args.output is None:
+                logger.error("--output is required unless --schedule-csv is provided")
+                return 1
+
+        logger.info(f"Scheduling window: {args.start} to {args.end}")
+        logger.info(f"Output directory: {args.output}")
 
         # 2. Validate Inputs
         if args.generate_visibility and not target_def_base:
@@ -1024,7 +1088,7 @@ def main() -> int:
                     config.targets_manifest,
                 )
 
-        # 4. Run Scheduler (using new API)
+        # 4. Run scheduler or reuse an existing schedule CSV
         logger.info("Run data directory: %s", output_dir / data_subdir)
         logger.info("PRIMARY_ONLY_MODE=%s", str(primary_only_mode).upper())
         logger.info("GENERATE_OCCULTATION_XML=%s", str(enable_occultation_xml).upper())
@@ -1034,16 +1098,19 @@ def main() -> int:
             "RUN_VISUALIZER_AFTER_PIPELINE=%s",
             str(run_visualizer_after_pipeline).upper(),
         )
-        logger.info("Starting scheduler pipeline...")
-        if args.legacy_mode:
-            logger.info("Legacy mode enabled - using MJD-based visibility filtering")
-        result = build_schedule(config)
 
-        # 4. Generate Science Calendar XML
+        if xml_only_from_schedule:
+            logger.info("Skipping scheduler pipeline; generating XML from existing schedule CSV")
+            result = SchedulerResult(schedule_csv=schedule_csv_input)
+        else:
+            logger.info("Starting scheduler pipeline...")
+            if args.legacy_mode:
+                logger.info("Legacy mode enabled - using MJD-based visibility filtering")
+            result = build_schedule(config)
+
+        # 5. Generate Science Calendar XML
         xml_path = None
         if not skip_xml and result.schedule_csv:
-            # Use the same config object to create calendar settings
-            # Ensure we point to the correct data directory (where manifests are)
             data_dir = output_dir / data_subdir
 
             inputs = ScienceCalendarInputs(
@@ -1091,7 +1158,7 @@ def main() -> int:
                 "Set skip_xml=false to enable automatic visualization."
             )
 
-        # 5. Print Summary
+        # 6. Print Summary
         print_summary(result, xml_path)
 
         return 0

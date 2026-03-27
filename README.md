@@ -55,7 +55,22 @@ If you want the visualizer to run automatically after the pipeline:
 "visualizer_mode": "priority"
 ```
 
-## Generate Visualizations
+## XML-Only From Existing Schedule
+------------------------------
+If you already have a schedule CSV and only want to regenerate the science calendar XML, you can skip the scheduling pipeline entirely:
+
+```bash
+poetry run python run_scheduler.py \
+  --schedule-csv output_test1_short/Pandora_Schedule_0.8_0.0_0.2_2026-04-01_to_2026-04-15.csv \
+  --config example_scheduler_config.json
+```
+
+Notes:
+- `--start` / `--end` are optional in this mode; they are inferred from the schedule CSV if omitted.
+- `--output` is optional in this mode; it defaults to the schedule CSV parent directory.
+- The XML is still written to `output_*/Pandora_science_calendar.xml`.
+
+Generate Visualizations
 
 All visualization commands read the science calendar XML:
 
