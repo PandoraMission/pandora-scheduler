@@ -47,7 +47,7 @@
 
   "# Extra inputs used by pipeline (paths and small flags)": null,
   "extra_inputs": {
-    "target_definition_base": "/path/to/PandoraTargetList/target_definition_files",
+    "target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",
     "target_definition_files": [
       "exoplanet",
       "auxiliary-standard",
@@ -56,7 +56,7 @@
     ],
     "generate_visibility": true,
     "data_subdir": null,
-    "visibility_gmat": "src/pandorascheduler/data/Pandora-600km-withoutdrag-20251018.txt",
+    "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260303-VF-20260303-EX-20270403-R001.txt ",
     "visibility_output_root": null,
     "skip_manifests": false
   }
