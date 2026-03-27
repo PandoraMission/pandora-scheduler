@@ -1418,7 +1418,6 @@ def _merge_short_occultation_segments(
 
     merged: List[tuple[datetime, datetime]] = []
     dropped_short_isolated = 0
-
     for run in runs:
         if len(run) == 1:
             seg_start, seg_stop = run[0]
