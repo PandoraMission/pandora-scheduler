@@ -22,7 +22,11 @@
   "show_progress": true,
   "parallel_workers": 13,
 
+  "primary_only_mode": false,
+  "use_target_list_for_occultations": false,
+  "prioritise_occultations_by_slew": false,
   "generate_occultation_xml": true,
+  "enable_occultation_pass1": true,
   "requested_occ_time_override": true,
   "allow_occ_startracker_violation": true,
 

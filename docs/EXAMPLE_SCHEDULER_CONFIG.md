@@ -22,7 +22,7 @@ Timing & window
 Paths & data sources
 - `extra_inputs.target_definition_base` (string): path to PandoraTargetList target definition files (example: `/path/to/PandoraTargetList/target_definition_files`).
 - `extra_inputs.visibility_gmat` (string): path to GMAT ephemeris file used to generate visibilities (can also be provided via CLI `--gmat-ephemeris`).
-- `extra_inputs.data_subdir` (string, optional): relative directory name under the run output root used for generated manifests and visibility files. If omitted, the runner derives a default like `data_<sun>_<moon>_<earth>` from the keepout angles.
+- `extra_inputs.data_subdir` (string, optional): relative directory name under the run output root used for generated manifests and visibility files. If omitted, the runner derives a default like `data_<sun>_<moon>_<earth>` from the keepout angles. When `earth_avoidance_day_deg` is set, the default suffix uses the day keepout value.
 
 Scheduling thresholds
 - `transit_coverage_min` (float 0-1, default `0.2`): minimum transit coverage to consider scheduling.
@@ -45,12 +45,18 @@ Weighting factors
 Keepout / avoidance angles (degrees)
 - `visibility_sun_deg` / `sun_avoidance_deg` (float, default `91.0`)
 - `visibility_moon_deg` / `moon_avoidance_deg` (float, default `25.0`)
-- `visibility_earth_deg` / `earth_avoidance_deg` (float, default `86.0`)
+- `visibility_earth_deg` / `earth_avoidance_deg` (float, default `110.0`)
+- `earth_avoidance_day_deg` (float, optional): day-side Earth keepout override for boresight checks.
+- `earth_avoidance_night_deg` (float, optional): night-side Earth keepout override for boresight checks.
+- `daynight_mode` (string, default `"subsatellite"`): valid values are:
+  - `subsatellite`: classify day/night from whether the subsatellite point is sunlit
+  - `limb`: classify day/night from whether the nearest Earth limb point in the target direction is sunlit
+- `twilight_margin_deg` (float, default `0.0`): expands the sunlit classification past the geometric terminator when day/night Earth keepout is enabled.
 
 XML generation parameters
 - `obs_sequence_duration_min` (int, default `90`): default observation sequence length used when writing the science calendar XML.
 - `occ_sequence_limit_min` (int, default `50`): maximum occultation sequence length in minutes for XML emission.
-- `min_sequence_minutes` (int, default `5`): minimum sequence length to include in XML output.
+- `min_sequence_minutes` (int, default `8`): minimum sequence length to include in XML output.
 - `break_occultation_sequences` (bool, default `true`): whether to break long occultation sequences into chunks.
 
 Standard star observations
@@ -64,9 +70,10 @@ Behavior flags
 - `primary_only_mode` (bool, default `false`): only schedule primary science targets; convert non-primary gap-fill windows into `Free Time`.
 - `use_target_list_for_occultations` (bool, default `false`): use the target list for occultation scheduling instead of a separate list.
 - `prioritise_occultations_by_slew` (bool, default `false`): prioritise occultation targets based on slew cost.
-- `enable_occultation_xml` (bool, default `true`): include occultation-target calculations when generating the science-calendar XML. Set to `false` to emit only visible-segment entries.
+- `generate_occultation_xml` / `enable_occultation_xml` (bool, default `true`): include occultation-target calculations when generating the science-calendar XML. Set to `false` to emit only visible-segment entries.
 - `enable_occultation_pass1` (bool, default `true`): run Pass 1 of the occultation search (single target covers all intervals). Set to `false` to skip directly to the multi-target greedy search (Pass 2).
-- `strict_occultation_time_limits` (bool, default `true`): raise an error when a target's requested-hours value cannot be found in the catalog. Set to `false` to log a warning and use a large fallback limit instead.
+- `requested_occ_time_override` (bool, default `false`): when `true`, allow occultation scheduling to continue when requested-hours bookkeeping is incomplete or would otherwise block assignment.
+- `allow_occ_startracker_violation` (bool, default `false`): when `true`, allow occultation targets that fail only star-tracker keepout while still passing boresight keepouts.
 
 Auxiliary sorting & metadata
 - `aux_sort_key` (string, default `"sort_by_tdf_priority"`): key used to sort auxiliary targets
