@@ -27,6 +27,8 @@
   "prioritise_occultations_by_slew": false,
   "generate_occultation_xml": true,
   "skip_xml": false,
+  "run_visualizer_after_pipeline": false,
+  "visualizer_mode": "priority",
   "enable_occultation_pass1": false,
   "requested_occ_time_override": true,
   "allow_occ_startracker_violation": true,

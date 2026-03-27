@@ -71,6 +71,13 @@ Behavior flags
 - `use_target_list_for_occultations` (bool, default `false`): use the target list for occultation scheduling instead of a separate list.
 - `prioritise_occultations_by_slew` (bool, default `false`): prioritise occultation targets based on slew cost.
 - `generate_occultation_xml` / `enable_occultation_xml` (bool, default `true`): include occultation-target calculations when generating the science-calendar XML. Set to `false` to emit only visible-segment entries.
+- `skip_xml` (bool, default `false`): skip science-calendar XML generation entirely.
+- `run_visualizer_after_pipeline` (bool, default `false`): if `true`, run `scripts/visualizer.py` automatically after XML generation and save a PNG in the output directory.
+- `visualizer_mode` (string, default `"priority"`): plot type for the automatic visualizer. Valid values are:
+  - `priority`: main Gantt-style plot colored by sequence priority
+  - `timeline`: simple chronological timeline
+  - `target-time`: bar chart of total observation time per target
+  - `simple`: lighter-weight priority timeline
 - `enable_occultation_pass1` (bool, default `true`): run Pass 1 of the occultation search (single target covers all intervals). Set to `false` to skip directly to the multi-target greedy search (Pass 2).
 - `requested_occ_time_override` (bool, default `false`): when `true`, allow occultation scheduling to continue when requested-hours bookkeeping is incomplete or would otherwise block assignment.
 - `allow_occ_startracker_violation` (bool, default `false`): when `true`, allow occultation targets that fail only star-tracker keepout while still passing boresight keepouts.

@@ -48,6 +48,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import subprocess
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -859,6 +860,17 @@ def main() -> int:
             ),
             False,
         )
+        run_visualizer_after_pipeline = _as_bool(
+            _get_val(
+                "run_visualizer_after_pipeline",
+                None,
+                False,
+            ),
+            False,
+        )
+        visualizer_mode = str(
+            _get_val("visualizer_mode", None, "priority")
+        ).strip().lower()
         requested_occ_time_override = _as_bool(
             _get_val(
                 "requested_occ_time_override",
@@ -978,6 +990,10 @@ def main() -> int:
         logger.info("GENERATE_OCCULTATION_XML=%s", str(enable_occultation_xml).upper())
         logger.info("OCCULTATION_PASS1=%s", str(enable_occultation_pass1).upper())
         logger.info("REQUESTED_OCC_TIME_OVERRIDE=%s", str(requested_occ_time_override).upper())
+        logger.info(
+            "RUN_VISUALIZER_AFTER_PIPELINE=%s",
+            str(run_visualizer_after_pipeline).upper(),
+        )
         logger.info("Starting scheduler pipeline...")
         if args.legacy_mode:
             logger.info("Legacy mode enabled - using MJD-based visibility filtering")
@@ -1001,6 +1017,36 @@ def main() -> int:
                 output_path=output_dir / "Pandora_science_calendar.xml",
             )
             logger.info(f"Science calendar written to: {xml_path}")
+
+            if run_visualizer_after_pipeline:
+                visualizer_script = Path(__file__).parent / "scripts" / "visualizer.py"
+                visualizer_output = output_dir / f"visualizer_{visualizer_mode}.png"
+                try:
+                    completed = subprocess.run(
+                        [
+                            sys.executable,
+                            str(visualizer_script),
+                            str(xml_path),
+                            "--mode",
+                            visualizer_mode,
+                            "--out",
+                            str(visualizer_output),
+                        ],
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+                    if completed.stdout.strip():
+                        logger.info(completed.stdout.strip())
+                    logger.info("Visualizer written to: %s", visualizer_output)
+                except subprocess.CalledProcessError as exc:
+                    stderr = exc.stderr.strip() if exc.stderr else str(exc)
+                    logger.warning("Visualizer generation failed: %s", stderr)
+        elif run_visualizer_after_pipeline:
+            logger.warning(
+                "run_visualizer_after_pipeline is enabled, but no XML was generated. "
+                "Set skip_xml=false to enable automatic visualization."
+            )
 
         # 5. Print Summary
         print_summary(result, xml_path)

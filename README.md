@@ -36,5 +36,11 @@ poetry run python run_scheduler.py \
   - `limb`: classify day/night from whether the nearest Earth limb point in the target direction is sunlit
 - `generate_occultation_xml` can be set in the JSON config to turn occultation filling in the science calendar XML on or off.
 - `requested_occ_time_override` can be set in the JSON config to allow occultation scheduling to continue when requested-hours bookkeeping is incomplete or would otherwise block assignment.
+- `run_visualizer_after_pipeline` can be set in the JSON config to generate a plot automatically after the XML is written.
+- `visualizer_mode` accepts:
+  - `priority`: main Gantt-style plot colored by sequence priority
+  - `timeline`: simple chronological timeline
+  - `target-time`: bar chart of total observation time per target
+  - `simple`: lighter-weight priority timeline
 
 If you need help, read `QUICK_START.md` for examples and troubleshooting tips.
