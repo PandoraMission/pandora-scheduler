@@ -222,6 +222,32 @@ class PandoraSchedulerConfig:
     min_sequence_minutes: int = 8
     """Minimum sequence length to include in XML (shorter sequences merged)."""
 
+    min_science_sequence_minutes: Optional[int] = None
+    """Minimum science-visible fragment length in minutes for XML handling.
+
+    When ``None``, falls back to ``min_sequence_minutes``.
+    """
+
+    min_occultation_sequence_minutes: Optional[int] = None
+    """Minimum occultation fragment length in minutes for XML tail handling.
+
+    When ``None``, falls back to ``min_sequence_minutes``.
+    """
+
+    @property
+    def effective_min_science_sequence_minutes(self) -> int:
+        """Resolved science-sequence minimum in minutes."""
+        if self.min_science_sequence_minutes is None:
+            return self.min_sequence_minutes
+        return self.min_science_sequence_minutes
+
+    @property
+    def effective_min_occultation_sequence_minutes(self) -> int:
+        """Resolved occultation-sequence minimum in minutes."""
+        if self.min_occultation_sequence_minutes is None:
+            return self.min_sequence_minutes
+        return self.min_occultation_sequence_minutes
+
     break_occultation_sequences: bool = True
     """Break long occultation sequences into chunks."""
 
@@ -383,6 +409,22 @@ class PandoraSchedulerConfig:
                 "min_power_frac must be in [0, 1], got %s"
                 % (self.min_power_frac,)
             )
+
+        for field_name, value in (
+            ("min_sequence_minutes", self.min_sequence_minutes),
+            (
+                "min_science_sequence_minutes",
+                self.min_science_sequence_minutes,
+            ),
+            (
+                "min_occultation_sequence_minutes",
+                self.min_occultation_sequence_minutes,
+            ),
+        ):
+            if value is not None and value < 0:
+                raise ValueError(
+                    f"{field_name} must be >= 0, got {value}"
+                )
 
         # Validate daynight_mode
         if self.daynight_mode not in ("limb", "subsatellite"):

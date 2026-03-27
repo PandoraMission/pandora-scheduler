@@ -56,7 +56,9 @@ Keepout / avoidance angles (degrees)
 XML generation parameters
 - `obs_sequence_duration_min` (int, default `90`): default observation sequence length used when writing the science calendar XML.
 - `occ_sequence_limit_min` (int, default `50`): maximum occultation sequence length in minutes for XML emission.
-- `min_sequence_minutes` (int, default `8`): minimum sequence length to include in XML output.
+- `min_sequence_minutes` (int, default `8`): legacy fallback minimum sequence length used when the more specific thresholds below are omitted.
+- `min_science_sequence_minutes` (int, optional): minimum standalone science-visible fragment. Shorter science fragments are merged into a contiguous preceding science chunk when possible; otherwise they are converted into occultation-fill intervals.
+- `min_occultation_sequence_minutes` (int, optional): minimum standalone occultation tail after chunking. A short trailing occultation fragment is only absorbed into the preceding occultation chunk when the same occultation target remains visible in the combined interval; otherwise it stays separate so a different occultation target can be assigned.
 - `break_occultation_sequences` (bool, default `true`): whether to break long occultation sequences into chunks.
 
 Standard star observations

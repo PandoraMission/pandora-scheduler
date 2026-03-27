@@ -233,6 +233,24 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Minimum contiguous sequence duration in minutes (default: 8)",
     )
+    parser.add_argument(
+        "--min-science-sequence-minutes",
+        type=int,
+        default=None,
+        help=(
+            "Minimum science-visible fragment length in minutes. "
+            "Defaults to --min-sequence-minutes when omitted."
+        ),
+    )
+    parser.add_argument(
+        "--min-occultation-sequence-minutes",
+        type=int,
+        default=None,
+        help=(
+            "Minimum occultation fragment length in minutes for tail handling. "
+            "Defaults to --min-sequence-minutes when omitted."
+        ),
+    )
 
     # Scheduling configuration
     parser.add_argument(
@@ -813,8 +831,28 @@ def main() -> int:
         )
 
         obs_sequence_duration_min = int(_get_val("obs_sequence_duration_min", None, 90))
-        occ_sequence_limit_min = int(_get_val("occ_sequence_limit_min", None, 40))
+        occ_sequence_limit_min = int(_get_val("occ_sequence_limit_min", None, 50))
         min_sequence_minutes = int(_get_val("min_sequence_minutes", args.min_sequence_minutes, 8))
+        raw_min_science_sequence_minutes = _get_val(
+            "min_science_sequence_minutes",
+            args.min_science_sequence_minutes,
+            None,
+        )
+        min_science_sequence_minutes = (
+            int(raw_min_science_sequence_minutes)
+            if raw_min_science_sequence_minutes is not None
+            else None
+        )
+        raw_min_occultation_sequence_minutes = _get_val(
+            "min_occultation_sequence_minutes",
+            args.min_occultation_sequence_minutes,
+            None,
+        )
+        min_occultation_sequence_minutes = (
+            int(raw_min_occultation_sequence_minutes)
+            if raw_min_occultation_sequence_minutes is not None
+            else None
+        )
 
         std_obs_duration_hours = float(_get_val("std_obs_duration_hours", None, 0.5))
         std_obs_frequency_days = float(_get_val("std_obs_frequency_days", None, 3.0))
@@ -945,6 +983,8 @@ def main() -> int:
             obs_sequence_duration_min=obs_sequence_duration_min,
             occ_sequence_limit_min=occ_sequence_limit_min,
             min_sequence_minutes=min_sequence_minutes,
+            min_science_sequence_minutes=min_science_sequence_minutes,
+            min_occultation_sequence_minutes=min_occultation_sequence_minutes,
             break_occultation_sequences=break_occultation_sequences,
             # Standard observations
             std_obs_duration_hours=std_obs_duration_hours,

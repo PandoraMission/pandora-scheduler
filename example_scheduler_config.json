@@ -18,7 +18,12 @@
   "roll_step_deg": 5.0,
   "min_power_frac": 0.7,
 
-  "min_sequence_minutes": 8,
+  "obs_sequence_duration_min": 90,
+  "occ_sequence_limit_min": 50,
+  "min_sequence_minutes": 5,
+  "min_science_sequence_minutes": 8,
+  "min_occultation_sequence_minutes": 8,
+  "break_occultation_sequences": true,
   "show_progress": true,
   "parallel_workers": 13,
 

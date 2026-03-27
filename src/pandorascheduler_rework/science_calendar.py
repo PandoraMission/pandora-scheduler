@@ -33,7 +33,6 @@ from pandorascheduler_rework import observation_utils
 from pandorascheduler_rework.config import PandoraSchedulerConfig
 from pandorascheduler_rework.utils.array_ops import (
     break_long_sequences,
-    remove_short_sequences,
 )
 from pandorascheduler_rework.utils.io import read_csv_cached, read_parquet_cached
 from pandorascheduler_rework.xml import observation_sequence
@@ -98,6 +97,18 @@ class _ScienceCalendarBuilder:
         # Track cumulative observation time for each occultation target
         self.occultation_obs_time: Dict[str, timedelta] = {}
 
+    def _science_min_duration(self) -> timedelta:
+        """Resolved minimum standalone science fragment duration."""
+        return timedelta(
+            minutes=self.config.effective_min_science_sequence_minutes
+        )
+
+    def _occultation_min_duration(self) -> timedelta:
+        """Resolved minimum standalone occultation fragment duration."""
+        return timedelta(
+            minutes=self.config.effective_min_occultation_sequence_minutes
+        )
+
     def _get_occultation_time_limit(self, target_name: str) -> timedelta:
         """Get the time limit for an occultation target.
 
@@ -161,25 +172,42 @@ class _ScienceCalendarBuilder:
         """Compute the end of the next chunk, absorbing a short tail.
 
         If emitting a chunk of *step* would leave a remainder shorter than
-        ``min_sequence_minutes``, extend this chunk to *segment_stop* so
-        no short trailing sequence is created.
+        the resolved science threshold, extend this chunk to *segment_stop*
+        so no short trailing science sequence is created.
         """
         candidate = min(current + step, segment_stop)
         if candidate >= segment_stop:
             return segment_stop
         remainder = segment_stop - candidate
-        if remainder < timedelta(minutes=self.config.min_sequence_minutes):
+        if remainder < self._science_min_duration():
             return segment_stop
         return candidate
 
     def _occ_chunk_end(
-        self, current: datetime, segment_stop: datetime
+        self,
+        current: datetime,
+        segment_stop: datetime,
+        occ_target: Optional[str] = None,
     ) -> datetime:
         """Occultation-aware chunk end, respecting break_occultation_sequences."""
         if self.config.break_occultation_sequences:
-            return self._next_chunk_end(
-                current, self.occultation_limit, segment_stop
-            )
+            candidate = min(current + self.occultation_limit, segment_stop)
+            if candidate >= segment_stop:
+                return segment_stop
+
+            remainder = segment_stop - candidate
+            if remainder >= self._occultation_min_duration():
+                return candidate
+
+            if occ_target:
+                acceptable, _ = self._occ_visibility_score(
+                    occ_target,
+                    current,
+                    segment_stop,
+                )
+                if acceptable:
+                    return segment_stop
+            return candidate
         return segment_stop
 
     @staticmethod
@@ -203,6 +231,111 @@ class _ScienceCalendarBuilder:
                 else visit_times[change_idx + 1]
             )
             yield seg_start, seg_stop, bool(visibility_flags[change_idx])
+
+    def _raw_visit_segments(
+        self,
+        visit_times: Sequence[datetime],
+        visibility_flags: Sequence[int],
+        start: datetime,
+        final_time: datetime,
+    ) -> List[Tuple[datetime, datetime, bool]]:
+        """Build raw visibility-change segments without short-fragment cleanup."""
+        if not visit_times or not visibility_flags:
+            return []
+
+        changes = _visibility_change_indices(visibility_flags)
+        segments: List[Tuple[datetime, datetime, bool]] = []
+        seg_start = start
+        for change_idx in changes:
+            seg_stop = visit_times[change_idx + 1]
+            if seg_stop > seg_start:
+                segments.append(
+                    (seg_start, seg_stop, bool(visibility_flags[change_idx]))
+                )
+            seg_start = seg_stop
+
+        if final_time > seg_start:
+            segments.append((seg_start, final_time, bool(visibility_flags[-1])))
+        return segments
+
+    @staticmethod
+    def _coalesce_segments(
+        segments: Sequence[Tuple[datetime, datetime, bool]]
+    ) -> List[Tuple[datetime, datetime, bool]]:
+        """Merge adjacent same-kind segments created by policy rewrites."""
+        if not segments:
+            return []
+
+        merged: List[Tuple[datetime, datetime, bool]] = [segments[0]]
+        tolerance = timedelta(seconds=1)
+        for seg_start, seg_stop, is_visible in segments[1:]:
+            prev_start, prev_stop, prev_visible = merged[-1]
+            if is_visible == prev_visible and seg_start <= prev_stop + tolerance:
+                merged[-1] = (prev_start, max(prev_stop, seg_stop), prev_visible)
+            else:
+                merged.append((seg_start, seg_stop, is_visible))
+        return merged
+
+    def _apply_science_fragment_policy(
+        self,
+        segments: Sequence[Tuple[datetime, datetime, bool]],
+    ) -> List[Tuple[datetime, datetime, bool]]:
+        """Handle short science-visible fragments before occultation fill.
+
+        Policy:
+        1. if a short science fragment can extend a contiguous preceding
+           science fragment, merge it into that science chunk
+        2. otherwise reclassify it as an occultation-fill interval
+        """
+        threshold = self._science_min_duration()
+        if threshold <= timedelta(0):
+            return self._coalesce_segments(list(segments))
+
+        adjusted: List[Tuple[datetime, datetime, bool]] = []
+        converted_short_science = 0
+        tolerance = timedelta(seconds=1)
+
+        for seg_start, seg_stop, is_visible in segments:
+            duration = seg_stop - seg_start
+            if is_visible and duration < threshold:
+                can_absorb_into_prev_science = (
+                    adjusted
+                    and adjusted[-1][2]
+                    and seg_start <= adjusted[-1][1] + tolerance
+                )
+                if can_absorb_into_prev_science:
+                    prev_start, prev_stop, _ = adjusted[-1]
+                    adjusted[-1] = (prev_start, max(prev_stop, seg_stop), True)
+                else:
+                    adjusted.append((seg_start, seg_stop, False))
+                    converted_short_science += 1
+                continue
+
+            adjusted.append((seg_start, seg_stop, is_visible))
+
+        if converted_short_science:
+            LOGGER.debug(
+                "Converted %d short science-visible fragment(s) shorter than %d "
+                "min into occultation-fill intervals",
+                converted_short_science,
+                self.config.effective_min_science_sequence_minutes,
+            )
+
+        return self._coalesce_segments(adjusted)
+
+    @staticmethod
+    def _occultation_windows_from_segments(
+        segments: Sequence[Tuple[datetime, datetime, bool]]
+    ) -> tuple[List[datetime], List[datetime]]:
+        """Extract dark intervals from the policy-adjusted segment list."""
+        starts: List[datetime] = []
+        stops: List[datetime] = []
+        for seg_start, seg_stop, is_visible in segments:
+            if is_visible or seg_stop <= seg_start:
+                continue
+            starts.append(seg_start)
+            stops.append(seg_stop)
+        return starts, stops
 
     def _merged_segments(
         self,
@@ -275,13 +408,13 @@ class _ScienceCalendarBuilder:
     ) -> int:
         """Emit chunked science observation sequences.  Returns updated
         *seq_counter*."""
-        min_td = timedelta(minutes=self.config.min_sequence_minutes)
+        min_td = self._science_min_duration()
         if min_td and (segment_stop - segment_start) < min_td:
             LOGGER.debug(
                 "Skipping short science segment for %s (%s < %d min)",
                 target_name,
                 segment_stop - segment_start,
-                self.config.min_sequence_minutes,
+                self.config.effective_min_science_sequence_minutes,
             )
             return seq_counter
         current = segment_start
@@ -317,35 +450,74 @@ class _ScienceCalendarBuilder:
         ra_occ: float,
         dec_occ: float,
         occ_info: Optional[pd.DataFrame],
+        reference_ra: Optional[float] = None,
+        reference_dec: Optional[float] = None,
     ) -> int:
         """Emit chunked occultation observation sequences.  Returns updated
         *seq_counter*."""
         current = segment_start
         while current < segment_stop:
-            current_occ_time = self.occultation_obs_time.get(occ_target, timedelta())
-            target_time_limit = self._get_occultation_time_limit(occ_target)
+            next_value = self._occ_chunk_end(current, segment_stop, occ_target)
+
+            chunk_target = occ_target
+            chunk_ra = ra_occ
+            chunk_dec = dec_occ
+            chunk_info = occ_info
+
+            acceptable, _ = self._occ_visibility_score(
+                chunk_target,
+                current,
+                next_value,
+            )
+            if (
+                not acceptable
+                and reference_ra is not None
+                and reference_dec is not None
+            ):
+                fallback = self._select_fallback_occultation_target(
+                    reference_ra,
+                    reference_dec,
+                    seg_start=current,
+                    seg_stop=next_value,
+                )
+                if fallback is not None:
+                    chunk_target, chunk_ra, chunk_dec, chunk_info = fallback
+                    acceptable = True
+
+            if not acceptable:
+                LOGGER.warning(
+                    "No visible occultation target for interval %s–%s",
+                    current,
+                    next_value,
+                )
+                current = next_value
+                continue
+
+            current_occ_time = self.occultation_obs_time.get(
+                chunk_target, timedelta()
+            )
+            target_time_limit = self._get_occultation_time_limit(chunk_target)
             if current_occ_time >= target_time_limit:
                 LOGGER.info(
                     "Skipping %s: exceeded occultation time limit (%.1f/%.1f hrs)",
-                    occ_target,
+                    chunk_target,
                     current_occ_time.total_seconds() / 3600,
                     target_time_limit.total_seconds() / 3600,
                 )
                 break
-            next_value = self._occ_chunk_end(current, segment_stop)
             observation_sequence(
                 visit_element,
                 f"{seq_counter:03d}",
-                occ_target,
+                chunk_target,
                 "0",
                 current.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 next_value.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                ra_occ,
-                dec_occ,
-                occ_info if occ_info is not None else pd.DataFrame(),
+                chunk_ra,
+                chunk_dec,
+                chunk_info if chunk_info is not None else pd.DataFrame(),
             )
-            self.occultation_obs_time[occ_target] = (
-                self.occultation_obs_time.get(occ_target, timedelta())
+            self.occultation_obs_time[chunk_target] = (
+                self.occultation_obs_time.get(chunk_target, timedelta())
                 + (next_value - current)
             )
             seq_counter += 1
@@ -404,7 +576,12 @@ class _ScienceCalendarBuilder:
             "Calendar_Weights": weights,
             "Keepout_Angles": keepout,
             "Observation_Sequence_Duration_hrs_max": str(self.sequence_duration),
-            "Removed_Sequences_Shorter_Than_min": str(self.config.min_sequence_minutes),
+            "Removed_Sequences_Shorter_Than_min": str(
+                self.config.effective_min_science_sequence_minutes
+            ),
+            "Occultation_Sequences_Shorter_Than_min": str(
+                self.config.effective_min_occultation_sequence_minutes
+            ),
             "Created": created_value,
             "Delivery_Id": "",
         }
@@ -484,10 +661,7 @@ class _ScienceCalendarBuilder:
             stop,
             self.config.min_sequence_minutes,
         )
-        # If all samples were filtered out (e.g. sequences too short), attempt
-        # to fall back to the transit window for transit entries so that
-        # scheduled transits can still be emitted.
-        if not visit_times or not any(bool(f) for f in visibility_flags):
+        if not visit_times:
             if has_transit and transit_start and transit_stop:
                 try:
                     visit_times = [transit_start[0], transit_stop[0]]
@@ -523,39 +697,43 @@ class _ScienceCalendarBuilder:
                 )
                 return
 
-        visibility_changes = _visibility_change_indices(visibility_flags)
         # Use the CSV stop boundary (not visit_times[-1]) so the XML visit
         # spans the full scheduled window and no 1-minute inter-visit gap
         # is introduced by visibility-sample rounding.
         final_time = stop
-        seq_counter = 1
-
-        if not visibility_changes:
-            self._emit_full_visibility(
-                visit_element,
-                target_name,
-                start,
-                final_time,
-                ra_value,
-                dec_value,
-                target_info,
-                priority_flag,
-                transit_start,
-                transit_stop,
-            )
-            return
-
-        oc_starts, oc_stops, augmented_changes = _occultation_windows(
+        raw_segments = self._raw_visit_segments(
             visit_times,
             visibility_flags,
-            visibility_changes,
+            start,
+            final_time,
         )
+        if not raw_segments:
+            LOGGER.warning(
+                "No usable visibility segments within visit for %s (%s..%s)",
+                target_name,
+                start,
+                stop,
+            )
+            return
+        seq_counter = 1
 
         # --- Path 1: occultation XML disabled — science-only ---------------
         if not self.config.enable_occultation_xml:
-            for seg_start, seg_stop, is_visible in self._merged_segments(
-                augmented_changes, visit_times, visibility_flags, start, final_time,
-            ):
+            for seg_start, seg_stop, is_visible in raw_segments:
+                if is_visible:
+                    seq_counter = self._emit_science_sequences(
+                        visit_element, seq_counter, target_name,
+                        seg_start, seg_stop, ra_value, dec_value,
+                        target_info, priority_flag, transit_start, transit_stop,
+                    )
+            return
+
+        visit_segments = self._apply_science_fragment_policy(raw_segments)
+        oc_starts, oc_stops = self._occultation_windows_from_segments(
+            visit_segments
+        )
+        if not oc_starts:
+            for seg_start, seg_stop, is_visible in visit_segments:
                 if is_visible:
                     seq_counter = self._emit_science_sequences(
                         visit_element, seq_counter, target_name,
@@ -588,9 +766,7 @@ class _ScienceCalendarBuilder:
 
         # --- Path 2: catalog-fallback occultation (no occ_df) ---------------
         if occ_df is None:
-            for seg_start, seg_stop, is_visible in self._merged_segments(
-                augmented_changes, visit_times, visibility_flags, start, final_time,
-            ):
+            for seg_start, seg_stop, is_visible in visit_segments:
                 if is_visible:
                     seq_counter = self._emit_science_sequences(
                         visit_element, seq_counter, target_name,
@@ -610,6 +786,8 @@ class _ScienceCalendarBuilder:
                         seq_counter = self._emit_occultation_sequences(
                             visit_element, seq_counter, occ_target,
                             seg_start, seg_stop, ra_occ, dec_occ, occ_info,
+                            reference_ra=ra_value,
+                            reference_dec=dec_value,
                         )
             return
 
@@ -631,9 +809,7 @@ class _ScienceCalendarBuilder:
                 occ_time_index = None
 
         oc_index = 0
-        for seg_start, seg_stop, is_visible in self._merged_segments(
-            augmented_changes, visit_times, visibility_flags, start, final_time,
-        ):
+        for seg_start, seg_stop, is_visible in visit_segments:
             if is_visible:
                 seq_counter = self._emit_science_sequences(
                     visit_element, seq_counter, target_name,
@@ -645,8 +821,6 @@ class _ScienceCalendarBuilder:
             # Occultation segment — iterate using scheduled occ_df.
             current = seg_start
             while current < seg_stop:
-                next_value = self._occ_chunk_end(current, seg_stop)
-
                 if oc_index >= len(occ_df):
                     # Pre-built schedule exhausted — fall back to catalog
                     # after the loop via the post-loop fallback block.
@@ -675,6 +849,7 @@ class _ScienceCalendarBuilder:
                     used_fallback_row = True
 
                 occ_target = str(occ_row["Target"])
+                next_value = self._occ_chunk_end(current, seg_stop, occ_target)
 
                 # Check if this occultation target has exceeded its time limit
                 current_occ_time = self.occultation_obs_time.get(
@@ -756,6 +931,8 @@ class _ScienceCalendarBuilder:
                     seq_counter = self._emit_occultation_sequences(
                         visit_element, seq_counter, fb_target,
                         current, seg_stop, fb_ra, fb_dec, fb_info,
+                        reference_ra=ra_value,
+                        reference_dec=dec_value,
                     )
                     current = seg_stop
                 else:
@@ -781,7 +958,7 @@ class _ScienceCalendarBuilder:
     ) -> None:
         segments = break_long_sequences(
             start, stop, self.sequence_duration,
-            min_chunk=timedelta(minutes=self.config.min_sequence_minutes),
+            min_chunk=self._science_min_duration(),
         )
         seq_counter = 1
         for seg_start, seg_stop in segments:
@@ -1030,11 +1207,6 @@ class _ScienceCalendarBuilder:
             expanded_starts = list(starts)
             expanded_stops = list(stops)
 
-        expanded_starts, expanded_stops = _merge_short_occultation_segments(
-            expanded_starts,
-            expanded_stops,
-            self.config.min_sequence_minutes,
-        )
         if not expanded_starts:
             return None
 
@@ -1365,12 +1537,8 @@ def _extract_visibility_segment(
             for t in filtered_times
         ]
 
-    flags = [float(visibility_df.iloc[int(idx)]["Visible"]) for idx in window_indices]
-    filtered_flags, _ = remove_short_sequences(
-        np.asarray(flags, dtype=float),
-        min_sequence_minutes,
-    )
-    return visit_times, [int(value) for value in filtered_flags]
+    flags = [int(float(visibility_df.iloc[int(idx)]["Visible"])) for idx in window_indices]
+    return visit_times, flags
 
 
 def _visibility_change_indices(flags: Sequence[int]) -> List[int]:
