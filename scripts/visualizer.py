@@ -2315,6 +2315,7 @@ class ScheduleVisualizer:
     def plot_gantt_with_visibility(
         self,
         calendar,
+        data_dir: Optional[Path] = None,
         figsize=(14, 8),
         show_sequence_labels=False,
         title="Schedule by Priority — Visibility Overlay",
@@ -2341,6 +2342,15 @@ class ScheduleVisualizer:
         -------
         matplotlib.figure.Figure
         """
+        if data_dir is not None:
+            return self._plot_gantt_with_visibility_from_data_dir(
+                calendar=calendar,
+                data_dir=Path(data_dir),
+                figsize=figsize,
+                show_sequence_labels=show_sequence_labels,
+                title=title,
+            )
+
         from astropy import units as u
         from astropy.coordinates import SkyCoord
         from matplotlib.patches import Patch
@@ -2499,6 +2509,222 @@ class ScheduleVisualizer:
             legend_items.append(
                 Patch(facecolor=c, label=f"Priority {p}")
             )
+        ax.legend(handles=legend_items, loc="upper right", fontsize=7)
+
+        fig.tight_layout()
+        return fig
+
+    def _plot_gantt_with_visibility_from_data_dir(
+        self,
+        calendar,
+        data_dir: Path,
+        figsize=(14, 8),
+        show_sequence_labels=False,
+        title="Schedule by Priority — Visibility Overlay",
+    ):
+        fig, ax = plt.subplots(figsize=figsize)
+        priority_colors = self._get_priority_colors([1, 2, 3, 4, 5, 6, 7, 8])
+
+        exoplanet_csv = data_dir / "exoplanet_targets.csv"
+        planet_to_star: dict[str, str] = {}
+        if exoplanet_csv.exists():
+            try:
+                exoplanet_df = pd.read_csv(exoplanet_csv, usecols=["Planet Name", "Star Name"])
+                for _, row in exoplanet_df.iterrows():
+                    planet = str(row.get("Planet Name", "")).strip()
+                    star = str(row.get("Star Name", "")).strip()
+                    if planet and star:
+                        planet_to_star[planet] = star
+            except Exception:
+                pass
+
+        visibility_cache: dict[str, Optional[pd.DataFrame]] = {}
+
+        def _load_visibility(target_name: str) -> Optional[pd.DataFrame]:
+            if target_name in visibility_cache:
+                return visibility_cache[target_name]
+
+            candidates = [
+                data_dir / "targets" / target_name / f"Visibility for {target_name}.parquet",
+                data_dir / "aux_targets" / target_name / f"Visibility for {target_name}.parquet",
+            ]
+            star_name = planet_to_star.get(target_name)
+            if star_name:
+                candidates.extend(
+                    [
+                        data_dir / "targets" / star_name / f"Visibility for {star_name}.parquet",
+                        data_dir / "aux_targets" / star_name / f"Visibility for {star_name}.parquet",
+                    ]
+                )
+
+            for candidate in candidates:
+                if candidate.exists():
+                    try:
+                        df = pd.read_parquet(candidate, columns=["Time_UTC", "Visible"])
+                    except Exception:
+                        try:
+                            df = pd.read_parquet(candidate, columns=["Time(MJD_UTC)", "Visible"])
+                        except Exception:
+                            continue
+                    if "Time_UTC" in df.columns:
+                        times = pd.to_datetime(df["Time_UTC"], errors="coerce")
+                    else:
+                        times = Time(
+                            df["Time(MJD_UTC)"].to_numpy(dtype=float),
+                            format="mjd",
+                            scale="utc",
+                        ).to_datetime()
+                        times = pd.to_datetime(times)
+                    index = pd.DatetimeIndex(times)
+                    if getattr(index, "tz", None) is not None:
+                        index = index.tz_localize(None)
+                    # GMAT-derived timestamps can be a few microseconds off each
+                    # exact minute boundary. Round to the nearest minute so they
+                    # align with the minute-grid XML sequences.
+                    index = index.round("min")
+                    prepared = pd.DataFrame(
+                        {"Visible": (df["Visible"].to_numpy(dtype=float) > 0.5)},
+                        index=index,
+                    )
+                    prepared = prepared.groupby(level=0)["Visible"].max().to_frame()
+                    visibility_cache[target_name] = prepared
+                    return prepared
+
+            visibility_cache[target_name] = None
+            return None
+
+        rows = []
+        missing_targets: set[str] = set()
+        for visit in sorted(
+            calendar.visits,
+            key=lambda v: (v.sequences[0].start_time if v.sequences else Time("2000-01-01")),
+        ):
+            for seq in visit.sequences:
+                n_mins = int(np.rint(seq.duration.sec / 60.0))
+                if n_mins <= 0:
+                    continue
+                visibility_df = _load_visibility(seq.target)
+                if visibility_df is None:
+                    missing_targets.add(seq.target)
+                    vis_arr = np.ones(n_mins, dtype=bool)
+                else:
+                    expected = pd.date_range(
+                        seq.start_time.datetime,
+                        periods=n_mins,
+                        freq="min",
+                    )
+                    vis_arr = (
+                        visibility_df["Visible"]
+                        .reindex(expected, fill_value=False)
+                        .to_numpy(dtype=bool)
+                    )
+                rows.append((visit.id, seq, vis_arr))
+
+        if not rows:
+            ax.text(0.5, 0.5, "No sequences", ha="center", transform=ax.transAxes)
+            return fig
+
+        seen = {}
+        y_labels = []
+        for vid, seq, _ in rows:
+            key = (vid, seq.target)
+            if key not in seen:
+                seen[key] = len(y_labels)
+                y_labels.append(f"{vid} / {seq.target}")
+
+        x_min = float("inf")
+        x_max = float("-inf")
+        non_vis_total = 0
+        total_mins = 0
+
+        for vid, seq, vis_arr in rows:
+            y = seen[(vid, seq.target)]
+            start_num = float(mdates.date2num(seq.start_time.datetime))
+            stop_num = float(mdates.date2num(seq.stop_time.datetime))
+            dur_days = stop_num - start_num
+
+            x_min = min(x_min, start_num)
+            x_max = max(x_max, stop_num)
+
+            color = priority_colors.get(seq.priority, "lightgray")
+            rect = Rectangle(
+                (start_num, y - 0.35),
+                dur_days,
+                0.7,
+                facecolor=color,
+                edgecolor="none",
+                alpha=1.0,
+                linewidth=0,
+            )
+            ax.add_patch(rect)
+
+            n_mins = len(vis_arr)
+            total_mins += n_mins
+            if n_mins > 0 and not np.all(vis_arr):
+                min_dur = dur_days / n_mins
+                in_block = False
+                block_start = 0
+                for i in range(n_mins + 1):
+                    if i < n_mins and not vis_arr[i]:
+                        if not in_block:
+                            block_start = i
+                            in_block = True
+                    elif in_block:
+                        x0 = start_num + block_start * min_dur
+                        width = (i - block_start) * min_dur
+                        ax.add_patch(
+                            Rectangle(
+                                (x0, y - 0.35),
+                                width,
+                                0.7,
+                                facecolor="black",
+                                edgecolor="none",
+                                alpha=1.0,
+                                linewidth=0,
+                                zorder=1000,
+                            )
+                        )
+                        non_vis_total += i - block_start
+                        in_block = False
+
+            if show_sequence_labels:
+                mid = start_num + dur_days / 2
+                ax.text(mid, y, seq.id, ha="center", va="center", fontsize=5, clip_on=True)
+
+        padding = (x_max - x_min) * 0.005 if x_max > x_min else 0.01
+        ax.set_xlim(x_min - padding, x_max + padding)
+        ax.set_yticks(range(len(y_labels)))
+        ax.set_yticklabels(y_labels, fontsize=7)
+        ax.set_ylim(-0.5, len(y_labels) - 0.5)
+        ax.invert_yaxis()
+
+        self._format_time_axis_safe(ax, calendar)
+
+        vis_pct = (
+            100.0 * (total_mins - non_vis_total) / total_mins
+            if total_mins > 0
+            else 100.0
+        )
+        title_suffix = ""
+        if missing_targets:
+            title_suffix = f"\n{len(missing_targets)} target(s) missing visibility parquet"
+        ax.set_title(
+            f"{title}\n"
+            f"({non_vis_total} non-visible min / {total_mins} total — {vis_pct:.1f}% visible)"
+            f"{title_suffix}",
+            fontsize=12,
+            pad=10,
+        )
+        ax.set_xlabel("Time (UTC)")
+        ax.grid(True, axis="x", alpha=0.3)
+
+        from matplotlib.patches import Patch
+
+        legend_items = [Patch(facecolor="black", alpha=1.0, label="Non-visible")]
+        used_priorities = sorted(set(s.priority for _, s, _ in rows))
+        for p in used_priorities:
+            c = priority_colors.get(p, "silver")
+            legend_items.append(Patch(facecolor=c, label=f"Priority {p}"))
         ax.legend(handles=legend_items, loc="upper right", fontsize=7)
 
         fig.tight_layout()
@@ -2842,12 +3068,17 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--mode",
-        choices=["priority", "timeline", "target-time", "simple"],
+        choices=["priority", "timeline", "target-time", "simple", "visibility"],
         default="priority",
         help=(
             "Plot type: 'priority' (default gantt by priority), "
-            "'timeline', 'target-time', or 'simple'."
+            "'timeline', 'target-time', 'simple', or 'visibility'."
         ),
+    )
+    parser.add_argument(
+        "--data-dir",
+        type=Path,
+        help="Run data directory containing visibility parquet files (required for --mode visibility).",
     )
     parser.add_argument(
         "--show-sequence-labels",
@@ -2872,6 +3103,15 @@ def main() -> int:
         result = visualizer.plot_timeline(calendar)[0]
     elif args.mode == "target-time":
         result = visualizer.plot_target_time(calendar)[0]
+    elif args.mode == "visibility":
+        if args.data_dir is None:
+            raise SystemExit("--data-dir is required when --mode visibility is used")
+        result = visualizer.plot_gantt_with_visibility(
+            calendar,
+            data_dir=args.data_dir,
+            show_sequence_labels=args.show_sequence_labels,
+            title=f"{args.xml.stem} — Visibility Check",
+        )
     else:
         result = visualizer.plot_simple_priority_timeline(
             calendar,

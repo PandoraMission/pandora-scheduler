@@ -29,6 +29,97 @@ poetry run python run_scheduler.py \
     --show-progress
 ```
 
+## Run The Pipeline
+
+With the example JSON config:
+
+```bash
+poetry run python run_scheduler.py \
+    --start "2026-04-01" \
+    --end "2026-04-05" \
+    --output output_standalone_test7_short \
+    --config example_scheduler_config.json
+```
+
+This writes:
+
+- schedule CSVs under `output_standalone_test7_short/`
+- visibility parquet files under `output_standalone_test7_short/data_*`
+- science calendar XML at `output_standalone_test7_short/Pandora_science_calendar.xml` unless `skip_xml` is `true`
+
+If you want the visualizer to run automatically after the pipeline:
+
+```json
+"skip_xml": false,
+"run_visualizer_after_pipeline": true,
+"visualizer_mode": "priority"
+```
+
+## Generate Visualizations
+
+All visualization commands read the science calendar XML:
+
+```bash
+poetry run python scripts/visualizer.py \
+    output_standalone_test7_short/Pandora_science_calendar.xml \
+    --mode priority \
+    --out output_standalone_test7_short/visualizer_priority.png
+```
+
+Available modes:
+
+- `priority`: main Gantt-style plot colored by sequence priority
+
+```bash
+poetry run python scripts/visualizer.py \
+    output_standalone_test7_short/Pandora_science_calendar.xml \
+    --mode priority \
+    --out output_standalone_test7_short/visualizer_priority.png
+```
+
+- `timeline`: simple chronological timeline
+
+```bash
+poetry run python scripts/visualizer.py \
+    output_standalone_test7_short/Pandora_science_calendar.xml \
+    --mode timeline \
+    --out output_standalone_test7_short/visualizer_timeline.png
+```
+
+- `target-time`: total scheduled time per target
+
+```bash
+poetry run python scripts/visualizer.py \
+    output_standalone_test7_short/Pandora_science_calendar.xml \
+    --mode target-time \
+    --out output_standalone_test7_short/visualizer_target_time.png
+```
+
+- `simple`: lighter-weight priority timeline
+
+```bash
+poetry run python scripts/visualizer.py \
+    output_standalone_test7_short/Pandora_science_calendar.xml \
+    --mode simple \
+    --out output_standalone_test7_short/visualizer_simple.png
+```
+
+- `visibility`: priority plot with non-visible intervals overlaid from the run's parquet visibility files
+
+```bash
+poetry run python scripts/visualizer.py \
+    output_standalone_test7_short/Pandora_science_calendar.xml \
+    --mode visibility \
+    --data-dir output_standalone_test7_short/data_91_20_115 \
+    --out output_standalone_test7_short/visualizer_visibility.png
+```
+
+Optional flag for supported modes:
+
+```bash
+--show-sequence-labels
+```
+
 ## Config Notes
 
 - `daynight_mode` accepts two values:
@@ -42,5 +133,6 @@ poetry run python run_scheduler.py \
   - `timeline`: simple chronological timeline
   - `target-time`: bar chart of total observation time per target
   - `simple`: lighter-weight priority timeline
+  - `visibility`: priority plot with non-visible intervals overlaid from the run's visibility parquet files
 
 If you need help, read `QUICK_START.md` for examples and troubleshooting tips.

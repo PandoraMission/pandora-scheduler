@@ -1021,17 +1021,20 @@ def main() -> int:
             if run_visualizer_after_pipeline:
                 visualizer_script = Path(__file__).parent / "scripts" / "visualizer.py"
                 visualizer_output = output_dir / f"visualizer_{visualizer_mode}.png"
+                visualizer_cmd = [
+                    sys.executable,
+                    str(visualizer_script),
+                    str(xml_path),
+                    "--mode",
+                    visualizer_mode,
+                    "--out",
+                    str(visualizer_output),
+                ]
+                if visualizer_mode == "visibility":
+                    visualizer_cmd.extend(["--data-dir", str(data_dir)])
                 try:
                     completed = subprocess.run(
-                        [
-                            sys.executable,
-                            str(visualizer_script),
-                            str(xml_path),
-                            "--mode",
-                            visualizer_mode,
-                            "--out",
-                            str(visualizer_output),
-                        ],
+                        visualizer_cmd,
                         check=True,
                         capture_output=True,
                         text=True,

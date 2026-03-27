@@ -78,6 +78,7 @@ Behavior flags
   - `timeline`: simple chronological timeline
   - `target-time`: bar chart of total observation time per target
   - `simple`: lighter-weight priority timeline
+  - `visibility`: priority plot with non-visible intervals overlaid from the run's visibility parquet files
 - `enable_occultation_pass1` (bool, default `true`): run Pass 1 of the occultation search (single target covers all intervals). Set to `false` to skip directly to the multi-target greedy search (Pass 2).
 - `requested_occ_time_override` (bool, default `false`): when `true`, allow occultation scheduling to continue when requested-hours bookkeeping is incomplete or would otherwise block assignment.
 - `allow_occ_startracker_violation` (bool, default `false`): when `true`, allow occultation targets that fail only star-tracker keepout while still passing boresight keepouts.
