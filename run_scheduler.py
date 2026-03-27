@@ -252,8 +252,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--weights",
         type=str,
-        default="0.8,0.0,0.2",
-        help="Schedule weights as comma-separated values: coverage,saa,schedule (default: 0.8,0.0,0.2)",
+        default=None,
+        help=(
+            "Schedule weights as comma-separated values: coverage,saa,schedule "
+            "(default from config, otherwise 0.8,0.0,0.2)"
+        ),
     )
     parser.add_argument(
         "--min-visibility",
