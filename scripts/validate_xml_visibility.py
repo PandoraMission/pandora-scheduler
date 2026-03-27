@@ -167,15 +167,49 @@ def _resolve_visibility_df(
     return None, None
 
 
+def _load_sequence_provenance(xml_path: Path) -> pd.DataFrame:
+    provenance_path = xml_path.with_name(f"{xml_path.stem}_sequence_provenance.csv")
+    if not provenance_path.exists():
+        return pd.DataFrame()
+
+    try:
+        df = pd.read_csv(
+            provenance_path,
+            dtype={"visit_id": str, "sequence_id": str},
+        )
+    except Exception:
+        return pd.DataFrame()
+
+    needed = {"visit_id", "sequence_id"}
+    if not needed.issubset(df.columns):
+        return pd.DataFrame()
+
+    keep_cols = [
+        "visit_id",
+        "sequence_id",
+        "sequence_type",
+        "occultation_pass",
+        "visibility_fraction",
+    ]
+    available = [col for col in keep_cols if col in df.columns]
+    return df[available].copy()
+
+
 def validate_sequences(
     sequences: list[XmlSequence],
     data_dir: Path,
+    provenance_df: Optional[pd.DataFrame] = None,
 ) -> list[dict[str, object]]:
     planet_to_star = _load_planet_to_star(data_dir)
     cache: dict[str, Optional[pd.DataFrame]] = {}
     results: list[dict[str, object]] = []
+    provenance_lookup: dict[tuple[str, str], dict[str, object]] = {}
+    if provenance_df is not None and not provenance_df.empty:
+        for _, row in provenance_df.iterrows():
+            provenance_lookup[(str(row.get("visit_id", "")), str(row.get("sequence_id", "")))] = row.to_dict()
 
     for seq in sequences:
+        provenance = provenance_lookup.get((seq.visit_id, seq.sequence_id), {})
         visibility_df, source_path = _resolve_visibility_df(
             data_dir,
             seq.target,
@@ -202,8 +236,9 @@ def validate_sequences(
                     "status": "missing_visibility_file",
                     "visible_minutes": 0,
                     "nonvisible_minutes": n_minutes,
-                    "first_problem_utc": seq.start.isoformat() if n_minutes > 0 else "",
-                    "source_path": "",
+                    "sequence_type": provenance.get("sequence_type", ""),
+                    "occultation_pass": provenance.get("occultation_pass", ""),
+                    "sequence_visibility_fraction": provenance.get("visibility_fraction", ""),
                 }
             )
             continue
@@ -221,8 +256,9 @@ def validate_sequences(
                     "status": "zero_duration",
                     "visible_minutes": 0,
                     "nonvisible_minutes": 0,
-                    "first_problem_utc": "",
-                    "source_path": str(source_path) if source_path else "",
+                    "sequence_type": provenance.get("sequence_type", ""),
+                    "occultation_pass": provenance.get("occultation_pass", ""),
+                    "sequence_visibility_fraction": provenance.get("visibility_fraction", ""),
                 }
             )
             continue
@@ -246,8 +282,9 @@ def validate_sequences(
                 "status": "ok" if nonvisible_minutes == 0 else "nonvisible_minutes_found",
                 "visible_minutes": visible_minutes,
                 "nonvisible_minutes": nonvisible_minutes,
-                "first_problem_utc": first_problem,
-                "source_path": str(source_path) if source_path else "",
+                "sequence_type": provenance.get("sequence_type", ""),
+                "occultation_pass": provenance.get("occultation_pass", ""),
+                "sequence_visibility_fraction": provenance.get("visibility_fraction", ""),
             }
         )
 
@@ -267,13 +304,27 @@ def write_csv(rows: list[dict[str, object]], output_path: Path) -> None:
         "status",
         "visible_minutes",
         "nonvisible_minutes",
-        "first_problem_utc",
-        "source_path",
+        "sequence_type",
+        "occultation_pass",
+        "sequence_visibility_fraction",
     ]
+    rounded_rows: list[dict[str, object]] = []
+    for row in rows:
+        row_copy = dict(row)
+        value = row_copy.get("sequence_visibility_fraction")
+        try:
+            if value not in {"", None}:
+                row_copy["sequence_visibility_fraction"] = round(float(value), 2)
+        except (TypeError, ValueError):
+            pass
+        rounded_rows.append(row_copy)
+
     with output_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerows(rows)
+        writer.writerows(rounded_rows)
+
+
 
 
 def print_summary(rows: list[dict[str, object]], csv_path: Path) -> int:
@@ -301,10 +352,14 @@ def print_summary(rows: list[dict[str, object]], csv_path: Path) -> int:
     if problem_rows:
         print("\nFirst issues:")
         for row in problem_rows[:10]:
+            pass_info = str(row.get("occultation_pass", "")).strip()
+            pass_suffix = f", source={pass_info}" if pass_info else ""
+            seq_frac = row.get("sequence_visibility_fraction", "")
+            frac_suffix = f", seq_vis_frac={seq_frac}" if seq_frac not in {"", None} else ""
             print(
                 f"- {row['visit_id']} / {row['sequence_id']} / {row['target']}: "
                 f"{row['status']} "
-                f"(non-visible min={row['nonvisible_minutes']}, first={row['first_problem_utc']})"
+                f"(non-visible min={row['nonvisible_minutes']}{pass_suffix}{frac_suffix})"
             )
         return 1
 
@@ -334,10 +389,11 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     sequences = parse_science_calendar(args.xml)
+    provenance_df = _load_sequence_provenance(args.xml)
     csv_path = args.csv_out or args.xml.with_name(
         f"{args.xml.stem}_visibility_validation.csv"
     )
-    results = validate_sequences(sequences, args.data_dir)
+    results = validate_sequences(sequences, args.data_dir, provenance_df=provenance_df)
     write_csv(results, csv_path)
     return print_summary(results, csv_path)
 

@@ -14,16 +14,16 @@
   "st_moon_min_deg": 20.0,
   "st_earthlimb_min_deg": 30.0,
   "st_required": 1,
-
   "roll_step_deg": 5.0,
   "min_power_frac": 0.7,
 
   "obs_sequence_duration_min": 90,
-  "occ_sequence_limit_min": 50,
+  "occ_sequence_limit_min": 30,
   "min_sequence_minutes": 5,
   "min_science_sequence_minutes": 8,
   "min_occultation_sequence_minutes": 8,
   "break_occultation_sequences": true,
+
   "show_progress": true,
   "parallel_workers": 13,
 
@@ -32,12 +32,13 @@
   "prioritise_occultations_by_slew": false,
   "generate_occultation_xml": true,
   "skip_xml": false,
+
   "run_visualizer_after_pipeline": false,
   "visualizer_mode": "priority",
+
   "enable_occultation_pass1": false,
   "requested_occ_time_override": true,
   "allow_occ_startracker_violation": true,
-
   "extra_inputs": {
     "target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",
     "target_definition_files": [
@@ -47,5 +48,7 @@
       "occultation-standard"
     ],
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260303-VF-20260303-EX-20270403-R001.txt"
-  }
+  },
+  "schedule_csv": "output_test1_short/Pandora_Schedule_0.8_0.0_0.2_2026-04-01_to_2026-04-15.csv",
+  "schedule_csv_row_limit": 10
 }

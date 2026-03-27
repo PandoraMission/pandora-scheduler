@@ -133,6 +133,15 @@ def parse_args() -> argparse.Namespace:
         ),
     )
 
+    parser.add_argument(
+        "--schedule-row-limit",
+        type=int,
+        help=(
+            "When generating XML from an existing schedule CSV, only use the first N rows. "
+            "Also accepted from JSON as schedule_csv_row_limit."
+        ),
+    )
+
     # Visibility configuration (if generating)
     parser.add_argument(
         "--gmat-ephemeris",
@@ -706,11 +715,24 @@ def main() -> int:
         # Resolve visibility GMAT file (CLI overrides JSON)
         visibility_gmat = args.gmat_ephemeris or extra_inputs.get("visibility_gmat")
 
-        # Resolve XML-only schedule input (CLI overrides JSON)
-        schedule_csv_input = args.schedule_csv or json_config.get("schedule_csv")
+        # Resolve XML-only schedule input. Explicit CLI --schedule-csv always wins.
+        # A JSON schedule_csv only activates XML-only mode when the user did not
+        # also provide an explicit full-pipeline window/output on the CLI.
+        explicit_full_pipeline_cli = (
+            args.schedule_csv is None
+            and args.start is not None
+            and args.end is not None
+            and args.output is not None
+        )
+        raw_schedule_csv = None
+        if args.schedule_csv is not None:
+            raw_schedule_csv = args.schedule_csv
+        elif not explicit_full_pipeline_cli:
+            raw_schedule_csv = json_config.get("schedule_csv")
+
         schedule_csv_input = (
-            Path(str(schedule_csv_input)).expanduser().resolve()
-            if schedule_csv_input is not None
+            Path(str(raw_schedule_csv)).expanduser().resolve()
+            if raw_schedule_csv is not None
             else None
         )
         xml_only_from_schedule = schedule_csv_input is not None
@@ -1001,7 +1023,11 @@ def main() -> int:
         aux_sort_key = str(_get_val("aux_sort_key", None, "sort_by_tdf_priority"))
         author = _get_val("author", None, None)
         created_timestamp = _get_val("created_timestamp", None, None)
-        visit_limit = _get_val("visit_limit", None, None)
+        visit_limit = _get_any(
+            ["visit_limit", "schedule_csv_row_limit"],
+            getattr(args, "schedule_row_limit", None),
+            None,
+        )
         target_filters = _get_val("target_filters", None, ())
         if target_filters is None:
             target_filters = ()

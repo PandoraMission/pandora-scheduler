@@ -260,6 +260,8 @@ def schedule_occultation_targets(
 
     if "Visibility" not in o_df.columns:
         o_df["Visibility"] = np.nan
+    if "Occultation Pass" not in o_df.columns:
+        o_df["Occultation Pass"] = pd.Series([None] * len(o_df), dtype=object)
 
     if visit_start is not None and visit_stop is not None:
         description = "%s to %s: Searching for occultation target from %s" % (
@@ -336,6 +338,7 @@ def schedule_occultation_targets(
                 o_df.loc[idx, "RA"] = match_row["RA"]
                 o_df.loc[idx, "DEC"] = match_row["DEC"]
                 o_df.loc[idx, "Visibility"] = 1
+                o_df.loc[idx, "Occultation Pass"] = "Pass 1"
 
         return o_df, True
 
@@ -396,6 +399,7 @@ def schedule_occultation_targets(
                     o_df.loc[idx, "RA"] = match_row["RA"]
                     o_df.loc[idx, "DEC"] = match_row["DEC"]
                     o_df.loc[idx, "Visibility"] = 1
+                    o_df.loc[idx, "Occultation Pass"] = "Pass 2"
                 else:
                     if pd.isna(schedule.loc[start, "Visibility"]):
                         schedule.loc[start, "Visibility"] = 0
@@ -450,6 +454,7 @@ def schedule_occultation_targets(
             o_df.loc[idx, "RA"] = match_row["RA"]
             o_df.loc[idx, "DEC"] = match_row["DEC"]
             o_df.loc[idx, "Visibility"] = 1
+            o_df.loc[idx, "Occultation Pass"] = "Pass 3"
 
     # If PASS 3 produced any assignments into o_df, treat this as a valid
     # partial schedule and return it.
@@ -567,6 +572,7 @@ def schedule_occultation_targets(
                     "RA": ra_val,
                     "DEC": dec_val,
                     "Visibility": 1.0,
+                    "Occultation Pass": "Pass 4",
                 }
             )
 

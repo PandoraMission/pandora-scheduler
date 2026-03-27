@@ -62,6 +62,9 @@ def generate_science_calendar(
     destination = output_path or (inputs.data_dir / "Pandora_science_calendar.xml")
     destination.parent.mkdir(parents=True, exist_ok=True)
     destination.write_text(xml_string, encoding="utf-8")
+    builder.write_sequence_provenance(
+        destination.with_name(f"{destination.stem}_sequence_provenance.csv")
+    )
     return destination
 
 
@@ -96,6 +99,85 @@ class _ScienceCalendarBuilder:
 
         # Track cumulative observation time for each occultation target
         self.occultation_obs_time: Dict[str, timedelta] = {}
+        self.sequence_provenance: list[dict[str, object]] = []
+
+    def _record_sequence_provenance(
+        self,
+        visit_id: str,
+        sequence_id: str,
+        target: str,
+        priority: str,
+        start: datetime,
+        stop: datetime,
+        sequence_type: str,
+        assignment_source: str,
+        occultation_pass: str = "",
+        visibility_fraction: float = 1.0,
+    ) -> None:
+        self.sequence_provenance.append(
+            {
+                "visit_id": visit_id,
+                "sequence_id": sequence_id,
+                "target": target,
+                "priority": priority,
+                "start_utc": start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "stop_utc": stop.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "duration_minutes": (stop - start).total_seconds() / 60.0,
+                "sequence_type": sequence_type,
+                "assignment_source": assignment_source,
+                "occultation_pass": occultation_pass,
+                "visibility_fraction": visibility_fraction,
+            }
+        )
+
+    def write_sequence_provenance(self, output_path: Path) -> None:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(self.sequence_provenance).to_csv(output_path, index=False)
+
+    def _visibility_fraction_in_df(
+        self, vis_df: Optional[pd.DataFrame], seg_start: datetime, seg_stop: datetime
+    ) -> float:
+        if vis_df is None or vis_df.empty:
+            return float("nan")
+
+        if "Time_UTC" in vis_df.columns and pd.api.types.is_datetime64_any_dtype(
+            vis_df["Time_UTC"]
+        ):
+            times = pd.to_datetime(vis_df["Time_UTC"], errors="coerce")
+        elif "Time(MJD_UTC)" in vis_df.columns:
+            times = pd.to_datetime(
+                Time(
+                    vis_df["Time(MJD_UTC)"].to_numpy(dtype=float),
+                    format="mjd",
+                    scale="utc",
+                ).to_datetime()
+            )
+        else:
+            return float("nan")
+
+        index = pd.DatetimeIndex(times)
+        if getattr(index, "tz", None) is not None:
+            index = index.tz_localize(None)
+        index = index.round("min")
+
+        prepared = pd.DataFrame(
+            {"Visible": (vis_df["Visible"].to_numpy(dtype=float) > 0.5)},
+            index=index,
+        )
+        prepared = prepared.groupby(level=0)["Visible"].max().to_frame()
+
+        n_minutes = int(round((seg_stop - seg_start).total_seconds() / 60.0))
+        if n_minutes <= 0:
+            return float("nan")
+        minute_index = pd.date_range(seg_start, periods=n_minutes, freq="min")
+        aligned = prepared["Visible"].reindex(minute_index, fill_value=False)
+        return float(aligned.mean())
+
+    def _occultation_visibility_fraction(
+        self, target_name: str, seg_start: datetime, seg_stop: datetime
+    ) -> float:
+        vis_df = _read_visibility(self.data_dir / "aux_targets" / target_name, target_name)
+        return self._visibility_fraction_in_df(vis_df, seg_start, seg_stop)
 
     def _science_min_duration(self) -> timedelta:
         """Resolved minimum standalone science fragment duration."""
@@ -395,6 +477,7 @@ class _ScienceCalendarBuilder:
     def _emit_science_sequences(
         self,
         visit_element: ET.Element,
+        visit_id: str,
         seq_counter: int,
         target_name: str,
         segment_start: datetime,
@@ -402,6 +485,7 @@ class _ScienceCalendarBuilder:
         ra_value: float,
         dec_value: float,
         target_info: Optional[pd.DataFrame],
+        science_visibility_df: Optional[pd.DataFrame],
         priority_flag: bool,
         transit_start: Sequence[datetime],
         transit_stop: Sequence[datetime],
@@ -425,9 +509,10 @@ class _ScienceCalendarBuilder:
             priority = _target_priority(
                 priority_flag, transit_start, transit_stop, current, next_value,
             )
+            sequence_id = f"{seq_counter:03d}"
             observation_sequence(
                 visit_element,
-                f"{seq_counter:03d}",
+                sequence_id,
                 target_name,
                 priority,
                 current.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -436,6 +521,19 @@ class _ScienceCalendarBuilder:
                 dec_value,
                 target_info if target_info is not None else pd.DataFrame(),
             )
+            self._record_sequence_provenance(
+                visit_id,
+                sequence_id,
+                target_name,
+                priority,
+                current,
+                next_value,
+                "science",
+                "science_schedule",
+                visibility_fraction=self._visibility_fraction_in_df(
+                    science_visibility_df, current, next_value
+                ),
+            )
             seq_counter += 1
             current = next_value
         return seq_counter
@@ -443,6 +541,7 @@ class _ScienceCalendarBuilder:
     def _emit_occultation_sequences(
         self,
         visit_element: ET.Element,
+        visit_id: str,
         seq_counter: int,
         occ_target: str,
         segment_start: datetime,
@@ -452,6 +551,8 @@ class _ScienceCalendarBuilder:
         occ_info: Optional[pd.DataFrame],
         reference_ra: Optional[float] = None,
         reference_dec: Optional[float] = None,
+        assignment_source: str = "catalog_fallback",
+        occultation_pass: str = "",
     ) -> int:
         """Emit chunked occultation observation sequences.  Returns updated
         *seq_counter*."""
@@ -505,9 +606,10 @@ class _ScienceCalendarBuilder:
                     target_time_limit.total_seconds() / 3600,
                 )
                 break
+            sequence_id = f"{seq_counter:03d}"
             observation_sequence(
                 visit_element,
-                f"{seq_counter:03d}",
+                sequence_id,
                 chunk_target,
                 "0",
                 current.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -515,6 +617,20 @@ class _ScienceCalendarBuilder:
                 chunk_ra,
                 chunk_dec,
                 chunk_info if chunk_info is not None else pd.DataFrame(),
+            )
+            self._record_sequence_provenance(
+                visit_id,
+                sequence_id,
+                chunk_target,
+                "0",
+                current,
+                next_value,
+                "occultation",
+                assignment_source,
+                occultation_pass,
+                visibility_fraction=self._occultation_visibility_fraction(
+                    chunk_target, current, next_value
+                ),
             )
             self.occultation_obs_time[chunk_target] = (
                 self.occultation_obs_time.get(chunk_target, timedelta())
@@ -604,7 +720,8 @@ class _ScienceCalendarBuilder:
         target_name, star_name = _normalise_target_name(target_label)
 
         visit_element = ET.SubElement(root, "Visit")
-        ET.SubElement(visit_element, "ID").text = f"{'0' * id_padding}{visit_counter}"
+        visit_id = f"{'0' * id_padding}{visit_counter}"
+        ET.SubElement(visit_element, "ID").text = visit_id
 
         start = _parse_datetime(row.get("Observation Start"))
         stop = _parse_datetime(row.get("Observation Stop"))
@@ -722,9 +839,9 @@ class _ScienceCalendarBuilder:
             for seg_start, seg_stop, is_visible in raw_segments:
                 if is_visible:
                     seq_counter = self._emit_science_sequences(
-                        visit_element, seq_counter, target_name,
+                        visit_element, visit_id, seq_counter, target_name,
                         seg_start, seg_stop, ra_value, dec_value,
-                        target_info, priority_flag, transit_start, transit_stop,
+                        target_info, visibility_df, priority_flag, transit_start, transit_stop,
                     )
             return
 
@@ -736,9 +853,9 @@ class _ScienceCalendarBuilder:
             for seg_start, seg_stop, is_visible in visit_segments:
                 if is_visible:
                     seq_counter = self._emit_science_sequences(
-                        visit_element, seq_counter, target_name,
+                        visit_element, visit_id, seq_counter, target_name,
                         seg_start, seg_stop, ra_value, dec_value,
-                        target_info, priority_flag, transit_start, transit_stop,
+                        target_info, visibility_df, priority_flag, transit_start, transit_stop,
                     )
             return
 
@@ -769,9 +886,9 @@ class _ScienceCalendarBuilder:
             for seg_start, seg_stop, is_visible in visit_segments:
                 if is_visible:
                     seq_counter = self._emit_science_sequences(
-                        visit_element, seq_counter, target_name,
+                        visit_element, visit_id, seq_counter, target_name,
                         seg_start, seg_stop, ra_value, dec_value,
-                        target_info, priority_flag, transit_start, transit_stop,
+                        target_info, visibility_df, priority_flag, transit_start, transit_stop,
                     )
                 else:
                     # Select per-segment so the visibility check uses the
@@ -784,10 +901,11 @@ class _ScienceCalendarBuilder:
                     if fallback_occultation is not None:
                         occ_target, ra_occ, dec_occ, occ_info = fallback_occultation
                         seq_counter = self._emit_occultation_sequences(
-                            visit_element, seq_counter, occ_target,
+                            visit_element, visit_id, seq_counter, occ_target,
                             seg_start, seg_stop, ra_occ, dec_occ, occ_info,
                             reference_ra=ra_value,
                             reference_dec=dec_value,
+                            assignment_source="catalog_fallback",
                         )
             return
 
@@ -812,9 +930,9 @@ class _ScienceCalendarBuilder:
         for seg_start, seg_stop, is_visible in visit_segments:
             if is_visible:
                 seq_counter = self._emit_science_sequences(
-                    visit_element, seq_counter, target_name,
+                    visit_element, visit_id, seq_counter, target_name,
                     seg_start, seg_stop, ra_value, dec_value,
-                    target_info, priority_flag, transit_start, transit_stop,
+                    target_info, visibility_df, priority_flag, transit_start, transit_stop,
                 )
                 continue
 
@@ -868,6 +986,7 @@ class _ScienceCalendarBuilder:
                         fb_target, fb_ra, fb_dec, fb_info = fallback
                         seq_counter = self._emit_occultation_sequences(
                             visit_element,
+                            visit_id,
                             seq_counter,
                             fb_target,
                             current,
@@ -877,6 +996,7 @@ class _ScienceCalendarBuilder:
                             fb_info,
                             reference_ra=ra_value,
                             reference_dec=dec_value,
+                            assignment_source="catalog_fallback",
                         )
                     else:
                         LOGGER.debug(
@@ -935,9 +1055,10 @@ class _ScienceCalendarBuilder:
                     occ_row.get("DEC"), occ_info, "DEC"
                 )
 
+                sequence_id = f"{seq_counter:03d}"
                 observation_sequence(
                     visit_element,
-                    f"{seq_counter:03d}",
+                    sequence_id,
                     occ_target,
                     "0",
                     current.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -945,6 +1066,21 @@ class _ScienceCalendarBuilder:
                     ra_occ,
                     dec_occ,
                     occ_info if occ_info is not None else pd.DataFrame(),
+                )
+                occ_pass = str(occ_row.get("Occultation Pass", "") or "")
+                self._record_sequence_provenance(
+                    visit_id,
+                    sequence_id,
+                    occ_target,
+                    "0",
+                    current,
+                    next_value,
+                    "occultation",
+                    "scheduled_occultation",
+                    occ_pass,
+                    visibility_fraction=self._occultation_visibility_fraction(
+                        occ_target, current, next_value
+                    ),
                 )
 
                 sequence_duration = next_value - current
@@ -968,7 +1104,7 @@ class _ScienceCalendarBuilder:
                 if fallback is not None:
                     fb_target, fb_ra, fb_dec, fb_info = fallback
                     seq_counter = self._emit_occultation_sequences(
-                        visit_element, seq_counter, fb_target,
+                        visit_element, visit_id, seq_counter, fb_target,
                         current, seg_stop, fb_ra, fb_dec, fb_info,
                         reference_ra=ra_value,
                         reference_dec=dec_value,
