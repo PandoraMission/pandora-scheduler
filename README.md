@@ -29,4 +29,12 @@ poetry run python run_scheduler.py \
     --show-progress
 ```
 
+## Config Notes
+
+- `daynight_mode` accepts two values:
+  - `subsatellite`: classify day/night from whether the subsatellite point is sunlit
+  - `limb`: classify day/night from whether the nearest Earth limb point in the target direction is sunlit
+- `generate_occultation_xml` can be set in the JSON config to turn occultation filling in the science calendar XML on or off.
+- `requested_occ_time_override` can be set in the JSON config to allow occultation scheduling to continue when requested-hours bookkeeping is incomplete or would otherwise block assignment.
+
 If you need help, read `QUICK_START.md` for examples and troubleshooting tips.
