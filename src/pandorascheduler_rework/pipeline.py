@@ -67,6 +67,7 @@ def build_schedule(config: PandoraSchedulerConfig) -> SchedulerResult:
         sun_avoidance_deg=config.sun_avoidance_deg,
         moon_avoidance_deg=config.moon_avoidance_deg,
         earth_avoidance_deg=config.earth_avoidance_deg,
+        earth_avoidance_day_deg=config.earth_avoidance_day_deg,
     )
 
     # Filesystem layout for this run. Use the run's `output_dir` as the
@@ -436,5 +437,4 @@ def _as_bool(value: object, default: bool) -> bool:
     if isinstance(value, (int, float)):
         return bool(value)
     return default
-
 

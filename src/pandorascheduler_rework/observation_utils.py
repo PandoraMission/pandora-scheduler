@@ -615,6 +615,7 @@ def save_observation_time_report(
 
     requested_hours_by_target: dict[str, float] = {}
     requested_hours_sources_by_target: dict[str, set[str]] = {}
+    conflicting_requested_hours_targets: set[str] = set()
     if requested_hours_catalogs:
         for catalog_path in requested_hours_catalogs:
             path = Path(catalog_path)
@@ -660,17 +661,21 @@ def save_observation_time_report(
                     and requested_hours_by_target[key] != value
                 ):
                     chosen = max(requested_hours_by_target[key], value)
-                    LOGGER.info(
-                        "Conflicting 'Number of Hours Requested' values for %r: %.2f vs %.2f; "
-                        "using %.2f",
-                        key,
-                        requested_hours_by_target[key],
-                        value,
-                        chosen,
-                    )
+                    conflicting_requested_hours_targets.add(key)
                     requested_hours_by_target[key] = chosen
                 else:
                     requested_hours_by_target[key] = value
+
+        if conflicting_requested_hours_targets:
+            example_targets = ", ".join(
+                sorted(conflicting_requested_hours_targets)[:5]
+            )
+            LOGGER.info(
+                "%d targets had conflicting 'Number of Hours Requested' values; "
+                "using max values%s",
+                len(conflicting_requested_hours_targets),
+                f" (e.g. {example_targets})" if example_targets else "",
+            )
 
         # Overlap is expected (e.g., a target appears in both auxiliary and
         # occultation lists).  Log at debug level for traceability.

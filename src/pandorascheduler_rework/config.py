@@ -402,13 +402,19 @@ def build_default_data_subdir(
     sun_avoidance_deg: float,
     moon_avoidance_deg: float,
     earth_avoidance_deg: float,
+    earth_avoidance_day_deg: Optional[float] = None,
 ) -> str:
     """Build the default run data directory name from keepout angles."""
 
+    earth_label = (
+        earth_avoidance_day_deg
+        if earth_avoidance_day_deg is not None
+        else earth_avoidance_deg
+    )
     return (
         f"data_{int(float(sun_avoidance_deg))}_"
         f"{int(float(moon_avoidance_deg))}_"
-        f"{int(float(earth_avoidance_deg))}"
+        f"{int(float(earth_label))}"
     )
 
 
@@ -418,6 +424,7 @@ def resolve_data_subdir(
     sun_avoidance_deg: float,
     moon_avoidance_deg: float,
     earth_avoidance_deg: float,
+    earth_avoidance_day_deg: Optional[float] = None,
 ) -> str:
     """Resolve the run data directory name.
 
@@ -431,6 +438,7 @@ def resolve_data_subdir(
             sun_avoidance_deg,
             moon_avoidance_deg,
             earth_avoidance_deg,
+            earth_avoidance_day_deg,
         )
 
     candidate = str(raw_value).strip()

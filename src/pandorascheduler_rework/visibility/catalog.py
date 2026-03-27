@@ -457,6 +457,7 @@ def _build_planet_transits(
     )
 
     generated: list[tuple[str, str]] = []
+    skipped_existing: list[tuple[str, str]] = []
 
     for _, row in manifest.iterrows():
         star_name = str(row.get("Star Name", ""))
@@ -477,11 +478,7 @@ def _build_planet_transits(
         planet_dir.mkdir(parents=True, exist_ok=True)
         planet_output = planet_dir / f"Visibility for {planet_name}.parquet"
         if planet_output.exists() and not config.force_regenerate:
-            LOGGER.info(
-                "Skipping %s/%s; planet visibility already exists",
-                star_name,
-                planet_name,
-            )
+            skipped_existing.append((star_name, planet_name))
             generated.append((star_name, planet_name))
             continue
 
@@ -494,6 +491,16 @@ def _build_planet_transits(
         _write_visibility_parquet(planet_df, planet_output, config)
         if not planet_df.empty:
             generated.append((star_name, planet_name))
+
+    if skipped_existing:
+        example_pairs = ", ".join(
+            f"{star}/{planet}" for star, planet in skipped_existing[:5]
+        )
+        LOGGER.info(
+            "Skipping %d planet visibility files that already exist%s",
+            len(skipped_existing),
+            f" (e.g. {example_pairs})" if example_pairs else "",
+        )
 
     return generated
 

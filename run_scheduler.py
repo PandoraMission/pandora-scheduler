@@ -167,7 +167,12 @@ def parse_args() -> argparse.Namespace:
         type=str,
         default="subsatellite",
         dest="daynight_mode",
-        help="Day/night mode for visibility calculations: 'limb' or 'subsatellite' (default: 'subsatellite')",
+        help=(
+            "Day/night mode for visibility calculations: "
+            "'subsatellite' = classify by the subsatellite point, "
+            "'limb' = classify by the nearest Earth limb point in the target direction "
+            "(default: 'subsatellite')"
+        ),
     )
 
     # Star tracker keepout configuration
@@ -737,19 +742,19 @@ def main() -> int:
                 ["earth_avoidance_deg", "visibility_earth_deg"], args.earth_avoidance, 110.0
             )
         )
-        data_subdir = resolve_data_subdir(
-            extra_inputs,
-            sun_avoidance_deg=sun_avoid,
-            moon_avoidance_deg=moon_avoid,
-            earth_avoidance_deg=earth_avoid,
-        )
-        extra_inputs["data_subdir"] = data_subdir
-
         # Day/night Earth avoidance (None = use uniform earth_avoid)
         _raw_day = _get_val("earth_avoidance_day_deg", args.earth_avoidance_day, None)
         earth_avoid_day = float(_raw_day) if _raw_day is not None else None
         _raw_night = _get_val("earth_avoidance_night_deg", args.earth_avoidance_night, None)
         earth_avoid_night = float(_raw_night) if _raw_night is not None else None
+        data_subdir = resolve_data_subdir(
+            extra_inputs,
+            sun_avoidance_deg=sun_avoid,
+            moon_avoidance_deg=moon_avoid,
+            earth_avoidance_deg=earth_avoid,
+            earth_avoidance_day_deg=earth_avoid_day,
+        )
+        extra_inputs["data_subdir"] = data_subdir
 
         twilight_margin = float(
             _get_val("twilight_margin_deg", args.twilight_margin, 0.0)
