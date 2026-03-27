@@ -120,6 +120,22 @@ Optional flag for supported modes:
 --show-sequence-labels
 ```
 
+## Flowchart Diagrams
+
+Generated reference diagrams live under `docs/`:
+
+- [docs/pipeline_flowchart.png](/Users/vkostov/Documents/GitHub/pandora-scheduler/docs/pipeline_flowchart.png): end-to-end pipeline overview
+- [docs/visibility_checks_flowchart.png](/Users/vkostov/Documents/GitHub/pandora-scheduler/docs/visibility_checks_flowchart.png): detailed visibility-generation and keepout logic
+- [docs/earth_daynight_logic_flowchart.png](/Users/vkostov/Documents/GitHub/pandora-scheduler/docs/earth_daynight_logic_flowchart.png): focused Earth day/night threshold selection
+- [docs/xml_segment_assignment_flowchart.png](/Users/vkostov/Documents/GitHub/pandora-scheduler/docs/xml_segment_assignment_flowchart.png): focused science-vs-occultation XML segment assignment
+
+Renderer scripts live under `scripts/` if you want to regenerate them:
+
+- [scripts/render_pipeline_flowchart.py](/Users/vkostov/Documents/GitHub/pandora-scheduler/scripts/render_pipeline_flowchart.py)
+- [scripts/render_visibility_flowchart.py](/Users/vkostov/Documents/GitHub/pandora-scheduler/scripts/render_visibility_flowchart.py)
+- [scripts/render_earth_daynight_flowchart.py](/Users/vkostov/Documents/GitHub/pandora-scheduler/scripts/render_earth_daynight_flowchart.py)
+- [scripts/render_xml_segment_flowchart.py](/Users/vkostov/Documents/GitHub/pandora-scheduler/scripts/render_xml_segment_flowchart.py)
+
 ## Config Notes
 
 - `daynight_mode` accepts two values:

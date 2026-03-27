@@ -826,19 +826,21 @@ class _ScienceCalendarBuilder:
                     # after the loop via the post-loop fallback block.
                     break
 
+                lookup_stop = self._occ_chunk_end(current, seg_stop)
+
                 # Prefer time-based lookup; fall back to positional index.
                 occ_row = None
                 used_fallback_row = False
                 if occ_time_index is not None and not occ_time_index.empty:
                     exact_mask = (
                         (occ_time_index["_start_dt"] <= current)
-                        & (occ_time_index["_stop_dt"] >= next_value)
+                        & (occ_time_index["_stop_dt"] >= lookup_stop)
                     )
                     if exact_mask.any():
                         occ_row = occ_time_index.loc[exact_mask].iloc[0]
                     else:
                         overlap_mask = (
-                            (occ_time_index["_start_dt"] < next_value)
+                            (occ_time_index["_start_dt"] < lookup_stop)
                             & (occ_time_index["_stop_dt"] > current)
                         )
                         if overlap_mask.any():
