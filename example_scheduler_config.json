@@ -41,7 +41,7 @@
   "allow_occ_startracker_violation": true,
 
   "schedule_csv": "output_test1_short/Pandora_Schedule_0.8_0.0_0.2_2026-04-01_to_2026-07-01.csv",
-  "schedule_csv_row_limit": 20,
+  "schedule_csv_row_limit": null,
 
   "extra_inputs": {
     "target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",
