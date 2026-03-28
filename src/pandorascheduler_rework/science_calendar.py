@@ -113,6 +113,8 @@ class _ScienceCalendarBuilder:
         assignment_source: str,
         occultation_pass: str = "",
         visibility_fraction: float = 1.0,
+        visible_minutes: float = float("nan"),
+        non_visible_minutes: float = float("nan"),
     ) -> None:
         self.sequence_provenance.append(
             {
@@ -127,6 +129,8 @@ class _ScienceCalendarBuilder:
                 "assignment_source": assignment_source,
                 "occultation_pass": occultation_pass,
                 "visibility_fraction": visibility_fraction,
+                "visible_minutes": visible_minutes,
+                "non_visible_minutes": non_visible_minutes,
             }
         )
 
@@ -134,11 +138,11 @@ class _ScienceCalendarBuilder:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         pd.DataFrame(self.sequence_provenance).to_csv(output_path, index=False)
 
-    def _visibility_fraction_in_df(
+    def _visibility_stats_in_df(
         self, vis_df: Optional[pd.DataFrame], seg_start: datetime, seg_stop: datetime
-    ) -> float:
+    ) -> tuple[float, float, float]:
         if vis_df is None or vis_df.empty:
-            return float("nan")
+            return float("nan"), float("nan"), float("nan")
 
         if "Time_UTC" in vis_df.columns and pd.api.types.is_datetime64_any_dtype(
             vis_df["Time_UTC"]
@@ -153,7 +157,7 @@ class _ScienceCalendarBuilder:
                 ).to_datetime()
             )
         else:
-            return float("nan")
+            return float("nan"), float("nan"), float("nan")
 
         index = pd.DatetimeIndex(times)
         if getattr(index, "tz", None) is not None:
@@ -168,16 +172,30 @@ class _ScienceCalendarBuilder:
 
         n_minutes = int(round((seg_stop - seg_start).total_seconds() / 60.0))
         if n_minutes <= 0:
-            return float("nan")
+            return float("nan"), float("nan"), float("nan")
         minute_index = pd.date_range(seg_start, periods=n_minutes, freq="min")
         aligned = prepared["Visible"].reindex(minute_index, fill_value=False)
-        return float(aligned.mean())
+        visible_minutes = float(aligned.sum())
+        non_visible_minutes = float((~aligned).sum())
+        return float(aligned.mean()), visible_minutes, non_visible_minutes
+
+    def _visibility_fraction_in_df(
+        self, vis_df: Optional[pd.DataFrame], seg_start: datetime, seg_stop: datetime
+    ) -> float:
+        fraction, _, _ = self._visibility_stats_in_df(vis_df, seg_start, seg_stop)
+        return fraction
+
+    def _occultation_visibility_stats(
+        self, target_name: str, seg_start: datetime, seg_stop: datetime
+    ) -> tuple[float, float, float]:
+        vis_df = _read_visibility(self.data_dir / "aux_targets" / target_name, target_name)
+        return self._visibility_stats_in_df(vis_df, seg_start, seg_stop)
 
     def _occultation_visibility_fraction(
         self, target_name: str, seg_start: datetime, seg_stop: datetime
     ) -> float:
-        vis_df = _read_visibility(self.data_dir / "aux_targets" / target_name, target_name)
-        return self._visibility_fraction_in_df(vis_df, seg_start, seg_stop)
+        fraction, _, _ = self._occultation_visibility_stats(target_name, seg_start, seg_stop)
+        return fraction
 
     def _science_min_duration(self) -> timedelta:
         """Resolved minimum standalone science fragment duration."""
@@ -521,6 +539,9 @@ class _ScienceCalendarBuilder:
                 dec_value,
                 target_info if target_info is not None else pd.DataFrame(),
             )
+            science_visibility_fraction, science_visible_minutes, science_non_visible_minutes = (
+                self._visibility_stats_in_df(science_visibility_df, current, next_value)
+            )
             self._record_sequence_provenance(
                 visit_id,
                 sequence_id,
@@ -530,9 +551,9 @@ class _ScienceCalendarBuilder:
                 next_value,
                 "science",
                 "science_schedule",
-                visibility_fraction=self._visibility_fraction_in_df(
-                    science_visibility_df, current, next_value
-                ),
+                visibility_fraction=science_visibility_fraction,
+                visible_minutes=science_visible_minutes,
+                non_visible_minutes=science_non_visible_minutes,
             )
             seq_counter += 1
             current = next_value
@@ -618,6 +639,9 @@ class _ScienceCalendarBuilder:
                 chunk_dec,
                 chunk_info if chunk_info is not None else pd.DataFrame(),
             )
+            occ_visibility_fraction, occ_visible_minutes, occ_non_visible_minutes = (
+                self._occultation_visibility_stats(chunk_target, current, next_value)
+            )
             self._record_sequence_provenance(
                 visit_id,
                 sequence_id,
@@ -628,9 +652,9 @@ class _ScienceCalendarBuilder:
                 "occultation",
                 assignment_source,
                 occultation_pass,
-                visibility_fraction=self._occultation_visibility_fraction(
-                    chunk_target, current, next_value
-                ),
+                visibility_fraction=occ_visibility_fraction,
+                visible_minutes=occ_visible_minutes,
+                non_visible_minutes=occ_non_visible_minutes,
             )
             self.occultation_obs_time[chunk_target] = (
                 self.occultation_obs_time.get(chunk_target, timedelta())
@@ -1068,6 +1092,9 @@ class _ScienceCalendarBuilder:
                     occ_info if occ_info is not None else pd.DataFrame(),
                 )
                 occ_pass = str(occ_row.get("Occultation Pass", "") or "")
+                occ_visibility_fraction, occ_visible_minutes, occ_non_visible_minutes = (
+                    self._occultation_visibility_stats(occ_target, current, next_value)
+                )
                 self._record_sequence_provenance(
                     visit_id,
                     sequence_id,
@@ -1078,9 +1105,9 @@ class _ScienceCalendarBuilder:
                     "occultation",
                     "scheduled_occultation",
                     occ_pass,
-                    visibility_fraction=self._occultation_visibility_fraction(
-                        occ_target, current, next_value
-                    ),
+                    visibility_fraction=occ_visibility_fraction,
+                    visible_minutes=occ_visible_minutes,
+                    non_visible_minutes=occ_non_visible_minutes,
                 )
 
                 sequence_duration = next_value - current
