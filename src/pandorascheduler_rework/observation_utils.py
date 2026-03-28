@@ -422,7 +422,21 @@ def schedule_occultation_targets(
     # candidate with the highest minute-coverage fraction (if > 0) and
     # assign it. This enables splitting long occultations across multiple
     # targets when no single candidate covers the whole interval.
+    remaining_before_p3 = int(schedule["Target"].isna().sum())
+    p3_progress_step = max(1, total_intervals // 10)
+    LOGGER.info(
+        "Occultation Pass 3: evaluating %d remaining interval(s) with best-effort coverage",
+        remaining_before_p3,
+    )
     for idx, (start, stop) in enumerate(zip(starts_array, stops_array)):
+        if (idx + 1) % p3_progress_step == 0 or idx + 1 == total_intervals:
+            remaining_now = int(schedule["Target"].isna().sum())
+            LOGGER.info(
+                "Occultation Pass 3 progress: %d/%d intervals checked (%d remaining)",
+                idx + 1,
+                total_intervals,
+                remaining_now,
+            )
         if not pd.isna(schedule.loc[start, "Target"]):
             continue
 
@@ -480,7 +494,20 @@ def schedule_occultation_targets(
     result_rows: list[dict] = []
     uncovered_minutes = 0
     minute_scale = 1440.0
+    remaining_before_p4 = int(schedule["Target"].isna().sum())
+    p4_progress_step = max(1, total_intervals // 10)
+    LOGGER.info(
+        "Occultation Pass 4: minute-resolution fallback for %d remaining interval(s)",
+        remaining_before_p4,
+    )
     for idx, (start, stop) in enumerate(zip(starts_array, stops_array)):
+        if (idx + 1) % p4_progress_step == 0 or idx + 1 == total_intervals:
+            LOGGER.info(
+                "Occultation Pass 4 progress: %d/%d intervals scanned (%d segment(s) built so far)",
+                idx + 1,
+                total_intervals,
+                len(result_rows),
+            )
         if not pd.isna(schedule.loc[start, "Target"]):
             # Already assigned by earlier passes
             continue

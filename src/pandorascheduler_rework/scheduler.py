@@ -872,7 +872,7 @@ def _schedule_auxiliary_target(
     if (
         active_start - state.last_std_obs
         > timedelta(days=config.std_obs_frequency_days)
-        and (stop - active_start).total_seconds() / 60.0 > config.min_sequence_minutes
+        and (stop - active_start).total_seconds() / 60.0 > config.effective_min_science_sequence_minutes
     ):
         std_path = inputs.paths.data_dir / "monitoring-standard_targets.csv"
         std_df = read_csv_cached(str(std_path))
@@ -916,7 +916,7 @@ def _schedule_auxiliary_target(
 
         # ── Adaptive-duration + sliding-window STD search ──────────
         # Try the configured duration first, then progressively shorter
-        # durations (down to min_sequence_minutes).  For each duration,
+        # durations (down to the effective science minimum). For each duration,
         # slide through the gap in 1-minute increments looking for a
         # window where at least one standard star has full visibility.
         #
@@ -929,7 +929,7 @@ def _schedule_auxiliary_target(
         std_candidate: Optional[tuple[str, float, float, float]] = None
         best_offset: timedelta = timedelta(0)
         best_duration: timedelta = obs_std_duration
-        min_std_td = timedelta(minutes=config.min_sequence_minutes)
+        min_std_td = timedelta(minutes=config.effective_min_science_sequence_minutes)
         slide_step = timedelta(minutes=1)
 
         trial_duration = obs_std_duration
@@ -938,7 +938,7 @@ def _schedule_auxiliary_target(
             trial_offset = timedelta(0)
             while active_start + trial_offset <= latest_start:
                 # Skip offsets that would create a pre-STD segment
-                # shorter than min_sequence_minutes: the calendar
+                # shorter than the science minimum: the calendar
                 # builder would emit a too-short occultation sequence.
                 # After trying offset=0, jump straight to min_std_td.
                 if timedelta(0) < trial_offset < min_std_td:
@@ -1004,16 +1004,16 @@ def _schedule_auxiliary_target(
             # via occultation-target observations.
             std_visible_end = active_start + best_offset + best_duration
 
-            # If the post-STD remainder is shorter than min_sequence,
+            # If the post-STD remainder is shorter than the science minimum,
             # extend the STD row to fill the entire gap so no Free Time
             # or too-short auxiliary slot is created.
             post_remainder = (stop - std_visible_end).total_seconds() / 60.0
-            if 0 < post_remainder <= config.min_sequence_minutes:
+            if 0 < post_remainder <= config.effective_min_science_sequence_minutes:
                 logger.warning(
                     "Extending STD row to absorb short post-STD "
                     "remainder (%.1f min < %d min minimum)",
                     post_remainder,
-                    config.min_sequence_minutes,
+                    config.effective_min_science_sequence_minutes,
                 )
                 std_row_end = stop
             else:
@@ -1047,28 +1047,15 @@ def _schedule_auxiliary_target(
                 stop,
             )
 
-    # Check if remaining window after STD is too short for auxiliary observation
+    # Check if any window remains after STD for auxiliary observation.
+    # Even short windows are worth attempting; only fall back to Free Time if
+    # no non-primary target can actually be scheduled.
     remaining_minutes = (stop - active_start).total_seconds() / 60.0
     if remaining_minutes <= 0:
         # Gap fully consumed (e.g. extended STD) — nothing more to schedule
         result = pd.DataFrame(scheduled_rows, columns=row_columns)
         _accumulate_observation_time(result)
         return result, "Gap fully scheduled by STD observation."
-    if remaining_minutes <= config.min_sequence_minutes:
-        logger.info(
-            "Remaining window after STD too short (%.1f min <= %d min); "
-            "marking as Free Time from %s to %s",
-            remaining_minutes,
-            config.min_sequence_minutes,
-            active_start,
-            stop,
-        )
-        scheduled_rows.append(
-            ["Free Time", active_start, stop, float("nan"), float("nan"), ""]
-        )
-        result = pd.DataFrame(scheduled_rows, columns=row_columns)
-        _accumulate_observation_time(result)
-        return result, "Free time after STD, remaining window too short."
 
     if config.aux_sort_key is None:
         scheduled_rows.append(
@@ -1440,41 +1427,22 @@ def _schedule_primary_target(
     if obs_range[0].to_pydatetime() < obs_start:
         gap = obs_start - start
         gap_minutes = gap.total_seconds() / 60.0
-        # Use strict > to avoid fencepost problem: a 5-minute window only yields
-        # 4-5 visibility samples at minute cadence, which may be filtered out by
-        # remove_short_sequences when min_sequence_minutes=5
-        if gap_minutes > config.min_sequence_minutes:
-            aux_df, aux_log = _schedule_auxiliary_target(
-                start,
-                obs_start,
-                config,
-                state,
-                inputs,
-            )
-            if not aux_df.empty:
-                dfs.append(aux_df)
-            logger.info(f"{aux_log}; window {start} to {obs_start}")
-        else:
-            # Gap is too short for a real observation - schedule Free Time instead
-            logger.info(
-                "Gap before primary observation too short (%.1f min <= %d min); "
-                "marking as Free Time from %s to %s",
-                gap_minutes,
-                config.min_sequence_minutes,
-                start,
-                obs_start,
-            )
-            free_time_df = pd.DataFrame(
-                [["Free Time", start, obs_start, float("nan"), float("nan")]],
-                columns=[
-                    "Target",
-                    "Observation Start",
-                    "Observation Stop",
-                    "RA",
-                    "DEC",
-                ],
-            )
-            dfs.append(free_time_df)
+        logger.info(
+            "Attempting non-primary fill before primary observation for %.1f min gap from %s to %s",
+            gap_minutes,
+            start,
+            obs_start,
+        )
+        aux_df, aux_log = _schedule_auxiliary_target(
+            start,
+            obs_start,
+            config,
+            state,
+            inputs,
+        )
+        if not aux_df.empty:
+            dfs.append(aux_df)
+        logger.info(f"{aux_log}; window {start} to {obs_start}")
 
     transit_comment = _primary_transit_comment(inputs.target_list, planet_name)
     main_schedule = pd.DataFrame(
