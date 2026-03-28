@@ -1279,11 +1279,6 @@ def _schedule_auxiliary_target(
                 comment = ""
 
             scheduled_rows.append([name, active_start, stop, ra_val, dec_val, comment])
-            logger.info(
-                "%s scheduled for non-primary observations from %s",
-                name,
-                target_def,
-            )
             selected_row = scheduled_rows[-1]
             break
 
@@ -1427,12 +1422,6 @@ def _schedule_primary_target(
     if obs_range[0].to_pydatetime() < obs_start:
         gap = obs_start - start
         gap_minutes = gap.total_seconds() / 60.0
-        logger.info(
-            "Attempting non-primary fill before primary observation for %.1f min gap from %s to %s",
-            gap_minutes,
-            start,
-            obs_start,
-        )
         aux_df, aux_log = _schedule_auxiliary_target(
             start,
             obs_start,
