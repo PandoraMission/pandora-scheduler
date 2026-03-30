@@ -1213,15 +1213,6 @@ class _ScienceCalendarBuilder:
                     start,
                     final_time,
                 )
-            elif self.config.show_progress:
-                LOGGER.info(
-                    "Visit %s: scheduled occultation rows available (%d assigned row(s)) for %s between %s and %s",
-                    visit_id,
-                    assigned_row_count,
-                    target_name,
-                    start,
-                    final_time,
-                )
 
         if occ_df is None:
             LOGGER.warning(
