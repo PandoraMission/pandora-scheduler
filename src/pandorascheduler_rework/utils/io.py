@@ -50,6 +50,9 @@ def _read_parquet_with_mtime(
 
 
 # cache on (file_path, mtime) -- mtime is a float or None (both hashable)
+#
+# Keep the DataFrame caches modest, but make the raw visibility-array cache
+# large enough to hold the occultation-standard catalog across visits.
 _read_csv_with_mtime = lru_cache(maxsize=256)(_read_csv_with_mtime)
 _read_parquet_with_mtime = lru_cache(maxsize=256)(_read_parquet_with_mtime)
 
@@ -205,7 +208,7 @@ def _load_visibility_arrays_with_mtime(
     return vis["Time(MJD_UTC)"].to_numpy(), vis["Visible"].to_numpy()
 
 
-_load_visibility_arrays_with_mtime = lru_cache(maxsize=256)(
+_load_visibility_arrays_with_mtime = lru_cache(maxsize=8192)(
     _load_visibility_arrays_with_mtime
 )
 

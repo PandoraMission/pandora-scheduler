@@ -50,6 +50,20 @@ class ScienceCalendarInputs:
     schedule_row_end: Optional[int] = None
 
 
+@dataclass
+class _OccultationChunk:
+    """Planned occultation XML chunk before final emission."""
+
+    start: datetime
+    stop: datetime
+    target: str
+    ra: float
+    dec: float
+    info: Optional[pd.DataFrame]
+    assignment_source: str
+    occultation_pass: str = ""
+
+
 def generate_science_calendar(
     inputs: ScienceCalendarInputs,
     config: PandoraSchedulerConfig,
@@ -572,11 +586,8 @@ class _ScienceCalendarBuilder:
             current = next_value
         return seq_counter
 
-    def _emit_occultation_sequences(
+    def _plan_occultation_sequences(
         self,
-        visit_element: ET.Element,
-        visit_id: str,
-        seq_counter: int,
         occ_target: str,
         segment_start: datetime,
         segment_stop: datetime,
@@ -587,9 +598,9 @@ class _ScienceCalendarBuilder:
         reference_dec: Optional[float] = None,
         assignment_source: str = "catalog_fallback",
         occultation_pass: str = "",
-    ) -> int:
-        """Emit chunked occultation observation sequences.  Returns updated
-        *seq_counter*."""
+    ) -> List[_OccultationChunk]:
+        """Plan chunked occultation sequences before final XML emission."""
+        planned_chunks: List[_OccultationChunk] = []
         current = segment_start
         while current < segment_stop:
             next_value = self._occ_chunk_end(current, segment_stop, occ_target)
@@ -640,42 +651,250 @@ class _ScienceCalendarBuilder:
                     target_time_limit.total_seconds() / 3600,
                 )
                 break
+            planned_chunks.append(
+                _OccultationChunk(
+                    start=current,
+                    stop=next_value,
+                    target=chunk_target,
+                    ra=chunk_ra,
+                    dec=chunk_dec,
+                    info=chunk_info,
+                    assignment_source=assignment_source,
+                    occultation_pass=occultation_pass,
+                )
+            )
+            current = next_value
+        return planned_chunks
+
+    def _emit_occultation_sequences(
+        self,
+        visit_element: ET.Element,
+        visit_id: str,
+        seq_counter: int,
+        occ_target: str,
+        segment_start: datetime,
+        segment_stop: datetime,
+        ra_occ: float,
+        dec_occ: float,
+        occ_info: Optional[pd.DataFrame],
+        reference_ra: Optional[float] = None,
+        reference_dec: Optional[float] = None,
+        assignment_source: str = "catalog_fallback",
+        occultation_pass: str = "",
+    ) -> int:
+        """Emit chunked occultation observation sequences.
+
+        Short occultation chunks are merged into neighbouring occultation
+        chunks when a neighbour can cover the combined interval.
+        """
+        planned_chunks = self._plan_occultation_sequences(
+            occ_target=occ_target,
+            segment_start=segment_start,
+            segment_stop=segment_stop,
+            ra_occ=ra_occ,
+            dec_occ=dec_occ,
+            occ_info=occ_info,
+            reference_ra=reference_ra,
+            reference_dec=reference_dec,
+            assignment_source=assignment_source,
+            occultation_pass=occultation_pass,
+        )
+        return self._emit_planned_occultation_chunks(
+            visit_element,
+            visit_id,
+            seq_counter,
+            planned_chunks,
+        )
+
+    def _emit_planned_occultation_chunks(
+        self,
+        visit_element: ET.Element,
+        visit_id: str,
+        seq_counter: int,
+        planned_chunks: Sequence[_OccultationChunk],
+    ) -> int:
+        """Emit a planned occultation chunk list after short-chunk merging."""
+        for chunk in self._merge_short_occultation_chunks(planned_chunks):
             sequence_id = f"{seq_counter:03d}"
             observation_sequence(
                 visit_element,
                 sequence_id,
-                chunk_target,
+                chunk.target,
                 "0",
-                current.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                next_value.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                chunk_ra,
-                chunk_dec,
-                chunk_info if chunk_info is not None else pd.DataFrame(),
+                chunk.start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                chunk.stop.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                chunk.ra,
+                chunk.dec,
+                chunk.info if chunk.info is not None else pd.DataFrame(),
             )
             occ_visibility_fraction, occ_visible_minutes, occ_non_visible_minutes = (
-                self._occultation_visibility_stats(chunk_target, current, next_value)
+                self._occultation_visibility_stats(chunk.target, chunk.start, chunk.stop)
             )
             self._record_sequence_provenance(
                 visit_id,
                 sequence_id,
-                chunk_target,
+                chunk.target,
                 "0",
-                current,
-                next_value,
+                chunk.start,
+                chunk.stop,
                 "occultation",
-                assignment_source,
-                occultation_pass,
+                chunk.assignment_source,
+                chunk.occultation_pass,
                 visibility_fraction=occ_visibility_fraction,
                 visible_minutes=occ_visible_minutes,
                 non_visible_minutes=occ_non_visible_minutes,
             )
-            self.occultation_obs_time[chunk_target] = (
-                self.occultation_obs_time.get(chunk_target, timedelta())
-                + (next_value - current)
+            self.occultation_obs_time[chunk.target] = (
+                self.occultation_obs_time.get(chunk.target, timedelta())
+                + (chunk.stop - chunk.start)
             )
             seq_counter += 1
-            current = next_value
         return seq_counter
+
+    def _merge_short_occultation_chunks(
+        self,
+        chunks: Sequence[_OccultationChunk],
+    ) -> List[_OccultationChunk]:
+        """Merge short occultation chunks into adjacent occultation chunks.
+
+        This is a best-effort XML-side cleanup. It preserves genuinely isolated
+        short occultation windows, but absorbs short handoff fragments whenever
+        a neighbouring occultation target can cover the combined interval.
+        """
+        chunk_list = [
+            _OccultationChunk(
+                start=chunk.start,
+                stop=chunk.stop,
+                target=chunk.target,
+                ra=chunk.ra,
+                dec=chunk.dec,
+                info=chunk.info,
+                assignment_source=chunk.assignment_source,
+                occultation_pass=chunk.occultation_pass,
+            )
+            for chunk in chunks
+            if chunk.stop > chunk.start
+        ]
+        threshold = self._occultation_min_duration()
+        if threshold <= timedelta(0) or len(chunk_list) < 2:
+            return chunk_list
+
+        adjacency_tolerance = timedelta(seconds=1)
+        merged_short_chunks = 0
+
+        def _merge_score(
+            target_name: str,
+            merged_start: datetime,
+            merged_stop: datetime,
+        ) -> tuple[bool, float]:
+            acceptable, st_frac = self._occ_visibility_score(
+                target_name,
+                merged_start,
+                merged_stop,
+            )
+            return acceptable, st_frac
+
+        changed = True
+        while changed and len(chunk_list) > 1:
+            changed = False
+            for idx, chunk in enumerate(chunk_list):
+                if (chunk.stop - chunk.start) >= threshold:
+                    continue
+
+                prev_chunk = (
+                    chunk_list[idx - 1]
+                    if idx > 0
+                    and chunk.start <= chunk_list[idx - 1].stop + adjacency_tolerance
+                    else None
+                )
+                next_chunk = (
+                    chunk_list[idx + 1]
+                    if idx + 1 < len(chunk_list)
+                    and chunk_list[idx + 1].start <= chunk.stop + adjacency_tolerance
+                    else None
+                )
+
+                if (
+                    prev_chunk is not None
+                    and next_chunk is not None
+                    and prev_chunk.target == next_chunk.target
+                ):
+                    bridge_ok, _bridge_st_frac = _merge_score(
+                        prev_chunk.target,
+                        prev_chunk.start,
+                        next_chunk.stop,
+                    )
+                    if bridge_ok:
+                        prev_chunk.stop = next_chunk.stop
+                        del chunk_list[idx + 1]
+                        del chunk_list[idx]
+                        merged_short_chunks += 1
+                        changed = True
+                        break
+
+                prev_ok = False
+                prev_st_frac = float("inf")
+                if prev_chunk is not None:
+                    prev_ok, prev_st_frac = _merge_score(
+                        prev_chunk.target,
+                        prev_chunk.start,
+                        chunk.stop,
+                    )
+
+                next_ok = False
+                next_st_frac = float("inf")
+                if next_chunk is not None:
+                    next_ok, next_st_frac = _merge_score(
+                        next_chunk.target,
+                        chunk.start,
+                        next_chunk.stop,
+                    )
+
+                if idx == 0 and next_ok:
+                    next_chunk.start = chunk.start
+                    del chunk_list[idx]
+                    merged_short_chunks += 1
+                    changed = True
+                    break
+
+                if idx == len(chunk_list) - 1 and prev_ok:
+                    prev_chunk.stop = chunk.stop
+                    del chunk_list[idx]
+                    merged_short_chunks += 1
+                    changed = True
+                    break
+
+                if prev_ok and next_ok:
+                    if prev_st_frac <= next_st_frac:
+                        prev_chunk.stop = chunk.stop
+                    else:
+                        next_chunk.start = chunk.start
+                    del chunk_list[idx]
+                    merged_short_chunks += 1
+                    changed = True
+                    break
+
+                if prev_ok:
+                    prev_chunk.stop = chunk.stop
+                    del chunk_list[idx]
+                    merged_short_chunks += 1
+                    changed = True
+                    break
+
+                if next_ok:
+                    next_chunk.start = chunk.start
+                    del chunk_list[idx]
+                    merged_short_chunks += 1
+                    changed = True
+                    break
+
+        if merged_short_chunks:
+            LOGGER.debug(
+                "Merged %d short occultation chunk(s) shorter than %d min",
+                merged_short_chunks,
+                self.config.effective_min_occultation_sequence_minutes,
+            )
+        return chunk_list
 
     def build_calendar(self) -> ET.Element:
         root = ET.Element("ScienceCalendar", xmlns="/pandora/calendar/")
@@ -886,6 +1105,7 @@ class _ScienceCalendarBuilder:
         oc_starts, oc_stops = self._occultation_windows_from_segments(
             visit_segments
         )
+        total_occultation_segments = sum(1 for _seg in visit_segments if not _seg[2])
         if not oc_starts:
             for seg_start, seg_stop, is_visible in visit_segments:
                 if is_visible:
@@ -961,6 +1181,14 @@ class _ScienceCalendarBuilder:
             return
 
         # --- Path 3: scheduled occ_df available -----------------------------
+        emission_progress = None
+        if self.config.show_progress and total_occultation_segments > 1:
+            emission_progress = tqdm(
+                total=total_occultation_segments,
+                desc=f"pandorascheduler_rework.science_calendar - INFO - Visit {visit_id}:",
+                bar_format="{desc} processed {n_fmt}/{total_fmt} occultation segment(s)",
+                leave=False,
+            )
         occ_time_index: Optional[pd.DataFrame] = None
         if {"start", "stop", "Target"}.issubset(set(occ_df.columns)):
             occ_time_index = occ_df.copy()
@@ -989,6 +1217,7 @@ class _ScienceCalendarBuilder:
 
             # Occultation segment — iterate using scheduled occ_df.
             current = seg_start
+            planned_occultation_chunks: List[_OccultationChunk] = []
             while current < seg_stop:
                 if oc_index >= len(occ_df):
                     # Pre-built schedule exhausted — fall back to catalog
@@ -1035,19 +1264,18 @@ class _ScienceCalendarBuilder:
                     )
                     if fallback is not None:
                         fb_target, fb_ra, fb_dec, fb_info = fallback
-                        seq_counter = self._emit_occultation_sequences(
-                            visit_element,
-                            visit_id,
-                            seq_counter,
-                            fb_target,
-                            current,
-                            next_value,
-                            fb_ra,
-                            fb_dec,
-                            fb_info,
-                            reference_ra=ra_value,
-                            reference_dec=dec_value,
-                            assignment_source="catalog_fallback",
+                        planned_occultation_chunks.extend(
+                            self._plan_occultation_sequences(
+                                occ_target=fb_target,
+                                segment_start=current,
+                                segment_stop=next_value,
+                                ra_occ=fb_ra,
+                                dec_occ=fb_dec,
+                                occ_info=fb_info,
+                                reference_ra=ra_value,
+                                reference_dec=dec_value,
+                                assignment_source="catalog_fallback",
+                            )
                         )
                     else:
                         LOGGER.debug(
@@ -1105,45 +1333,19 @@ class _ScienceCalendarBuilder:
                 dec_occ = _fallback_float(
                     occ_row.get("DEC"), occ_info, "DEC"
                 )
-
-                sequence_id = f"{seq_counter:03d}"
-                observation_sequence(
-                    visit_element,
-                    sequence_id,
-                    occ_target,
-                    "0",
-                    current.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    next_value.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                    ra_occ,
-                    dec_occ,
-                    occ_info if occ_info is not None else pd.DataFrame(),
-                )
                 occ_pass = str(occ_row.get("Occultation Pass", "") or "")
-                occ_visibility_fraction, occ_visible_minutes, occ_non_visible_minutes = (
-                    self._occultation_visibility_stats(occ_target, current, next_value)
+                planned_occultation_chunks.append(
+                    _OccultationChunk(
+                        start=current,
+                        stop=next_value,
+                        target=occ_target,
+                        ra=ra_occ,
+                        dec=dec_occ,
+                        info=occ_info,
+                        assignment_source="scheduled_occultation",
+                        occultation_pass=occ_pass,
+                    )
                 )
-                self._record_sequence_provenance(
-                    visit_id,
-                    sequence_id,
-                    occ_target,
-                    "0",
-                    current,
-                    next_value,
-                    "occultation",
-                    "scheduled_occultation",
-                    occ_pass,
-                    visibility_fraction=occ_visibility_fraction,
-                    visible_minutes=occ_visible_minutes,
-                    non_visible_minutes=occ_non_visible_minutes,
-                )
-
-                sequence_duration = next_value - current
-                self.occultation_obs_time[occ_target] = (
-                    self.occultation_obs_time.get(occ_target, timedelta())
-                    + sequence_duration
-                )
-
-                seq_counter += 1
                 if used_fallback_row:
                     oc_index += 1
                 current = next_value
@@ -1157,11 +1359,18 @@ class _ScienceCalendarBuilder:
                 )
                 if fallback is not None:
                     fb_target, fb_ra, fb_dec, fb_info = fallback
-                    seq_counter = self._emit_occultation_sequences(
-                        visit_element, visit_id, seq_counter, fb_target,
-                        current, seg_stop, fb_ra, fb_dec, fb_info,
-                        reference_ra=ra_value,
-                        reference_dec=dec_value,
+                    planned_occultation_chunks.extend(
+                        self._plan_occultation_sequences(
+                            occ_target=fb_target,
+                            segment_start=current,
+                            segment_stop=seg_stop,
+                            ra_occ=fb_ra,
+                            dec_occ=fb_dec,
+                            occ_info=fb_info,
+                            reference_ra=ra_value,
+                            reference_dec=dec_value,
+                            assignment_source="catalog_fallback",
+                        )
                     )
                     current = seg_stop
                 else:
@@ -1171,6 +1380,17 @@ class _ScienceCalendarBuilder:
                         "occultation gap %s–%s (%.0f min gap in XML)",
                         target_name, current, seg_stop, gap_minutes,
                     )
+
+            seq_counter = self._emit_planned_occultation_chunks(
+                visit_element,
+                visit_id,
+                seq_counter,
+                planned_occultation_chunks,
+            )
+            if emission_progress is not None:
+                emission_progress.update(1)
+        if emission_progress is not None:
+            emission_progress.close()
 
     def _emit_full_visibility(
         self,
@@ -1472,6 +1692,7 @@ class _ScienceCalendarBuilder:
                     excluded,
                     show_progress=self.config.show_progress,
                     use_pass1=self.config.enable_occultation_pass1,
+                    occultation_nonvisible_tolerance_minutes=self.config.occultation_nonvisible_tolerance_minutes,
                 )
                 if flag and result_df is not None:
                     return result_df, True
@@ -1969,6 +2190,7 @@ def _build_occultation_schedule(
     excluded_targets: Optional[set] = None,
     show_progress: bool = False,
     use_pass1: bool = True,
+    occultation_nonvisible_tolerance_minutes: int = 3,
 ) -> tuple[Optional[pd.DataFrame], bool]:
     if not starts or not stops:
         return None, False
@@ -2050,7 +2272,7 @@ def _build_occultation_schedule(
         label,
         show_progress=show_progress,
         use_pass1=use_pass1,
-        occultation_nonvisible_tolerance_minutes=config.occultation_nonvisible_tolerance_minutes,
+        occultation_nonvisible_tolerance_minutes=occultation_nonvisible_tolerance_minutes,
     )
     return occ_df, flag
 

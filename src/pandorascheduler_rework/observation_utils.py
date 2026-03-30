@@ -453,15 +453,22 @@ def schedule_occultation_targets(
         remaining_indices_p3,
         desc="Occultation Pass 3",
         leave=False,
-        disable=not show_progress or remaining_before_p3 == 0,
+        disable=not show_progress or remaining_before_p3 <= 1,
     )
     for idx in p3_iterator:
         start = starts_array[idx]
         stop = stops_array[idx]
+        interval_number = remaining_indices_p3.index(idx) + 1
 
         best_name = None
         best_coverage = 0.0
-        for v_name in v_names:
+        candidate_iterator = tqdm(
+            v_names,
+            desc=f"Occultation Pass 3 scan {interval_number}/{remaining_before_p3}",
+            leave=False,
+            disable=not show_progress,
+        )
+        for v_name in candidate_iterator:
             vis = _get_visibility(v_name)
             if vis is None:
                 continue
