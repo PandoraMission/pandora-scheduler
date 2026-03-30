@@ -36,8 +36,6 @@ from pandorascheduler_rework.utils.io import (
 LOGGER = logging.getLogger(__name__)
 
 _PLACEHOLDER_MARKERS = {"SET_BY_TARGET_DEFINITION_FILE", "SET_BY_SCHEDULER"}
-_OCCULTATION_FULL_VISIBILITY_TOLERANCE_SAMPLES = 1
-
 # Default column name for per-target visit duration
 _OBS_WINDOW_COLUMN = "Obs Window (hrs)"
 
@@ -243,6 +241,7 @@ def schedule_occultation_targets(
     try_occ_targets: str,
     show_progress: bool = False,
     use_pass1: bool = True,
+    occultation_nonvisible_tolerance_minutes: int = 3,
 ):
     starts_array = np.asarray(starts, dtype=float)
     stops_array = np.asarray(stops, dtype=float)
@@ -298,7 +297,7 @@ def schedule_occultation_targets(
     def _interval_visible_with_tolerance(
         visibility: np.ndarray,
         interval_mask: np.ndarray,
-        tolerance_samples: int = _OCCULTATION_FULL_VISIBILITY_TOLERANCE_SAMPLES,
+        tolerance_samples: int = occultation_nonvisible_tolerance_minutes,
     ) -> bool:
         sample_count = int(interval_mask.sum())
         if sample_count == 0:
@@ -434,23 +433,31 @@ def schedule_occultation_targets(
     # candidate with the highest minute-coverage fraction (if > 0) and
     # assign it. This enables splitting long occultations across multiple
     # targets when no single candidate covers the whole interval.
-    remaining_before_p3 = int(schedule["Target"].isna().sum())
-    p3_progress_step = max(1, total_intervals // 10)
-    LOGGER.info(
-        "Occultation Pass 3: evaluating %d remaining interval(s) with best-effort coverage",
-        remaining_before_p3,
+    remaining_indices_p3 = [
+        idx for idx, start in enumerate(starts_array)
+        if pd.isna(schedule.loc[start, "Target"])
+    ]
+    remaining_before_p3 = len(remaining_indices_p3)
+    if remaining_before_p3 > 0:
+        p3_durations = [
+            f"{int(round((stops_array[idx] - starts_array[idx]) * 1440))}m"
+            for idx in remaining_indices_p3
+        ]
+        LOGGER.info(
+            "Occultation Pass 3: evaluating %d remaining interval(s) with best-effort coverage "
+            "(durations: %s)",
+            remaining_before_p3,
+            ", ".join(p3_durations),
+        )
+    p3_iterator = tqdm(
+        remaining_indices_p3,
+        desc="Occultation Pass 3",
+        leave=False,
+        disable=not show_progress or remaining_before_p3 == 0,
     )
-    for idx, (start, stop) in enumerate(zip(starts_array, stops_array)):
-        if (idx + 1) % p3_progress_step == 0 or idx + 1 == total_intervals:
-            remaining_now = int(schedule["Target"].isna().sum())
-            LOGGER.info(
-                "Occultation Pass 3 progress: %d/%d intervals checked (%d remaining)",
-                idx + 1,
-                total_intervals,
-                remaining_now,
-            )
-        if not pd.isna(schedule.loc[start, "Target"]):
-            continue
+    for idx in p3_iterator:
+        start = starts_array[idx]
+        stop = stops_array[idx]
 
         best_name = None
         best_coverage = 0.0
@@ -506,23 +513,31 @@ def schedule_occultation_targets(
     result_rows: list[dict] = []
     uncovered_minutes = 0
     minute_scale = 1440.0
-    remaining_before_p4 = int(schedule["Target"].isna().sum())
-    p4_progress_step = max(1, total_intervals // 10)
-    LOGGER.info(
-        "Occultation Pass 4: minute-resolution fallback for %d remaining interval(s)",
-        remaining_before_p4,
+    remaining_indices_p4 = [
+        idx for idx, start in enumerate(starts_array)
+        if pd.isna(schedule.loc[start, "Target"])
+    ]
+    remaining_before_p4 = len(remaining_indices_p4)
+    if remaining_before_p4 > 0:
+        p4_durations = [
+            f"{int(round((stops_array[idx] - starts_array[idx]) * 1440))}m"
+            for idx in remaining_indices_p4
+        ]
+        LOGGER.info(
+            "Occultation Pass 4: minute-resolution fallback for %d remaining interval(s) "
+            "(durations: %s)",
+            remaining_before_p4,
+            ", ".join(p4_durations),
+        )
+    p4_iterator = tqdm(
+        remaining_indices_p4,
+        desc="Occultation Pass 4",
+        leave=False,
+        disable=not show_progress or remaining_before_p4 == 0,
     )
-    for idx, (start, stop) in enumerate(zip(starts_array, stops_array)):
-        if (idx + 1) % p4_progress_step == 0 or idx + 1 == total_intervals:
-            LOGGER.info(
-                "Occultation Pass 4 progress: %d/%d intervals scanned (%d segment(s) built so far)",
-                idx + 1,
-                total_intervals,
-                len(result_rows),
-            )
-        if not pd.isna(schedule.loc[start, "Target"]):
-            # Already assigned by earlier passes
-            continue
+    for idx in p4_iterator:
+        start = starts_array[idx]
+        stop = stops_array[idx]
 
         # Build integer minute indices for the interval
         start_idx = int(np.floor(start * minute_scale))

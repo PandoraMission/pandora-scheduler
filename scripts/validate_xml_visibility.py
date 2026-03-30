@@ -199,6 +199,7 @@ def validate_sequences(
     sequences: list[XmlSequence],
     data_dir: Path,
     provenance_df: Optional[pd.DataFrame] = None,
+    occultation_nonvisible_tolerance_minutes: int = 3,
 ) -> list[dict[str, object]]:
     planet_to_star = _load_planet_to_star(data_dir)
     cache: dict[str, Optional[pd.DataFrame]] = {}
@@ -272,7 +273,8 @@ def validate_sequences(
 
         sequence_type = str(provenance.get("sequence_type", "") or "")
         tolerated_occultation_miss = (
-            sequence_type == "occultation" and nonvisible_minutes <= 1
+            sequence_type == "occultation"
+            and nonvisible_minutes <= occultation_nonvisible_tolerance_minutes
         )
 
         results.append(
@@ -392,6 +394,15 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help="Optional CSV output path. Defaults next to the XML file.",
     )
+    parser.add_argument(
+        "--occultation-nonvisible-tolerance-minutes",
+        type=int,
+        default=3,
+        help=(
+            "Treat occultation XML sequences with up to this many non-visible "
+            "minutes as acceptable. Default: 3."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -402,7 +413,12 @@ def main() -> int:
     csv_path = args.csv_out or args.xml.with_name(
         f"{args.xml.stem}_visibility_validation.csv"
     )
-    results = validate_sequences(sequences, args.data_dir, provenance_df=provenance_df)
+    results = validate_sequences(
+        sequences,
+        args.data_dir,
+        provenance_df=provenance_df,
+        occultation_nonvisible_tolerance_minutes=args.occultation_nonvisible_tolerance_minutes,
+    )
     write_csv(results, csv_path)
     return print_summary(results, csv_path)
 

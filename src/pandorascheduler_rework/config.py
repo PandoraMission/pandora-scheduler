@@ -234,6 +234,14 @@ class PandoraSchedulerConfig:
     When ``None``, falls back to ``min_sequence_minutes``.
     """
 
+    occultation_nonvisible_tolerance_minutes: int = 3
+    """Allowed non-visible minutes inside an occultation interval.
+
+    This tolerance applies only to occultation scheduling/validation and is
+    used to absorb small boundary mismatches without forcing later occultation
+    passes.
+    """
+
     @property
     def effective_min_science_sequence_minutes(self) -> int:
         """Resolved science-sequence minimum in minutes."""
@@ -419,6 +427,10 @@ class PandoraSchedulerConfig:
             (
                 "min_occultation_sequence_minutes",
                 self.min_occultation_sequence_minutes,
+            ),
+            (
+                "occultation_nonvisible_tolerance_minutes",
+                self.occultation_nonvisible_tolerance_minutes,
             ),
         ):
             if value is not None and value < 0:

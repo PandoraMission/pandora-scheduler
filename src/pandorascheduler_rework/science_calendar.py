@@ -2050,6 +2050,7 @@ def _build_occultation_schedule(
         label,
         show_progress=show_progress,
         use_pass1=use_pass1,
+        occultation_nonvisible_tolerance_minutes=config.occultation_nonvisible_tolerance_minutes,
     )
     return occ_df, flag
 

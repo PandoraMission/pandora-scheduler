@@ -1026,6 +1026,9 @@ def main() -> int:
             if raw_min_occultation_sequence_minutes is not None
             else None
         )
+        occultation_nonvisible_tolerance_minutes = int(
+            _get_val("occultation_nonvisible_tolerance_minutes", None, 3)
+        )
 
         std_obs_duration_hours = float(_get_val("std_obs_duration_hours", None, 0.5))
         std_obs_frequency_days = float(_get_val("std_obs_frequency_days", None, 3.0))
@@ -1162,6 +1165,7 @@ def main() -> int:
             min_sequence_minutes=min_sequence_minutes,
             min_science_sequence_minutes=min_science_sequence_minutes,
             min_occultation_sequence_minutes=min_occultation_sequence_minutes,
+            occultation_nonvisible_tolerance_minutes=occultation_nonvisible_tolerance_minutes,
             break_occultation_sequences=break_occultation_sequences,
             # Standard observations
             std_obs_duration_hours=std_obs_duration_hours,

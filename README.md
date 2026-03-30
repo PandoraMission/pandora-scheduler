@@ -224,6 +224,7 @@ Renderer scripts live under `scripts/` if you want to regenerate them:
 - `generate_occultation_xml` can be set in the JSON config to turn occultation filling in the science calendar XML on or off.
 - `min_science_sequence_minutes` sets the minimum standalone science-visible fragment. Shorter science fragments are merged into a contiguous preceding science chunk when possible; otherwise they are handed to occultation filling.
 - `min_occultation_sequence_minutes` sets the minimum standalone occultation tail. Short trailing occultation chunks are only absorbed into the preceding occultation chunk when the same occultation target remains visible there.
+- `occultation_nonvisible_tolerance_minutes` sets how many non-visible minutes are tolerated inside an occultation interval before a later occultation pass or validation failure is triggered. This applies to occultation only.
 - `requested_occ_time_override` can be set in the JSON config to allow occultation scheduling to continue when requested-hours bookkeeping is incomplete or would otherwise block assignment.
 - `run_visualizer_after_pipeline` can be set in the JSON config to generate a plot automatically after the XML is written.
 - `visualizer_mode` accepts:

@@ -22,6 +22,7 @@
   "min_sequence_minutes": 5,
   "min_science_sequence_minutes": 8,
   "min_occultation_sequence_minutes": 8,
+  "occultation_nonvisible_tolerance_minutes": 3,
   "break_occultation_sequences": true,
 
   "show_progress": true,
