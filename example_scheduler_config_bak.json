@@ -40,11 +40,8 @@
   "requested_occ_time_override": true,
   "allow_occ_startracker_violation": true,
 
-  "schedule_csv": "output_test_6months/Pandora_Schedule_0.8_0.0_0.2_2026-04-01_to_2026-07-01.csv",
+  "schedule_csv": "output_test1_short/Pandora_Schedule_0.8_0.0_0.2_2026-04-01_to_2026-07-01.csv",
   "schedule_csv_row_limit": null,
-  "schedule_csv_row_start": 1,
-  "schedule_csv_row_end": 50,
-  "xml_data_dir": "output_test1_short/data_91_20_115",
 
   "extra_inputs": {
     "target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",

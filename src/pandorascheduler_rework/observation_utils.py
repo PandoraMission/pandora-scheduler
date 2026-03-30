@@ -36,6 +36,7 @@ from pandorascheduler_rework.utils.io import (
 LOGGER = logging.getLogger(__name__)
 
 _PLACEHOLDER_MARKERS = {"SET_BY_TARGET_DEFINITION_FILE", "SET_BY_SCHEDULER"}
+_OCCULTATION_FULL_VISIBILITY_TOLERANCE_SAMPLES = 1
 
 # Default column name for per-target visit duration
 _OBS_WINDOW_COLUMN = "Obs Window (hrs)"
@@ -294,6 +295,17 @@ def schedule_occultation_targets(
         visibility_cache[name] = data
         return data
 
+    def _interval_visible_with_tolerance(
+        visibility: np.ndarray,
+        interval_mask: np.ndarray,
+        tolerance_samples: int = _OCCULTATION_FULL_VISIBILITY_TOLERANCE_SAMPLES,
+    ) -> bool:
+        sample_count = int(interval_mask.sum())
+        if sample_count == 0:
+            return False
+        nonvisible = int((visibility[interval_mask] != 1).sum())
+        return nonvisible <= tolerance_samples
+
     # PASS 1: Search for a single target that covers ALL intervals
     if not use_pass1:
         LOGGER.info("Pass 1 skipped (enable_occultation_pass1=False)")
@@ -314,7 +326,7 @@ def schedule_occultation_targets(
             interval_mask = (vis_times >= start) & (vis_times <= stop)
             if stop > start and interval_mask.sum() > 0:
                 has_nonzero_interval_samples = True
-            if not np.all(visibility[interval_mask] == 1):
+            if not _interval_visible_with_tolerance(visibility, interval_mask):
                 all_visible = False
                 break
 
@@ -387,7 +399,7 @@ def schedule_occultation_targets(
                         o_df.loc[idx, "Visibility"] = 0
                     continue
 
-                if np.all(visibility[interval_mask] == 1):
+                if _interval_visible_with_tolerance(visibility, interval_mask):
                     schedule.loc[start, "Target"] = v_name
                     schedule.loc[start, "Visibility"] = 1
 

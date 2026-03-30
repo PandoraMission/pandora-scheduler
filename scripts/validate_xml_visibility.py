@@ -270,6 +270,11 @@ def validate_sequences(
         if nonvisible_minutes:
             first_problem = aligned.index[(~aligned).to_numpy()][0].isoformat()
 
+        sequence_type = str(provenance.get("sequence_type", "") or "")
+        tolerated_occultation_miss = (
+            sequence_type == "occultation" and nonvisible_minutes <= 1
+        )
+
         results.append(
             {
                 "visit_id": seq.visit_id,
@@ -279,10 +284,14 @@ def validate_sequences(
                 "start_utc": seq.start.isoformat(),
                 "stop_utc": seq.stop.isoformat(),
                 "duration_minutes": n_minutes,
-                "status": "ok" if nonvisible_minutes == 0 else "nonvisible_minutes_found",
+                "status": (
+                    "ok"
+                    if nonvisible_minutes == 0 or tolerated_occultation_miss
+                    else "nonvisible_minutes_found"
+                ),
                 "visible_minutes": visible_minutes,
                 "nonvisible_minutes": nonvisible_minutes,
-                "sequence_type": provenance.get("sequence_type", ""),
+                "sequence_type": sequence_type,
                 "occultation_pass": provenance.get("occultation_pass", ""),
                 "sequence_visibility_fraction": provenance.get("visibility_fraction", ""),
             }

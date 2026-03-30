@@ -176,7 +176,7 @@ def build_nodes() -> list[Node]:
             4.6,
             1.8,
             "8. Build XML?",
-            "Decision gate\n- skip_xml=false required\n- generate_occultation_xml controls whether dark intervals are filled, not whether XML exists",
+            "Decision gate\n- skip_xml=false required\n- generate_occultation_xml controls whether occultation intervals are filled, not whether XML exists",
             PALETTE["decision"],
         ),
         Node(
@@ -186,7 +186,7 @@ def build_nodes() -> list[Node]:
             5.0,
             3.5,
             "9. Science Calendar Builder",
-            "science_calendar.generate_science_calendar()\n- read schedule CSV + manifests\n- read visibility parquet for each visit\n- segment visit into visible/dark intervals\n- chunk science sequences\n- chunk occultation sequences\n- emit Pandora_science_calendar.xml",
+            "science_calendar.generate_science_calendar()\n- read schedule CSV + manifests\n- read visibility parquet for each visit\n- segment visit into science/occultation intervals\n- chunk science sequences\n- chunk occultation sequences\n- emit Pandora_science_calendar.xml",
             PALETTE["xml"],
         ),
         Node(
@@ -196,7 +196,7 @@ def build_nodes() -> list[Node]:
             5.0,
             4.0,
             "10. Segment Assignment Logic",
-            "Current flow\n- build raw visibility-change segments\n- short science fragment:\n  merge into contiguous preceding science chunk if possible\n  else convert to occultation-fill interval\n- dark interval:\n  assign scheduled occultation target or fallback catalog target\n- short occultation tail:\n  absorb only if same target stays visible\n  else leave separate for alternate target selection",
+            "Current flow\n- build raw visibility-change segments\n- short science fragment:\n  merge into contiguous preceding science chunk if possible\n  else convert to occultation-fill interval\n- occultation interval:\n  assign scheduled occultation target or fallback catalog target\n- short occultation tail:\n  absorb only if same target stays visible\n  else leave separate for alternate target selection",
             PALETTE["xml"],
         ),
         Node(

@@ -47,6 +47,10 @@ This writes:
 - visibility parquet files under `output_standalone_test7_short/data_*`
 - science calendar XML at `output_standalone_test7_short/Pandora_science_calendar.xml` unless `skip_xml` is `true`
 
+Notes:
+- If you pass `--start`, `--end`, and `--output` explicitly, those force a full pipeline run even if the JSON also contains `schedule_csv`.
+- If you keep `schedule_csv_row_limit` in the JSON for XML-only testing, set it to `null` before a full pipeline run unless you intentionally want to truncate the XML build.
+
 If you want the visualizer to run automatically after the pipeline:
 
 ```json
@@ -56,7 +60,7 @@ If you want the visualizer to run automatically after the pipeline:
 ```
 
 ## XML-Only From Existing Schedule
-------------------------------
+
 If you already have a schedule CSV and only want to regenerate the science calendar XML, you can skip the scheduling pipeline entirely:
 
 ```bash
@@ -69,8 +73,69 @@ Notes:
 - `--start` / `--end` are optional in this mode; they are inferred from the schedule CSV if omitted.
 - `--output` is optional in this mode; it defaults to the schedule CSV parent directory.
 - The XML is still written to `output_*/Pandora_science_calendar.xml`.
+- If you only want to test the XML builder on the first few schedule rows, add `--schedule-row-limit N`.
 
-Generate Visualizations
+Example:
+
+```bash
+poetry run python run_scheduler.py \
+  --schedule-csv output_test1_short/Pandora_Schedule_0.8_0.0_0.2_2026-04-01_to_2026-04-15.csv \
+  --schedule-row-limit 10 \
+  --config example_scheduler_config.json
+```
+
+## Validate XML Visibility
+
+To validate the final XML against the run's visibility parquet files:
+
+```bash
+python3 scripts/validate_xml_visibility.py \
+  output_test1_short/Pandora_science_calendar.xml \
+  --data-dir output_test1_short/data_91_20_115
+```
+
+This writes:
+
+- `output_test1_short/Pandora_science_calendar_visibility_validation.csv`
+
+If present, the validator also merges sequence-level provenance from:
+
+- `output_test1_short/Pandora_science_calendar_sequence_provenance.csv`
+
+The validation CSV includes:
+
+- sequence identity (`visit_id`, `sequence_id`, `target`)
+- schedule timing (`start_utc`, `stop_utc`, `duration_minutes`)
+- visibility check results (`status`, `visible_minutes`, `non_visible_minutes`)
+- provenance fields (`sequence_type`, `occultation_pass`, `sequence_visibility_fraction`)
+
+The provenance CSV is written automatically during XML generation and records one row per emitted XML sequence.
+
+## Debug a Visit
+
+If you want to inspect how occultation scheduling behaved for one specific XML visit, use the visit debug helper:
+
+```bash
+poetry run python scripts/debug_occultation_visit.py \
+  --config example_scheduler_config.json \
+  --schedule-csv output_test_6months/Pandora_Schedule_0.8_0.0_0.2_2026-04-01_to_2026-07-01.csv \
+  --data-dir output_test1_short/data_91_20_115 \
+  --visit-id 0145 \
+  --validation-csv output_test_6months/Pandora_science_calendar_visibility_validation.csv
+```
+
+This prints:
+- the visit window
+- the science/occultation segments seen by the XML builder
+- the occultation intervals passed into `schedule_occultation_targets(...)`
+- the raw `occ_df` returned for that visit
+- any validation failures for that visit
+
+This is useful when a visit mixes:
+- `scheduled_occultation` rows from Pass 1/2/3/4
+- `catalog_fallback` rows emitted later by the XML builder
+
+## Generate Visualizations
 
 All visualization commands read the science calendar XML:
 

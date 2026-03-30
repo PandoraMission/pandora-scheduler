@@ -141,6 +141,31 @@ def parse_args() -> argparse.Namespace:
             "Also accepted from JSON as schedule_csv_row_limit."
         ),
     )
+    parser.add_argument(
+        "--schedule-row-start",
+        type=int,
+        help=(
+            "When generating XML from an existing schedule CSV, start from this 1-based row. "
+            "Also accepted from JSON as schedule_csv_row_start."
+        ),
+    )
+    parser.add_argument(
+        "--schedule-row-end",
+        type=int,
+        help=(
+            "When generating XML from an existing schedule CSV, stop at this 1-based row "
+            "(inclusive). Also accepted from JSON as schedule_csv_row_end."
+        ),
+    )
+    parser.add_argument(
+        "--xml-data-dir",
+        type=Path,
+        help=(
+            "When generating XML from an existing schedule CSV, use this explicit data_* "
+            "directory for manifests and visibility files. Also accepted from JSON as "
+            "xml_data_dir."
+        ),
+    )
 
     # Visibility configuration (if generating)
     parser.add_argument(
@@ -418,11 +443,28 @@ def parse_datetime(date_str: str) -> datetime:
             )
 
 
-def _derive_window_from_schedule(schedule_csv: Path) -> tuple[datetime, datetime]:
+def _derive_window_from_schedule(
+    schedule_csv: Path,
+    row_start: Optional[int] = None,
+    row_end: Optional[int] = None,
+) -> tuple[datetime, datetime]:
     """Infer schedule window bounds from an existing schedule CSV."""
     schedule_df = read_csv_cached(str(schedule_csv))
     if schedule_df is None or schedule_df.empty:
         raise ValueError(f"Schedule CSV is empty or unreadable: {schedule_csv}")
+
+    if row_start is not None or row_end is not None:
+        start_idx = max(int(row_start or 1) - 1, 0)
+        end_idx = None if row_end is None else max(int(row_end), 0)
+        if end_idx is not None and end_idx < start_idx:
+            raise ValueError(
+                "Invalid schedule row range: schedule_row_end must be >= schedule_row_start"
+            )
+        schedule_df = schedule_df.iloc[start_idx:end_idx].reset_index(drop=True)
+        if schedule_df.empty:
+            raise ValueError(
+                f"Selected schedule row range is empty for {schedule_csv}"
+            )
 
     if not {"Observation Start", "Observation Stop"}.issubset(schedule_df.columns):
         raise ValueError(
@@ -737,15 +779,60 @@ def main() -> int:
         )
         xml_only_from_schedule = schedule_csv_input is not None
 
+        schedule_row_start = _get_any(
+            ["schedule_csv_row_start"],
+            getattr(args, "schedule_row_start", None),
+            None,
+        )
+        schedule_row_end = _get_any(
+            ["schedule_csv_row_end"],
+            getattr(args, "schedule_row_end", None),
+            None,
+        )
+        raw_xml_data_dir = _get_any(
+            ["xml_data_dir"],
+            getattr(args, "xml_data_dir", None),
+            None,
+        )
+        xml_data_dir = (
+            Path(str(raw_xml_data_dir)).expanduser().resolve()
+            if raw_xml_data_dir is not None
+            else None
+        )
+        if schedule_row_start is not None:
+            schedule_row_start = int(schedule_row_start)
+        if schedule_row_end is not None:
+            schedule_row_end = int(schedule_row_end)
+        if schedule_row_start is not None and schedule_row_start < 1:
+            logger.error("--schedule-row-start must be >= 1")
+            return 1
+        if schedule_row_end is not None and schedule_row_end < 1:
+            logger.error("--schedule-row-end must be >= 1")
+            return 1
+        if (
+            schedule_row_start is not None
+            and schedule_row_end is not None
+            and schedule_row_end < schedule_row_start
+        ):
+            logger.error("--schedule-row-end must be >= --schedule-row-start")
+            return 1
+
         if xml_only_from_schedule and not schedule_csv_input.exists():
             logger.error("Schedule CSV not found: %s", schedule_csv_input)
+            return 1
+        if xml_data_dir is not None and not xml_data_dir.exists():
+            logger.error("XML data directory not found: %s", xml_data_dir)
             return 1
 
         if xml_only_from_schedule:
             if args.output is None:
                 args.output = schedule_csv_input.parent
             if args.start is None or args.end is None:
-                inferred_start, inferred_end = _derive_window_from_schedule(schedule_csv_input)
+                inferred_start, inferred_end = _derive_window_from_schedule(
+                    schedule_csv_input,
+                    row_start=schedule_row_start,
+                    row_end=schedule_row_end,
+                )
                 if args.start is None:
                     args.start = inferred_start.strftime("%Y-%m-%d %H:%M:%S")
                 if args.end is None:
@@ -1137,11 +1224,13 @@ def main() -> int:
         # 5. Generate Science Calendar XML
         xml_path = None
         if not skip_xml and result.schedule_csv:
-            data_dir = output_dir / data_subdir
+            data_dir = xml_data_dir if (xml_only_from_schedule and xml_data_dir is not None) else (output_dir / data_subdir)
 
             inputs = ScienceCalendarInputs(
                 schedule_csv=result.schedule_csv,
                 data_dir=data_dir,
+                schedule_row_start=schedule_row_start if xml_only_from_schedule else None,
+                schedule_row_end=schedule_row_end if xml_only_from_schedule else None,
             )
 
             xml_path = generate_science_calendar(

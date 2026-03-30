@@ -124,7 +124,7 @@ def render(output_path: Path) -> None:
             5.0,
             1.8,
             "3. Occultation XML Enabled?",
-            "If generate_occultation_xml / enable_occultation_xml is false:\n- only emit science segments\n- raw dark intervals are ignored for occultation filling",
+            "If generate_occultation_xml / enable_occultation_xml is false:\n- only emit science segments\n- raw occultation intervals are ignored for occultation filling",
             COLORS["decision"],
         ),
         Node(
@@ -144,7 +144,7 @@ def render(output_path: Path) -> None:
             5.2,
             2.2,
             "5. Coalesce Adjacent Segments",
-            "_coalesce_segments()\n- merge adjacent same-kind segments after policy rewrite\n- final visit_segments now define science vs dark intervals for XML building",
+            "_coalesce_segments()\n- merge adjacent same-kind segments after policy rewrite\n- final visit_segments now define science vs occultation intervals for XML building",
             COLORS["science"],
         ),
         Node(
@@ -153,8 +153,8 @@ def render(output_path: Path) -> None:
             5.1,
             5.2,
             2.0,
-            "6. Dark Interval Extraction",
-            "_occultation_windows_from_segments()\n- collect dark segment starts/stops\n- these intervals are the occultation-fill request for this visit",
+            "6. Occultation Interval Extraction",
+            "_occultation_windows_from_segments()\n- collect occultation segment starts/stops\n- these intervals are the occultation-fill request for this visit",
             COLORS["occ"],
         ),
         Node(
@@ -164,7 +164,7 @@ def render(output_path: Path) -> None:
             5.0,
             3.0,
             "7. Resolve Occultation Source",
-            "_find_occultation_target()\n- break dark intervals by occ_sequence_limit_min if enabled\n- build scheduled occ_df from occultation catalog(s)\n- obey requested_occ_time_override\n- use pass1 / pass2 search logic\nIf no occ_df is available, fall back to per-segment catalog selection later",
+            "_find_occultation_target()\n- break occultation intervals by occ_sequence_limit_min if enabled\n- build scheduled occ_df from occultation catalog(s)\n- obey requested_occ_time_override\n- use pass1 / pass2 search logic\nIf no occ_df is available, fall back to per-segment catalog selection later",
             COLORS["occ"],
         ),
         Node(
@@ -184,7 +184,7 @@ def render(output_path: Path) -> None:
             5.0,
             3.2,
             "9. Emit Occultation Segments",
-            "For each dark segment:\n- use scheduled occ_df row if available, else fallback catalog target\n- visibility gate via _occ_visibility_score()\n- short occultation tail:\n  absorb only if same target stays visible across combined interval\n  else keep separate so another target can be chosen\n- chunk by occ_sequence_limit_min",
+            "For each occultation segment:\n- use scheduled occ_df row if available, else fallback catalog target\n- visibility gate via _occ_visibility_score()\n- short occultation tail:\n  absorb only if same target stays visible across combined interval\n  else keep separate so another target can be chosen\n- chunk by occ_sequence_limit_min",
             COLORS["occ"],
         ),
         Node(
@@ -194,7 +194,7 @@ def render(output_path: Path) -> None:
             3.6,
             3.5,
             "10. XML Output",
-            "Observation_Sequence entries written in visit order\n- science chunks keep target priority\n- occultation chunks get priority 0\n- if no visible occultation target exists for a dark interval, a warning is logged and the interval remains uncovered",
+            "Observation_Sequence entries written in visit order\n- science chunks keep target priority\n- occultation chunks get priority 0\n- if no visible occultation target exists for an occultation interval, a warning is logged and the interval remains uncovered",
             COLORS["output"],
         ),
     ]
@@ -224,7 +224,7 @@ def render(output_path: Path) -> None:
     add_arrow(ax, right_mid("xml_toggle"), left_mid("science_policy"), "XML occultation fill enabled", rad=0.06)
     add_arrow(ax, center_bottom("science_policy"), center_top("coalesce"))
     add_arrow(ax, center_bottom("coalesce"), center_top("oc_windows"))
-    add_arrow(ax, right_mid("oc_windows"), left_mid("occ_source"), "dark intervals", rad=0.03)
+    add_arrow(ax, right_mid("oc_windows"), left_mid("occ_source"), "occultation intervals", rad=0.03)
     add_arrow(ax, center_bottom("occ_source"), center_top("science_emit"), "visit_segments drive visible chunks", rad=-0.10)
     add_arrow(ax, center_bottom("science_emit"), center_top("occ_emit"))
     add_arrow(ax, right_mid("science_emit"), left_mid("final"), "science sequences", rad=0.03)

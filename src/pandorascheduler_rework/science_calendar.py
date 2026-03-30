@@ -46,6 +46,8 @@ class ScienceCalendarInputs:
 
     schedule_csv: Path
     data_dir: Path
+    schedule_row_start: Optional[int] = None
+    schedule_row_end: Optional[int] = None
 
 
 def generate_science_calendar(
@@ -79,6 +81,17 @@ class _ScienceCalendarBuilder:
         self.schedule = read_csv_cached(str(inputs.schedule_csv))
         if self.schedule is None:
             raise FileNotFoundError(f"Schedule CSV missing: {inputs.schedule_csv}")
+
+        row_start = inputs.schedule_row_start
+        row_end = inputs.schedule_row_end
+        if row_start is not None or row_end is not None:
+            start_idx = max(int(row_start or 1) - 1, 0)
+            end_idx = None if row_end is None else max(int(row_end), 0)
+            if end_idx is not None and end_idx < start_idx:
+                raise ValueError(
+                    "Invalid schedule row range: schedule_row_end must be >= schedule_row_start"
+                )
+            self.schedule = self.schedule.iloc[start_idx:end_idx].reset_index(drop=True)
 
         if self.schedule.empty:
             raise ValueError("Schedule CSV is empty; nothing to convert into XML")
@@ -427,7 +440,7 @@ class _ScienceCalendarBuilder:
     def _occultation_windows_from_segments(
         segments: Sequence[Tuple[datetime, datetime, bool]]
     ) -> tuple[List[datetime], List[datetime]]:
-        """Extract dark intervals from the policy-adjusted segment list."""
+        """Extract occultation intervals from the policy-adjusted segment list."""
         starts: List[datetime] = []
         stops: List[datetime] = []
         for seg_start, seg_stop, is_visible in segments:
@@ -896,8 +909,22 @@ class _ScienceCalendarBuilder:
 
         if occultation_info is not None:
             occ_df, scheduled = occultation_info
-            if not scheduled or occ_df is None:
+            if occ_df is not None and not occ_df.empty and "Target" in occ_df.columns:
+                assigned_mask = occ_df["Target"].astype(str).str.strip().ne("")
+                has_assigned_rows = bool(assigned_mask.any())
+            else:
+                has_assigned_rows = False
+
+            if occ_df is None or occ_df.empty or not has_assigned_rows:
                 occ_df = None
+            elif not scheduled:
+                LOGGER.info(
+                    "Using partial scheduled occultation rows for %s between %s and %s; "
+                    "unassigned occultation intervals will fall back per segment",
+                    target_name,
+                    start,
+                    final_time,
+                )
 
         if occ_df is None:
             LOGGER.warning(
@@ -916,7 +943,7 @@ class _ScienceCalendarBuilder:
                     )
                 else:
                     # Select per-segment so the visibility check uses the
-                    # actual dark-gap times — a target visible in one gap
+                    # actual occultation-gap times — a target visible in one gap
                     # may violate sun keepout in another.
                     fallback_occultation = self._select_fallback_occultation_target(
                         ra_value, dec_value,
@@ -1122,7 +1149,7 @@ class _ScienceCalendarBuilder:
                 current = next_value
 
             # After exhausting occ_df rows, try catalog fallback for any
-            # remaining dark time in this segment.
+            # remaining occultation time in this segment.
             if current < seg_stop:
                 fallback = self._select_fallback_occultation_target(
                     ra_value, dec_value,
@@ -1141,7 +1168,7 @@ class _ScienceCalendarBuilder:
                     gap_minutes = (seg_stop - current).total_seconds() / 60
                     LOGGER.warning(
                         "No visible occultation target for %s during "
-                        "dark gap %s–%s (%.0f min gap in XML)",
+                        "occultation gap %s–%s (%.0f min gap in XML)",
                         target_name, current, seg_stop, gap_minutes,
                     )
 
