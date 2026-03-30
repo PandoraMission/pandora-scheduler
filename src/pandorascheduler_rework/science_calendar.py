@@ -1197,15 +1197,27 @@ class _ScienceCalendarBuilder:
             if occ_df is not None and not occ_df.empty and "Target" in occ_df.columns:
                 assigned_mask = occ_df["Target"].astype(str).str.strip().ne("")
                 has_assigned_rows = bool(assigned_mask.any())
+                assigned_row_count = int(assigned_mask.sum())
             else:
                 has_assigned_rows = False
+                assigned_row_count = 0
 
             if occ_df is None or occ_df.empty or not has_assigned_rows:
                 occ_df = None
             elif not scheduled:
                 LOGGER.info(
-                    "Using partial scheduled occultation rows for %s between %s and %s; "
+                    "Visit %s: using partial scheduled occultation rows for %s between %s and %s; "
                     "unassigned occultation intervals will fall back per segment",
+                    visit_id,
+                    target_name,
+                    start,
+                    final_time,
+                )
+            elif self.config.show_progress:
+                LOGGER.info(
+                    "Visit %s: scheduled occultation rows available (%d assigned row(s)) for %s between %s and %s",
+                    visit_id,
+                    assigned_row_count,
                     target_name,
                     start,
                     final_time,
@@ -1213,8 +1225,8 @@ class _ScienceCalendarBuilder:
 
         if occ_df is None:
             LOGGER.warning(
-                "Unable to schedule occultation target for %s between %s and %s",
-                target_name, start, final_time,
+                "Visit %s: unable to schedule occultation target for %s between %s and %s",
+                visit_id, target_name, start, final_time,
             )
 
         # --- Path 2: catalog-fallback occultation (no occ_df) ---------------
@@ -1271,6 +1283,21 @@ class _ScienceCalendarBuilder:
                 occ_time_index = None
 
         oc_index = 0
+        consumed_occ_df_indices: set[int] = set()
+
+        def _consume_occ_row(row_index: Optional[int]) -> None:
+            nonlocal oc_index, occ_time_index
+            if row_index is None:
+                return
+            consumed_occ_df_indices.add(int(row_index))
+            if occ_time_index is not None and row_index in occ_time_index.index:
+                occ_time_index = occ_time_index.drop(index=row_index)
+            while (
+                oc_index < len(occ_df)
+                and int(occ_df.index[oc_index]) in consumed_occ_df_indices
+            ):
+                oc_index += 1
+
         for seg_start, seg_stop, is_visible in visit_segments:
             if is_visible:
                 seq_counter = self._emit_science_sequences(
@@ -1283,10 +1310,23 @@ class _ScienceCalendarBuilder:
             # Occultation segment — iterate using scheduled occ_df.
             current = seg_start
             planned_occultation_chunks: List[_OccultationChunk] = []
+            segment_label = (
+                f"Visit {visit_id} occultation segment {seg_start:%Y-%m-%d %H:%M}–{seg_stop:%Y-%m-%d %H:%M}"
+            )
             while current < seg_stop:
+                while (
+                    oc_index < len(occ_df)
+                    and int(occ_df.index[oc_index]) in consumed_occ_df_indices
+                ):
+                    oc_index += 1
                 if oc_index >= len(occ_df):
                     # Pre-built schedule exhausted — fall back to catalog
                     # after the loop via the post-loop fallback block.
+                    LOGGER.info(
+                        "%s: scheduled occ_df exhausted at row index %d; remaining time will use fallback if possible",
+                        segment_label,
+                        oc_index,
+                    )
                     break
 
                 lookup_stop = self._occ_chunk_end(current, seg_stop)
@@ -1294,6 +1334,7 @@ class _ScienceCalendarBuilder:
                 # Prefer time-based lookup; fall back to positional index.
                 occ_row = None
                 used_fallback_row = False
+                selected_row_index: Optional[int] = None
                 if occ_time_index is not None and not occ_time_index.empty:
                     exact_mask = (
                         (occ_time_index["_start_dt"] <= current)
@@ -1301,6 +1342,7 @@ class _ScienceCalendarBuilder:
                     )
                     if exact_mask.any():
                         occ_row = occ_time_index.loc[exact_mask].iloc[0]
+                        selected_row_index = int(occ_row.name)
                     else:
                         overlap_mask = (
                             (occ_time_index["_start_dt"] < lookup_stop)
@@ -1308,10 +1350,28 @@ class _ScienceCalendarBuilder:
                         )
                         if overlap_mask.any():
                             occ_row = occ_time_index.loc[overlap_mask].iloc[0]
+                            selected_row_index = int(occ_row.name)
 
                 if occ_row is None:
+                    if occ_time_index is not None:
+                        LOGGER.info(
+                            "%s: no scheduled occ_df row matches %s–%s; remaining time will use fallback if needed",
+                            segment_label,
+                            current,
+                            lookup_stop,
+                        )
+                        break
+
                     occ_row = occ_df.iloc[oc_index]
                     used_fallback_row = True
+                    selected_row_index = int(occ_df.index[oc_index])
+                    LOGGER.debug(
+                        "%s: no time-based occ_df available; using positional row %d for %s–%s",
+                        segment_label,
+                        oc_index,
+                        current,
+                        lookup_stop,
+                    )
 
                 occ_target = str(occ_row["Target"]).strip()
                 next_value = self._occ_chunk_end(
@@ -1321,6 +1381,12 @@ class _ScienceCalendarBuilder:
                 )
 
                 if not occ_target or occ_target.lower() == "no target":
+                    LOGGER.info(
+                        "%s: scheduled row for %s–%s is blank/'No target'; trying catalog fallback",
+                        segment_label,
+                        current,
+                        next_value,
+                    )
                     fallback = self._select_fallback_occultation_target(
                         ra_value,
                         dec_value,
@@ -1349,8 +1415,7 @@ class _ScienceCalendarBuilder:
                             current,
                             next_value,
                         )
-                    if used_fallback_row:
-                        oc_index += 1
+                    _consume_occ_row(selected_row_index)
                     current = next_value
                     continue
 
@@ -1361,13 +1426,14 @@ class _ScienceCalendarBuilder:
                 target_time_limit = self._get_occultation_time_limit(occ_target)
                 if current_occ_time >= target_time_limit:
                     LOGGER.info(
-                        "Skipping %s: exceeded occultation time limit "
+                        "%s: skipping scheduled target %s: exceeded occultation time limit "
                         "(%.1f/%.1f hrs)",
+                        segment_label,
                         occ_target,
                         current_occ_time.total_seconds() / 3600,
                         target_time_limit.total_seconds() / 3600,
                     )
-                    oc_index += 1
+                    _consume_occ_row(selected_row_index)
                     continue
 
                 # Visibility gate: reject targets that violate keepout
@@ -1378,13 +1444,17 @@ class _ScienceCalendarBuilder:
                     occ_target, current, next_value,
                 )
                 if not acceptable:
-                    LOGGER.debug(
-                        "Skipping occultation target %s (%s–%s): "
-                        "not visible (keepout constraint violated)",
-                        occ_target, current, next_value,
+                    LOGGER.info(
+                        "%s: scheduled target %s rejected for %s–%s by visibility gate; advancing to next row",
+                        segment_label,
+                        occ_target,
+                        current,
+                        next_value,
                     )
-                    oc_index += 1
+                    _consume_occ_row(selected_row_index)
                     continue
+
+                occ_pass = str(occ_row.get("Occultation Pass", "") or "")
 
                 occ_info = _lookup_occultation_info(
                     occ_target,
@@ -1398,7 +1468,6 @@ class _ScienceCalendarBuilder:
                 dec_occ = _fallback_float(
                     occ_row.get("DEC"), occ_info, "DEC"
                 )
-                occ_pass = str(occ_row.get("Occultation Pass", "") or "")
                 planned_occultation_chunks.append(
                     _OccultationChunk(
                         start=current,
@@ -1411,19 +1480,31 @@ class _ScienceCalendarBuilder:
                         occultation_pass=occ_pass,
                     )
                 )
-                if used_fallback_row:
-                    oc_index += 1
+                _consume_occ_row(selected_row_index)
                 current = next_value
 
             # After exhausting occ_df rows, try catalog fallback for any
             # remaining occultation time in this segment.
             if current < seg_stop:
+                LOGGER.info(
+                    "%s: no usable scheduled row for remaining %s–%s; trying catalog fallback",
+                    segment_label,
+                    current,
+                    seg_stop,
+                )
                 fallback = self._select_fallback_occultation_target(
                     ra_value, dec_value,
                     seg_start=current, seg_stop=seg_stop,
                 )
                 if fallback is not None:
                     fb_target, fb_ra, fb_dec, fb_info = fallback
+                    LOGGER.info(
+                        "%s: fallback selected %s for %s–%s",
+                        segment_label,
+                        fb_target,
+                        current,
+                        seg_stop,
+                    )
                     planned_occultation_chunks.extend(
                         self._plan_occultation_sequences(
                             occ_target=fb_target,
