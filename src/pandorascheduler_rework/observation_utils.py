@@ -242,6 +242,7 @@ def schedule_occultation_targets(
     show_progress: bool = False,
     use_pass1: bool = True,
     occultation_nonvisible_tolerance_minutes: int = 3,
+    visit_label: str = "",
 ):
     starts_array = np.asarray(starts, dtype=float)
     stops_array = np.asarray(stops, dtype=float)
@@ -271,6 +272,7 @@ def schedule_occultation_targets(
         )
     else:
         description = "Searching for occultation target from %s" % (try_occ_targets,)
+    visit_prefix = f"{visit_label}: " if visit_label else ""
 
     base_path = Path(path) if path is not None else None
 
@@ -307,7 +309,7 @@ def schedule_occultation_targets(
 
     # PASS 1: Search for a single target that covers ALL intervals
     if not use_pass1:
-        LOGGER.info("Pass 1 skipped (enable_occultation_pass1=False)")
+        LOGGER.info("%sPass 1 skipped (enable_occultation_pass1=False)", visit_prefix)
     for v_name in tqdm(v_names, desc=f"{description} (Pass 1)", leave=False, disable=not show_progress or not use_pass1):
         vis_data = _get_visibility(v_name)
         if vis_data is None:
@@ -444,8 +446,9 @@ def schedule_occultation_targets(
             for idx in remaining_indices_p3
         ]
         LOGGER.info(
-            "Occultation Pass 3: evaluating %d remaining interval(s) with best-effort coverage "
+            "%sOccultation Pass 3: evaluating %d remaining interval(s) with best-effort coverage "
             "(durations: %s)",
+            visit_prefix,
             remaining_before_p3,
             ", ".join(p3_durations),
         )
@@ -464,7 +467,10 @@ def schedule_occultation_targets(
         best_coverage = 0.0
         candidate_iterator = tqdm(
             v_names,
-            desc=f"Occultation Pass 3 scan {interval_number}/{remaining_before_p3}",
+            desc=(
+                f"{visit_prefix}Occultation Pass 3 scan "
+                f"{interval_number}/{remaining_before_p3}"
+            ),
             leave=False,
             disable=not show_progress,
         )
@@ -531,8 +537,9 @@ def schedule_occultation_targets(
             for idx in remaining_indices_p4
         ]
         LOGGER.info(
-            "Occultation Pass 4: minute-resolution fallback for %d remaining interval(s) "
+            "%sOccultation Pass 4: minute-resolution fallback for %d remaining interval(s) "
             "(durations: %s)",
+            visit_prefix,
             remaining_before_p4,
             ", ".join(p4_durations),
         )

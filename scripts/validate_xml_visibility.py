@@ -272,8 +272,8 @@ def validate_sequences(
             first_problem = aligned.index[(~aligned).to_numpy()][0].isoformat()
 
         sequence_type = str(provenance.get("sequence_type", "") or "")
-        tolerated_occultation_miss = (
-            sequence_type == "occultation"
+        tolerated_small_visibility_miss = (
+            sequence_type in {"occultation", "science"}
             and nonvisible_minutes <= occultation_nonvisible_tolerance_minutes
         )
 
@@ -288,7 +288,7 @@ def validate_sequences(
                 "duration_minutes": n_minutes,
                 "status": (
                     "ok"
-                    if nonvisible_minutes == 0 or tolerated_occultation_miss
+                    if nonvisible_minutes == 0 or tolerated_small_visibility_miss
                     else "nonvisible_minutes_found"
                 ),
                 "visible_minutes": visible_minutes,

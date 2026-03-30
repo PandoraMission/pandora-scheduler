@@ -413,6 +413,8 @@ class _ScienceCalendarBuilder:
         1. if a short science fragment can extend a contiguous preceding
            science fragment, merge it into that science chunk
         2. otherwise reclassify it as an occultation-fill interval
+        3. absorb tiny non-visible gaps back into adjacent science using the
+           configured non-visible tolerance
         """
         threshold = self._science_min_duration()
         if threshold <= timedelta(0):
@@ -446,6 +448,69 @@ class _ScienceCalendarBuilder:
                 "min into occultation-fill intervals",
                 converted_short_science,
                 self.config.effective_min_science_sequence_minutes,
+            )
+
+        adjusted = self._coalesce_segments(adjusted)
+
+        nonvisible_tolerance = timedelta(
+            minutes=self.config.occultation_nonvisible_tolerance_minutes
+        )
+        if nonvisible_tolerance <= timedelta(0):
+            return adjusted
+
+        absorbed_short_nonvisible = 0
+        changed = True
+        while changed and len(adjusted) > 1:
+            changed = False
+            for idx, (seg_start, seg_stop, is_visible) in enumerate(adjusted):
+                if is_visible:
+                    continue
+                duration = seg_stop - seg_start
+                if duration > nonvisible_tolerance:
+                    continue
+
+                prev_visible = (
+                    idx > 0
+                    and adjusted[idx - 1][2]
+                    and seg_start <= adjusted[idx - 1][1] + tolerance
+                )
+                next_visible = (
+                    idx + 1 < len(adjusted)
+                    and adjusted[idx + 1][2]
+                    and adjusted[idx + 1][0] <= seg_stop + tolerance
+                )
+
+                if prev_visible and next_visible:
+                    prev_start, _prev_stop, _ = adjusted[idx - 1]
+                    _next_start, next_stop, _ = adjusted[idx + 1]
+                    adjusted[idx - 1] = (prev_start, next_stop, True)
+                    del adjusted[idx + 1]
+                    del adjusted[idx]
+                    absorbed_short_nonvisible += 1
+                    changed = True
+                    break
+
+                if prev_visible:
+                    prev_start, _prev_stop, _ = adjusted[idx - 1]
+                    adjusted[idx - 1] = (prev_start, seg_stop, True)
+                    del adjusted[idx]
+                    absorbed_short_nonvisible += 1
+                    changed = True
+                    break
+
+                if next_visible:
+                    _next_start, next_stop, _ = adjusted[idx + 1]
+                    adjusted[idx + 1] = (seg_start, next_stop, True)
+                    del adjusted[idx]
+                    absorbed_short_nonvisible += 1
+                    changed = True
+                    break
+
+        if absorbed_short_nonvisible:
+            LOGGER.debug(
+                "Absorbed %d short non-visible science gap(s) <= %d min back into science",
+                absorbed_short_nonvisible,
+                self.config.occultation_nonvisible_tolerance_minutes,
             )
 
         return self._coalesce_segments(adjusted)
@@ -1118,7 +1183,7 @@ class _ScienceCalendarBuilder:
 
         # --- Resolve the occultation source for this visit ------------------
         occultation_info = self._find_occultation_target(
-            oc_starts, oc_stops, start, final_time, ra_value, dec_value,
+            oc_starts, oc_stops, start, final_time, ra_value, dec_value, visit_id,
         )
 
         # Determine whether we have a scheduled occ_df or need a fallback.
@@ -1635,6 +1700,7 @@ class _ScienceCalendarBuilder:
         visit_stop: datetime,
         reference_ra: float,
         reference_dec: float,
+        visit_id: str = "",
     ) -> Optional[tuple[pd.DataFrame, bool]]:
         if not starts or not stops:
             return None
@@ -1693,6 +1759,7 @@ class _ScienceCalendarBuilder:
                     show_progress=self.config.show_progress,
                     use_pass1=self.config.enable_occultation_pass1,
                     occultation_nonvisible_tolerance_minutes=self.config.occultation_nonvisible_tolerance_minutes,
+                    visit_label=f"Visit {visit_id}" if visit_id else "",
                 )
                 if flag and result_df is not None:
                     return result_df, True
@@ -2191,6 +2258,7 @@ def _build_occultation_schedule(
     show_progress: bool = False,
     use_pass1: bool = True,
     occultation_nonvisible_tolerance_minutes: int = 3,
+    visit_label: str = "",
 ) -> tuple[Optional[pd.DataFrame], bool]:
     if not starts or not stops:
         return None, False
@@ -2273,6 +2341,7 @@ def _build_occultation_schedule(
         show_progress=show_progress,
         use_pass1=use_pass1,
         occultation_nonvisible_tolerance_minutes=occultation_nonvisible_tolerance_minutes,
+        visit_label=visit_label,
     )
     return occ_df, flag
 
