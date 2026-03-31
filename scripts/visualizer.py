@@ -1811,6 +1811,69 @@ class ScheduleVisualizer:
 
         return figures
 
+    def _create_windowed_visibility_plots(
+        self,
+        calendar,
+        figsize,
+        show_sequence_labels,
+        title,
+        window_days,
+        data_dir: Optional[Path] = None,
+    ):
+        """Create multiple visibility-overlay plots split into fixed windows."""
+        all_times = []
+        for visit in calendar.visits:
+            for seq in visit.sequences:
+                all_times.extend(
+                    [seq.start_time.datetime, seq.stop_time.datetime]
+                )
+
+        if not all_times:
+            return []
+
+        start_date = min(all_times)
+        end_date = max(all_times)
+
+        figures = []
+        current_date = start_date
+        window_num = 1
+
+        while current_date < end_date:
+            window_end = min(
+                current_date + timedelta(days=window_days), end_date
+            )
+            windowed_calendar = self._filter_calendar_by_time(
+                calendar, current_date, window_end
+            )
+
+            if windowed_calendar.visits:
+                window_title = (
+                    f"{title} - Week {window_num} "
+                    f"({current_date.strftime('%m/%d')} to {window_end.strftime('%m/%d')})"
+                )
+                if data_dir is not None:
+                    fig = self._plot_gantt_with_visibility_from_data_dir(
+                        calendar=windowed_calendar,
+                        data_dir=data_dir,
+                        figsize=figsize,
+                        show_sequence_labels=show_sequence_labels,
+                        title=window_title,
+                    )
+                else:
+                    fig = self.plot_gantt_with_visibility(
+                        calendar=windowed_calendar,
+                        data_dir=None,
+                        figsize=figsize,
+                        show_sequence_labels=show_sequence_labels,
+                        title=window_title,
+                    )
+                figures.append(fig)
+                window_num += 1
+
+            current_date = window_end
+
+        return figures
+
     def _filter_calendar_by_time(self, calendar, start_date, end_date):
         """Filter calendar to only include sequences within time window."""
         # Standard library
@@ -2342,6 +2405,25 @@ class ScheduleVisualizer:
         -------
         matplotlib.figure.Figure
         """
+        all_times = []
+        for visit in calendar.visits:
+            for seq in visit.sequences:
+                all_times.extend(
+                    [seq.start_time.datetime, seq.stop_time.datetime]
+                )
+
+        if all_times:
+            time_span = max(all_times) - min(all_times)
+            if time_span.total_seconds() > 86400 * 7:
+                return self._create_windowed_visibility_plots(
+                    calendar=calendar,
+                    figsize=figsize,
+                    show_sequence_labels=show_sequence_labels,
+                    title=title,
+                    window_days=7,
+                    data_dir=Path(data_dir) if data_dir is not None else None,
+                )
+
         if data_dir is not None:
             return self._plot_gantt_with_visibility_from_data_dir(
                 calendar=calendar,
