@@ -18,6 +18,16 @@ def _write_star_vis(tmp_path, star_name, times_mjd, visible):
     ).to_parquet(pq, index=False)
 
 
+def _write_star_vis_with_sun(tmp_path, star_name, times_mjd, visible, sun_sep):
+    """Write a star visibility parquet including Sun_Sep."""
+    star_dir = tmp_path / star_name
+    star_dir.mkdir(parents=True, exist_ok=True)
+    pq = star_dir / f"Visibility for {star_name}.parquet"
+    pd.DataFrame(
+        {"Time(MJD_UTC)": times_mjd, "Visible": visible, "Sun_Sep": sun_sep}
+    ).to_parquet(pq, index=False)
+
+
 def _make_o_list(*names):
     return pd.DataFrame(
         {"Star Name": list(names), "RA": [0.0] * len(names), "DEC": [0.0] * len(names)}
@@ -104,6 +114,77 @@ class TestPass2GreedyFill:
 
         # Pass 3 or 4 should still assign the only candidate since it has > 0 coverage
         assert assigned is True
+
+    def test_pass2_prefers_best_acceptable_target_over_first_catalog_hit(self, tmp_path):
+        """Among acceptable candidates, Pass 2 should choose the fewest bad minutes."""
+        t = np.arange(61000.0, 61000.01, 1 / 1440)
+
+        vis_early = np.ones(len(t), dtype=int)
+        vis_early[-3:] = 0  # acceptable under tolerance=3, but not ideal
+        _write_star_vis(tmp_path, "EarlyOkay", t, vis_early)
+
+        vis_best = np.ones(len(t), dtype=int)
+        _write_star_vis(tmp_path, "LaterBest", t, vis_best)
+
+        starts = [t[0]]
+        stops = [t[-1]]
+        o_df = _make_o_df(1)
+        o_list = _make_o_list("EarlyOkay", "LaterBest")
+
+        result, assigned = schedule_occultation_targets(
+            v_names=["EarlyOkay", "LaterBest"],
+            starts=starts,
+            stops=stops,
+            visit_start=None,
+            visit_stop=None,
+            path=str(tmp_path),
+            o_df=o_df,
+            o_list=o_list,
+            try_occ_targets="aux",
+            use_pass1=False,
+            occultation_nonvisible_tolerance_minutes=3,
+        )
+
+        assert assigned is True
+        assert result["Target"].iloc[0] == "LaterBest"
+
+    def test_pass2_tolerance_requires_sun_avoidance(self, tmp_path):
+        """Tolerated non-visible minutes are only allowed when Sun_Sep always passes."""
+        t = np.arange(61000.0, 61000.01, 1 / 1440)
+
+        vis_sun_fail = np.ones(len(t), dtype=int)
+        vis_sun_fail[-1] = 0
+        sun_fail = np.full(len(t), 120.0)
+        sun_fail[-1] = 80.0
+        _write_star_vis_with_sun(tmp_path, "SunFail", t, vis_sun_fail, sun_fail)
+
+        vis_sun_ok = np.ones(len(t), dtype=int)
+        vis_sun_ok[-2:] = 0
+        sun_ok = np.full(len(t), 120.0)
+        _write_star_vis_with_sun(tmp_path, "SunOkay", t, vis_sun_ok, sun_ok)
+
+        starts = [t[0]]
+        stops = [t[-1]]
+        o_df = _make_o_df(1)
+        o_list = _make_o_list("SunFail", "SunOkay")
+
+        result, assigned = schedule_occultation_targets(
+            v_names=["SunFail", "SunOkay"],
+            starts=starts,
+            stops=stops,
+            visit_start=None,
+            visit_stop=None,
+            path=str(tmp_path),
+            o_df=o_df,
+            o_list=o_list,
+            try_occ_targets="aux",
+            use_pass1=False,
+            occultation_nonvisible_tolerance_minutes=3,
+            sun_avoidance_deg=91.0,
+        )
+
+        assert assigned is True
+        assert result["Target"].iloc[0] == "SunOkay"
 
 
 class TestPass3BestEffort:

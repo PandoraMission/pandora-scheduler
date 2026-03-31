@@ -1831,6 +1831,7 @@ class _ScienceCalendarBuilder:
                     show_progress=self.config.show_progress,
                     use_pass1=self.config.enable_occultation_pass1,
                     occultation_nonvisible_tolerance_minutes=self.config.occultation_nonvisible_tolerance_minutes,
+                    sun_avoidance_deg=self.config.sun_avoidance_deg,
                     visit_label=f"Visit {visit_id}" if visit_id else "",
                 )
                 if flag and result_df is not None:
@@ -2330,6 +2331,7 @@ def _build_occultation_schedule(
     show_progress: bool = False,
     use_pass1: bool = True,
     occultation_nonvisible_tolerance_minutes: int = 3,
+    sun_avoidance_deg: float = 91.0,
     visit_label: str = "",
 ) -> tuple[Optional[pd.DataFrame], bool]:
     if not starts or not stops:
@@ -2413,6 +2415,7 @@ def _build_occultation_schedule(
         show_progress=show_progress,
         use_pass1=use_pass1,
         occultation_nonvisible_tolerance_minutes=occultation_nonvisible_tolerance_minutes,
+        sun_avoidance_deg=sun_avoidance_deg,
         visit_label=visit_label,
     )
     return occ_df, flag

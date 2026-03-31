@@ -242,6 +242,7 @@ def schedule_occultation_targets(
     show_progress: bool = False,
     use_pass1: bool = True,
     occultation_nonvisible_tolerance_minutes: int = 3,
+    sun_avoidance_deg: float = 91.0,
     visit_label: str = "",
 ):
     starts_array = np.asarray(starts, dtype=float)
@@ -279,6 +280,7 @@ def schedule_occultation_targets(
     # Cache visibility data to avoid re-reading files in the second pass
     # Key: v_name, Value: (vis_times, visibility)
     visibility_cache: Dict[str, tuple[np.ndarray, np.ndarray]] = {}
+    detailed_visibility_cache: Dict[str, Optional[pd.DataFrame]] = {}
 
     def _get_visibility(name: str) -> Optional[tuple[np.ndarray, np.ndarray]]:
         if name in visibility_cache:
@@ -296,6 +298,27 @@ def schedule_occultation_targets(
         visibility_cache[name] = data
         return data
 
+    def _get_detailed_visibility(name: str) -> Optional[pd.DataFrame]:
+        if name in detailed_visibility_cache:
+            return detailed_visibility_cache[name]
+
+        f_path = resolve_star_visibility_file(base_path, name)
+        if f_path is None:
+            detailed_visibility_cache[name] = None
+            return None
+
+        df = read_parquet_cached(
+            str(f_path),
+            columns=["Time(MJD_UTC)", "Visible", "Sun_Sep"],
+        )
+        if df is None:
+            df = read_parquet_cached(
+                str(f_path),
+                columns=["Time(MJD_UTC)", "Visible"],
+            )
+        detailed_visibility_cache[name] = df
+        return df
+
     def _interval_visible_with_tolerance(
         visibility: np.ndarray,
         interval_mask: np.ndarray,
@@ -306,6 +329,48 @@ def schedule_occultation_targets(
             return False
         nonvisible = int((visibility[interval_mask] != 1).sum())
         return nonvisible <= tolerance_samples
+
+    def _interval_nonvisible_count(
+        visibility: np.ndarray,
+        interval_mask: np.ndarray,
+    ) -> Optional[int]:
+        sample_count = int(interval_mask.sum())
+        if sample_count == 0:
+            return None
+        return int((visibility[interval_mask] != 1).sum())
+
+    def _interval_sun_avoidance_ok(
+        name: str,
+        interval_mask: np.ndarray,
+    ) -> bool:
+        vis_df = _get_detailed_visibility(name)
+        if vis_df is None or "Sun_Sep" not in vis_df.columns:
+            return False
+
+        sun_sep = pd.to_numeric(vis_df["Sun_Sep"], errors="coerce").to_numpy(dtype=float)
+        if len(sun_sep) != len(interval_mask):
+            return False
+
+        seg_sun = sun_sep[interval_mask]
+        if seg_sun.size == 0:
+            return False
+        if np.isnan(seg_sun).any():
+            return False
+        return bool(np.all(seg_sun >= float(sun_avoidance_deg)))
+
+    def _interval_acceptable(
+        name: str,
+        visibility: np.ndarray,
+        interval_mask: np.ndarray,
+    ) -> tuple[bool, Optional[int]]:
+        nonvisible = _interval_nonvisible_count(visibility, interval_mask)
+        if nonvisible is None:
+            return False, None
+        if nonvisible > occultation_nonvisible_tolerance_minutes:
+            return False, nonvisible
+        if nonvisible == 0:
+            return True, nonvisible
+        return _interval_sun_avoidance_ok(name, interval_mask), nonvisible
 
     # PASS 1: Search for a single target that covers ALL intervals
     if not use_pass1:
@@ -327,7 +392,10 @@ def schedule_occultation_targets(
             interval_mask = (vis_times >= start) & (vis_times <= stop)
             if stop > start and interval_mask.sum() > 0:
                 has_nonzero_interval_samples = True
-            if not _interval_visible_with_tolerance(visibility, interval_mask):
+            acceptable, _nonvisible = _interval_acceptable(
+                v_name, visibility, interval_mask,
+            )
+            if not acceptable:
                 all_visible = False
                 break
 
@@ -364,12 +432,17 @@ def schedule_occultation_targets(
         total_intervals,
     )
 
-    # PASS 2: Fill gaps with multiple targets (Greedy approach)
-    for v_name in tqdm(v_names, desc=f"{description} (Pass 2)", leave=False, disable=not show_progress):
-        # If schedule is full, we are done
-        if not schedule["Target"].isna().any():
-            return o_df, True
+    # PASS 2: Fill gaps with the best acceptable target per interval.
+    remaining_indices_p2 = [
+        idx for idx, start in enumerate(starts_array)
+        if pd.isna(schedule.loc[start, "Target"])
+    ]
+    best_choices: Dict[int, tuple[int, str, pd.Series]] = {}
+    has_interval_samples: Dict[int, bool] = {
+        idx: False for idx in remaining_indices_p2
+    }
 
+    for v_name in tqdm(v_names, desc=f"{description} (Pass 2)", leave=False, disable=not show_progress):
         vis_data = _get_visibility(v_name)
         if vis_data is None:
             continue
@@ -389,34 +462,56 @@ def schedule_occultation_targets(
         if not has_nonzero_interval_samples and bool(np.any(stops_array > starts_array)):
             continue
 
-        for idx, (start, stop) in enumerate(zip(starts_array, stops_array)):
-            if pd.isna(schedule.loc[start, "Target"]):
-                interval_mask = (vis_times >= start) & (vis_times <= stop)
+        match = o_list.loc[o_list["Star Name"] == v_name]
+        if match.empty:
+            continue
+        match_row = match.iloc[0]
 
-                # Guard: empty mask means no visibility data for this interval.
-                if interval_mask.sum() == 0:
-                    if pd.isna(schedule.loc[start, "Visibility"]):
-                        schedule.loc[start, "Visibility"] = 0
-                        o_df.loc[idx, "Visibility"] = 0
-                    continue
+        for idx in remaining_indices_p2:
+            start = starts_array[idx]
+            stop = stops_array[idx]
+            interval_mask = (vis_times >= start) & (vis_times <= stop)
+            nonvisible = _interval_nonvisible_count(visibility, interval_mask)
 
-                if _interval_visible_with_tolerance(visibility, interval_mask):
-                    schedule.loc[start, "Target"] = v_name
-                    schedule.loc[start, "Visibility"] = 1
+            # Guard: empty mask means no visibility data for this interval.
+            if nonvisible is None:
+                continue
 
-                    match = o_list.loc[o_list["Star Name"] == v_name]
-                    if match.empty:
-                        continue
-                    match_row = match.iloc[0]
-                    o_df.loc[idx, "Target"] = v_name
-                    o_df.loc[idx, "RA"] = match_row["RA"]
-                    o_df.loc[idx, "DEC"] = match_row["DEC"]
-                    o_df.loc[idx, "Visibility"] = 1
-                    o_df.loc[idx, "Occultation Pass"] = "Pass 2"
-                else:
-                    if pd.isna(schedule.loc[start, "Visibility"]):
-                        schedule.loc[start, "Visibility"] = 0
-                        o_df.loc[idx, "Visibility"] = 0
+            has_interval_samples[idx] = True
+            acceptable, nonvisible = _interval_acceptable(
+                v_name, visibility, interval_mask,
+            )
+            if not acceptable or nonvisible is None:
+                continue
+
+            current_best = best_choices.get(idx)
+            if current_best is None or nonvisible < current_best[0]:
+                best_choices[idx] = (nonvisible, v_name, match_row)
+
+        # Once every remaining interval has a fully visible candidate, Pass 2
+        # cannot improve further, so stop scanning the catalog.
+        if remaining_indices_p2 and all(
+            idx in best_choices and best_choices[idx][0] == 0
+            for idx in remaining_indices_p2
+        ):
+            break
+
+    for idx in remaining_indices_p2:
+        start = starts_array[idx]
+        choice = best_choices.get(idx)
+        if choice is None:
+            schedule.loc[start, "Visibility"] = 0 if has_interval_samples[idx] else 0
+            o_df.loc[idx, "Visibility"] = 0
+            continue
+
+        nonvisible, v_name, match_row = choice
+        schedule.loc[start, "Target"] = v_name
+        schedule.loc[start, "Visibility"] = 1
+        o_df.loc[idx, "Target"] = v_name
+        o_df.loc[idx, "RA"] = match_row["RA"]
+        o_df.loc[idx, "DEC"] = match_row["DEC"]
+        o_df.loc[idx, "Visibility"] = 1
+        o_df.loc[idx, "Occultation Pass"] = "Pass 2"
 
     if not schedule["Target"].isna().any():
         return o_df, True
