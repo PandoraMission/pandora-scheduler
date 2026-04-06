@@ -1070,14 +1070,19 @@ def main() -> int:
             ),
             True,
         )
-        skip_xml = _as_bool(
-            _get_val(
-                "skip_xml",
-                True if args.skip_xml else None,
-                None,
-            ),
-            False,
-        )
+        raw_generate_xml = _get_val("generate_xml", None, None)
+        if raw_generate_xml is not None:
+            generate_xml = _as_bool(raw_generate_xml, True)
+        else:
+            skip_xml = _as_bool(
+                _get_val(
+                    "skip_xml",
+                    True if args.skip_xml else None,
+                    None,
+                ),
+                False,
+            )
+            generate_xml = not skip_xml
         run_visualizer_after_pipeline = _as_bool(
             _get_val(
                 "run_visualizer_after_pipeline",
@@ -1234,7 +1239,7 @@ def main() -> int:
 
         # 5. Generate Science Calendar XML
         xml_path = None
-        if not skip_xml and result.schedule_csv:
+        if generate_xml and result.schedule_csv:
             data_dir = xml_data_dir if (xml_only_from_schedule and xml_data_dir is not None) else (output_dir / data_subdir)
 
             inputs = ScienceCalendarInputs(
@@ -1281,7 +1286,7 @@ def main() -> int:
         elif run_visualizer_after_pipeline:
             logger.warning(
                 "run_visualizer_after_pipeline is enabled, but no XML was generated. "
-                "Set skip_xml=false to enable automatic visualization."
+                    "Set generate_xml=true to enable automatic visualization."
             )
 
         # 6. Print Summary

@@ -32,7 +32,7 @@
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
   "include_occultation_sequences_in_xml": false,
-  "skip_xml": true,
+  "generate_xml": false,
 
   "run_visualizer_after_pipeline": false,
   "visualizer_mode": "priority",

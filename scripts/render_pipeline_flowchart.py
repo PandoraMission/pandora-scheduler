@@ -106,7 +106,7 @@ def build_nodes() -> list[Node]:
             4.2,
             1.8,
             "1. Runner / Config",
-            "run_scheduler.py\n- parse CLI + JSON config\n- resolve output/data_subdir\n- build PandoraSchedulerConfig\n- optional skip_xml / visualizer",
+            "run_scheduler.py\n- parse CLI + JSON config\n- resolve output/data_subdir\n- build PandoraSchedulerConfig\n- optional generate_xml / visualizer",
             PALETTE["setup"],
         ),
         Node(
@@ -176,7 +176,7 @@ def build_nodes() -> list[Node]:
             4.6,
             1.8,
             "8. Build XML?",
-            "Decision gate\n- skip_xml=false required\n- include_occultation_sequences_in_xml controls whether occultation intervals are filled, not whether XML exists",
+            "Decision gate\n- generate_xml=true required\n- include_occultation_sequences_in_xml controls whether occultation intervals are filled, not whether XML exists",
             PALETTE["decision"],
         ),
         Node(
@@ -260,7 +260,7 @@ def render(output_path: Path) -> None:
     add_arrow(ax, center_bottom("scheduler_loop"), center_top("scheduler_checks"))
     add_arrow(ax, center_bottom("scheduler_checks"), center_top("scheduler_outputs"))
     add_arrow(ax, right_mid("scheduler_outputs"), left_mid("xml_decision"), "schedule CSV", rad=0.03)
-    add_arrow(ax, center_bottom("xml_decision"), center_top("xml_builder"), "skip_xml = false")
+    add_arrow(ax, center_bottom("xml_decision"), center_top("xml_builder"), "generate_xml = true")
     add_arrow(ax, center_bottom("xml_builder"), center_top("segment_logic"))
     add_arrow(ax, right_mid("xml_builder"), left_mid("final_outputs"), "write XML", rad=0.02)
     add_arrow(ax, right_mid("segment_logic"), left_mid("visualizer"), "XML + data_dir", rad=-0.02)
