@@ -28,11 +28,11 @@
   "show_progress": true,
   "parallel_workers": 13,
 
-  "primary_only_mode": true,
+  "primary_only_mode": false,
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
-  "include_occultation_sequences_in_xml": false,
-  "generate_xml": false,
+  "generate_xml": true,
+  "include_occultation_sequences_in_xml": true,
 
   "run_visualizer_after_pipeline": false,
   "visualizer_mode": "priority",
