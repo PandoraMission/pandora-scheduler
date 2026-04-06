@@ -176,7 +176,7 @@ def build_nodes() -> list[Node]:
             4.6,
             1.8,
             "8. Build XML?",
-            "Decision gate\n- skip_xml=false required\n- generate_occultation_xml controls whether occultation intervals are filled, not whether XML exists",
+            "Decision gate\n- skip_xml=false required\n- include_occultation_sequences_in_xml controls whether occultation intervals are filled, not whether XML exists",
             PALETTE["decision"],
         ),
         Node(

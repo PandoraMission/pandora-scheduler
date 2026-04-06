@@ -96,7 +96,13 @@ def build_config(config_path: Path, data_dir: Path, output_dir: Path) -> Pandora
         primary_only_mode=bool(_json_value(cfg, "primary_only_mode", False)),
         use_target_list_for_occultations=bool(_json_value(cfg, "use_target_list_for_occultations", False)),
         prioritise_occultations_by_slew=bool(_json_value(cfg, "prioritise_occultations_by_slew", False)),
-        enable_occultation_xml=bool(_json_value(cfg, "generate_occultation_xml", True)),
+        enable_occultation_xml=bool(
+            _json_value(
+                cfg,
+                "include_occultation_sequences_in_xml",
+                _json_value(cfg, "generate_occultation_xml", True),
+            )
+        ),
         enable_occultation_pass1=bool(_json_value(cfg, "enable_occultation_pass1", True)),
         requested_occ_time_override=bool(_json_value(cfg, "requested_occ_time_override", False)),
         allow_occ_startracker_violation=bool(_json_value(cfg, "allow_occ_startracker_violation", False)),

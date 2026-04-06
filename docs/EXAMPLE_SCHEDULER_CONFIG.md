@@ -73,7 +73,7 @@ Behavior flags
 - `primary_only_mode` (bool, default `false`): only schedule primary science targets; convert non-primary gap-fill windows into `Free Time`.
 - `use_target_list_for_occultations` (bool, default `false`): use the target list for occultation scheduling instead of a separate list.
 - `prioritise_occultations_by_slew` (bool, default `false`): prioritise occultation targets based on slew cost.
-- `generate_occultation_xml` / `enable_occultation_xml` (bool, default `true`): include occultation-target calculations when generating the science-calendar XML. Set to `false` to emit only visible-segment entries.
+- `include_occultation_sequences_in_xml` / `generate_occultation_xml` / `enable_occultation_xml` (bool, default `true`): include occultation-target calculations when generating the science-calendar XML. Set to `false` to emit only visible-segment entries.
 - `skip_xml` (bool, default `false`): skip science-calendar XML generation entirely.
 - `run_visualizer_after_pipeline` (bool, default `false`): if `true`, run `scripts/visualizer.py` automatically after XML generation and save a PNG in the output directory.
 - `visualizer_mode` (string, default `"priority"`): plot type for the automatic visualizer. Valid values are:

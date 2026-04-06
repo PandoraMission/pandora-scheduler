@@ -1052,7 +1052,11 @@ def main() -> int:
         )
         enable_occultation_xml = _as_bool(
             _get_any(
-                ["generate_occultation_xml", "enable_occultation_xml"],
+                [
+                    "include_occultation_sequences_in_xml",
+                    "generate_occultation_xml",
+                    "enable_occultation_xml",
+                ],
                 not args.no_occultation_xml if args.no_occultation_xml else None,
                 True,
             ),
@@ -1208,7 +1212,10 @@ def main() -> int:
         # 4. Run scheduler or reuse an existing schedule CSV
         logger.info("Run data directory: %s", output_dir / data_subdir)
         logger.info("PRIMARY_ONLY_MODE=%s", str(primary_only_mode).upper())
-        logger.info("GENERATE_OCCULTATION_XML=%s", str(enable_occultation_xml).upper())
+        logger.info(
+            "INCLUDE_OCCULTATION_SEQUENCES_IN_XML=%s",
+            str(enable_occultation_xml).upper(),
+        )
         logger.info("OCCULTATION_PASS1=%s", str(enable_occultation_pass1).upper())
         logger.info("REQUESTED_OCC_TIME_OVERRIDE=%s", str(requested_occ_time_override).upper())
         logger.info(

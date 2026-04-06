@@ -124,7 +124,7 @@ def render(output_path: Path) -> None:
             5.0,
             1.8,
             "3. Occultation XML Enabled?",
-            "If generate_occultation_xml / enable_occultation_xml is false:\n- only emit science segments\n- raw occultation intervals are ignored for occultation filling",
+            "If include_occultation_sequences_in_xml / generate_occultation_xml / enable_occultation_xml is false:\n- only emit science segments\n- raw occultation intervals are ignored for occultation filling",
             COLORS["decision"],
         ),
         Node(
