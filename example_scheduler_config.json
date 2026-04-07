@@ -4,7 +4,7 @@
   "min_visibility": 0.4,
   "transit_scheduling_weights": [0.8, 0.0, 0.2],
 
-  "sun_avoidance_deg": 101.0,
+  "sun_avoidance_deg": 91.0,
   "moon_avoidance_deg": 20.0,
   "earth_avoidance_day_deg": 115.0,
   "earth_avoidance_night_deg": 86.0,
@@ -31,7 +31,7 @@
   "primary_only_mode": true,
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
-  "generate_xml": true,
+  "generate_xml": false,
   "include_occultation_sequences_in_xml": true,
 
   "run_visualizer_after_pipeline": false,
