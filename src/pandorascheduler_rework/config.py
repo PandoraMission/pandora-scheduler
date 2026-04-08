@@ -550,3 +550,17 @@ def resolve_data_subdir(
     if candidate in {"", ".", ".."}:
         raise ValueError("extra_inputs.data_subdir is invalid")
     return candidate
+
+
+def output_filename_suffix(config: PandoraSchedulerConfig) -> str:
+    """Return a stable output suffix for feature-tagged runs."""
+    return "_soft_ST" if config.allow_science_soft_startracker_tail else ""
+
+
+def apply_output_suffix(path: Path, suffix: str) -> Path:
+    """Insert *suffix* before the file extension, avoiding double-appends."""
+    if not suffix:
+        return path
+    if path.stem.endswith(suffix):
+        return path
+    return path.with_name(f"{path.stem}{suffix}{path.suffix}")

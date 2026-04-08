@@ -26,7 +26,7 @@ def _read_csv_with_mtime(
     """
     path = Path(file_path)
     try:
-        return pd.read_csv(path)
+        return pd.read_csv(path, low_memory=False)
     except Exception as e:
         LOGGER.error(f"Error reading {path}: {e}")
         return None

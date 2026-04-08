@@ -17,7 +17,7 @@
   "roll_step_deg": 5.0,
   "min_power_frac": 0.7,
 
-  "allow_science_soft_startracker_tail": false,
+  "allow_science_soft_startracker_tail": true,
   "science_soft_startracker_tail_minutes": 10,
   "science_soft_st_sun_min_deg": 34,
   "science_soft_st_moon_min_deg": 10,
@@ -40,7 +40,8 @@
   "primary_only_mode": true,
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
-  "generate_xml": false,
+
+  "generate_xml": true,
   "include_occultation_sequences_in_xml": true,
 
   "run_visualizer_after_pipeline": false,

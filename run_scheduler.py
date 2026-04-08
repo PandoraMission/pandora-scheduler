@@ -56,7 +56,12 @@ from typing import Any, Dict, Optional
 
 import pandas as pd
 
-from pandorascheduler_rework.config import PandoraSchedulerConfig, resolve_data_subdir
+from pandorascheduler_rework.config import (
+    PandoraSchedulerConfig,
+    apply_output_suffix,
+    output_filename_suffix,
+    resolve_data_subdir,
+)
 from pandorascheduler_rework.pipeline import SchedulerResult, build_schedule
 from pandorascheduler_rework.science_calendar import (
     ScienceCalendarInputs,
@@ -1325,7 +1330,10 @@ def main() -> int:
             xml_path = generate_science_calendar(
                 inputs=inputs,
                 config=config,
-                output_path=output_dir / "Pandora_science_calendar.xml",
+                output_path=apply_output_suffix(
+                    output_dir / "Pandora_science_calendar.xml",
+                    output_filename_suffix(config),
+                ),
             )
             logger.info(f"Science calendar written to: {xml_path}")
 

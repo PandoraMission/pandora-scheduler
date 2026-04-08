@@ -15,7 +15,11 @@ from astropy.time import Time
 from tqdm import tqdm
 
 from pandorascheduler_rework import observation_utils
-from pandorascheduler_rework.config import PandoraSchedulerConfig
+from pandorascheduler_rework.config import (
+    PandoraSchedulerConfig,
+    apply_output_suffix,
+    output_filename_suffix,
+)
 from pandorascheduler_rework.utils.io import (
     build_star_visibility_path,
     build_visibility_path,
@@ -352,6 +356,7 @@ def run_scheduler(
         inputs,
         state,
         pandora_start,
+        config,
     )
     schedule_path, tracker_csv_path, tracker_pickle_path = _persist_outputs(
         schedule,
@@ -513,10 +518,16 @@ def _initialize_tracker(
 
 
 def _write_observation_report(
-    inputs: SchedulerInputs, state: SchedulerState, pandora_start: datetime
+    inputs: SchedulerInputs,
+    state: SchedulerState,
+    pandora_start: datetime,
+    config: PandoraSchedulerConfig,
 ) -> Path:
     report_name = f"Observation_Time_Report_{pandora_start}.csv"
-    report_path = inputs.output_dir / report_name
+    report_path = apply_output_suffix(
+        inputs.output_dir / report_name,
+        output_filename_suffix(config),
+    )
     requested_hours_catalogs: list[Path] = []
     # Prefer the canonical per-category manifests written to the output data dir.
     for target_def in inputs.target_definition_files[1:]:
@@ -541,15 +552,16 @@ def _persist_outputs(
     pandora_start: datetime,
     pandora_stop: datetime,
 ) -> tuple[Path, Path, Path]:
+    suffix = output_filename_suffix(config)
     schedule_name = (
         f"Pandora_Schedule_{config.transit_scheduling_weights[0]}_"
         f"{config.transit_scheduling_weights[1]}_{config.transit_scheduling_weights[2]}_"
         f"{pandora_start.strftime('%Y-%m-%d')}_to_{pandora_stop.strftime('%Y-%m-%d')}.csv"
     )
-    schedule_path = inputs.output_dir / schedule_name
+    schedule_path = apply_output_suffix(inputs.output_dir / schedule_name, suffix)
     schedule.to_csv(schedule_path, index=False)
 
-    tracker_csv_path = inputs.output_dir / "tracker.csv"
+    tracker_csv_path = apply_output_suffix(inputs.output_dir / "tracker.csv", suffix)
     tracker.to_csv(tracker_csv_path, index=False)
 
     if inputs.tracker_pickle_path:
@@ -558,7 +570,7 @@ def _persist_outputs(
         start_name = pandora_start.strftime("%Y-%m-%d")
         stop_name = pandora_stop.strftime("%Y-%m-%d")
         filename = f"Tracker_{start_name}_to_{stop_name}.pkl"
-        tracker_pickle_path = inputs.output_dir / filename
+        tracker_pickle_path = apply_output_suffix(inputs.output_dir / filename, suffix)
     with tracker_pickle_path.open("wb") as handle:
         pickle.dump(tracker, handle)
 
