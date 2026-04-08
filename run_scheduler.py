@@ -684,6 +684,23 @@ def print_summary(result: SchedulerResult, xml_path: Optional[Path]) -> None:
             pass
 
 
+def _write_json_config_manifest(
+    destination_dir: Path,
+    json_config: Dict[str, Any],
+    config_path: Optional[Path],
+) -> Optional[Path]:
+    """Write the source JSON config alongside run data for reproducibility."""
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = destination_dir / "run_config_manifest.json"
+    payload = {
+        "generated_at_utc": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "source_config_path": str(config_path.resolve()) if config_path else None,
+        "json_config": json_config,
+    }
+    manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return manifest_path
+
+
 def main() -> int:
     """Main execution function."""
     args = parse_args()
@@ -1029,6 +1046,37 @@ def main() -> int:
         occultation_nonvisible_tolerance_minutes = int(
             _get_val("occultation_nonvisible_tolerance_minutes", None, 3)
         )
+        allow_science_soft_startracker_tail = _as_bool(
+            _get_val("allow_science_soft_startracker_tail", None, False),
+            False,
+        )
+        science_soft_startracker_tail_minutes = int(
+            _get_val("science_soft_startracker_tail_minutes", None, 10)
+        )
+        _raw_soft_st_sun = _get_val("science_soft_st_sun_min_deg", None, None)
+        science_soft_st_sun_min_deg = (
+            float(_raw_soft_st_sun) if _raw_soft_st_sun is not None else None
+        )
+        _raw_soft_st_moon = _get_val("science_soft_st_moon_min_deg", None, None)
+        science_soft_st_moon_min_deg = (
+            float(_raw_soft_st_moon) if _raw_soft_st_moon is not None else None
+        )
+        _raw_soft_st_el = _get_val("science_soft_st_earthlimb_min_deg", None, None)
+        science_soft_st_earthlimb_min_deg = (
+            float(_raw_soft_st_el) if _raw_soft_st_el is not None else None
+        )
+        _raw_soft_st1_el = _get_val("science_soft_st1_earthlimb_min_deg", None, None)
+        science_soft_st1_earthlimb_min_deg = (
+            float(_raw_soft_st1_el) if _raw_soft_st1_el is not None else None
+        )
+        _raw_soft_st2_el = _get_val("science_soft_st2_earthlimb_min_deg", None, None)
+        science_soft_st2_earthlimb_min_deg = (
+            float(_raw_soft_st2_el) if _raw_soft_st2_el is not None else None
+        )
+        _raw_soft_st_required = _get_val("science_soft_st_required", None, None)
+        science_soft_st_required = (
+            int(_raw_soft_st_required) if _raw_soft_st_required is not None else None
+        )
 
         std_obs_duration_hours = float(_get_val("std_obs_duration_hours", None, 0.5))
         std_obs_frequency_days = float(_get_val("std_obs_frequency_days", None, 3.0))
@@ -1175,6 +1223,14 @@ def main() -> int:
             min_science_sequence_minutes=min_science_sequence_minutes,
             min_occultation_sequence_minutes=min_occultation_sequence_minutes,
             occultation_nonvisible_tolerance_minutes=occultation_nonvisible_tolerance_minutes,
+            allow_science_soft_startracker_tail=allow_science_soft_startracker_tail,
+            science_soft_startracker_tail_minutes=science_soft_startracker_tail_minutes,
+            science_soft_st_sun_min_deg=science_soft_st_sun_min_deg,
+            science_soft_st_moon_min_deg=science_soft_st_moon_min_deg,
+            science_soft_st_earthlimb_min_deg=science_soft_st_earthlimb_min_deg,
+            science_soft_st1_earthlimb_min_deg=science_soft_st1_earthlimb_min_deg,
+            science_soft_st2_earthlimb_min_deg=science_soft_st2_earthlimb_min_deg,
+            science_soft_st_required=science_soft_st_required,
             break_occultation_sequences=break_occultation_sequences,
             # Standard observations
             std_obs_duration_hours=std_obs_duration_hours,
@@ -1214,8 +1270,25 @@ def main() -> int:
                     config.targets_manifest,
                 )
 
+        run_data_dir = output_dir / data_subdir
+        config_manifest_path = None
+        if args.config is not None:
+            try:
+                config_manifest_path = _write_json_config_manifest(
+                    run_data_dir,
+                    json_config,
+                    args.config,
+                )
+                logger.info("Wrote run config manifest: %s", config_manifest_path)
+            except Exception as exc:
+                logger.warning(
+                    "Unable to write run config manifest to %s: %s",
+                    run_data_dir,
+                    exc,
+                )
+
         # 4. Run scheduler or reuse an existing schedule CSV
-        logger.info("Run data directory: %s", output_dir / data_subdir)
+        logger.info("Run data directory: %s", run_data_dir)
         logger.info("PRIMARY_ONLY_MODE=%s", str(primary_only_mode).upper())
         logger.info(
             "INCLUDE_OCCULTATION_SEQUENCES_IN_XML=%s",

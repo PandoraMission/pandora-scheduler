@@ -17,6 +17,15 @@
   "roll_step_deg": 5.0,
   "min_power_frac": 0.7,
 
+  "allow_science_soft_startracker_tail": true,
+  "science_soft_startracker_tail_minutes": 10,
+  "science_soft_st_sun_min_deg": null,
+  "science_soft_st_moon_min_deg": null,
+  "science_soft_st_earthlimb_min_deg": null,
+  "science_soft_st1_earthlimb_min_deg": null,
+  "science_soft_st2_earthlimb_min_deg": null,
+  "science_soft_st_required": 1,
+
   "obs_sequence_duration_min": 90,
   "occ_sequence_limit_min": 30,
   "min_sequence_minutes": 5,
@@ -36,7 +45,6 @@
 
   "run_visualizer_after_pipeline": false,
   "visualizer_mode": "priority",
-
   "enable_occultation_pass1": false,
   "requested_occ_time_override": true,
   "allow_occ_startracker_violation": true,

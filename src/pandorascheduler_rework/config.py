@@ -242,6 +242,37 @@ class PandoraSchedulerConfig:
     passes.
     """
 
+    allow_science_soft_startracker_tail: bool = False
+    """Allow science-visible XML segments to extend into a soft-ST tail.
+
+    When enabled, the XML builder may extend the end of a science-visible
+    sequence by up to ``science_soft_startracker_tail_minutes`` into the
+    immediately following non-visible gap if the extension passes the hard
+    boresight constraints and a softened star-tracker-only visibility check.
+    This does not affect target selection or transit admission.
+    """
+
+    science_soft_startracker_tail_minutes: int = 10
+    """Maximum tail length, in minutes, for soft-ST science extension."""
+
+    science_soft_st_sun_min_deg: Optional[float] = None
+    """Soft-tail override for star-tracker Sun keepout. None = use nominal."""
+
+    science_soft_st_moon_min_deg: Optional[float] = None
+    """Soft-tail override for star-tracker Moon keepout. None = use nominal."""
+
+    science_soft_st_earthlimb_min_deg: Optional[float] = None
+    """Soft-tail shared override for tracker Earth-limb keepout. None = nominal."""
+
+    science_soft_st1_earthlimb_min_deg: Optional[float] = None
+    """Soft-tail override for ST1 Earth-limb keepout. None = shared/nominal."""
+
+    science_soft_st2_earthlimb_min_deg: Optional[float] = None
+    """Soft-tail override for ST2 Earth-limb keepout. None = shared/nominal."""
+
+    science_soft_st_required: Optional[int] = None
+    """Soft-tail override for number of passing trackers required. None = nominal."""
+
     @property
     def effective_min_science_sequence_minutes(self) -> int:
         """Resolved science-sequence minimum in minutes."""
@@ -432,11 +463,24 @@ class PandoraSchedulerConfig:
                 "occultation_nonvisible_tolerance_minutes",
                 self.occultation_nonvisible_tolerance_minutes,
             ),
+            (
+                "science_soft_startracker_tail_minutes",
+                self.science_soft_startracker_tail_minutes,
+            ),
         ):
             if value is not None and value < 0:
                 raise ValueError(
                     f"{field_name} must be >= 0, got {value}"
                 )
+
+        if (
+            self.science_soft_st_required is not None
+            and self.science_soft_st_required not in (0, 1, 2)
+        ):
+            raise ValueError(
+                "science_soft_st_required must be 0, 1, or 2 when set, got %s"
+                % (self.science_soft_st_required,)
+            )
 
         # Validate daynight_mode
         if self.daynight_mode not in ("limb", "subsatellite"):

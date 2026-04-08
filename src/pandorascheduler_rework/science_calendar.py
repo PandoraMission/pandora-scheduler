@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta
 from numbers import Number
 from pathlib import Path
@@ -25,6 +25,7 @@ from xml.dom import minidom
 
 import numpy as np
 import pandas as pd
+from astropy import units as u
 from astropy.coordinates import SkyCoord
 from astropy.time import Time
 from tqdm import tqdm
@@ -35,6 +36,14 @@ from pandorascheduler_rework.utils.array_ops import (
     break_long_sequences,
 )
 from pandorascheduler_rework.utils.io import read_csv_cached, read_parquet_cached
+from pandorascheduler_rework.visibility.catalog import _build_base_payload
+from pandorascheduler_rework.visibility.constraints import (
+    compute_visibility_with_constraints,
+)
+from pandorascheduler_rework.visibility.geometry import (
+    build_minute_cadence,
+    interpolate_gmat_ephemeris,
+)
 from pandorascheduler_rework.xml import observation_sequence
 
 LOGGER = logging.getLogger(__name__)
@@ -127,6 +136,8 @@ class _ScienceCalendarBuilder:
         # Track cumulative observation time for each occultation target
         self.occultation_obs_time: Dict[str, timedelta] = {}
         self.sequence_provenance: list[dict[str, object]] = []
+        self._science_soft_payload: Optional[dict[str, object]] = None
+        self._science_soft_payload_failed = False
 
     def _record_sequence_provenance(
         self,
@@ -402,6 +413,212 @@ class _ScienceCalendarBuilder:
             else:
                 merged.append((seg_start, seg_stop, is_visible))
         return merged
+
+    def _science_soft_st_config(self) -> PandoraSchedulerConfig:
+        """Return a config with softened ST thresholds but unchanged boresight."""
+        return replace(
+            self.config,
+            st_sun_min_deg=(
+                self.config.science_soft_st_sun_min_deg
+                if self.config.science_soft_st_sun_min_deg is not None
+                else self.config.st_sun_min_deg
+            ),
+            st_moon_min_deg=(
+                self.config.science_soft_st_moon_min_deg
+                if self.config.science_soft_st_moon_min_deg is not None
+                else self.config.st_moon_min_deg
+            ),
+            st_earthlimb_min_deg=(
+                self.config.science_soft_st_earthlimb_min_deg
+                if self.config.science_soft_st_earthlimb_min_deg is not None
+                else self.config.st_earthlimb_min_deg
+            ),
+            st1_earthlimb_min_deg=(
+                self.config.science_soft_st1_earthlimb_min_deg
+                if self.config.science_soft_st1_earthlimb_min_deg is not None
+                else self.config.st1_earthlimb_min_deg
+            ),
+            st2_earthlimb_min_deg=(
+                self.config.science_soft_st2_earthlimb_min_deg
+                if self.config.science_soft_st2_earthlimb_min_deg is not None
+                else self.config.st2_earthlimb_min_deg
+            ),
+            st_required=(
+                self.config.science_soft_st_required
+                if self.config.science_soft_st_required is not None
+                else self.config.st_required
+            ),
+        )
+
+    def _get_science_soft_payload(self) -> Optional[dict[str, object]]:
+        """Load the shared GMAT geometry payload used for soft-ST tail checks."""
+        if self._science_soft_payload is not None:
+            return self._science_soft_payload
+        if self._science_soft_payload_failed:
+            return None
+        if not self.config.gmat_ephemeris:
+            self._science_soft_payload_failed = True
+            LOGGER.warning(
+                "Science soft-ST tail extension requested, but gmat_ephemeris is unavailable; "
+                "science sequence tails will not be extended"
+            )
+            return None
+        try:
+            cadence = build_minute_cadence(
+                self.config.window_start, self.config.window_end
+            )
+            ephemeris = interpolate_gmat_ephemeris(
+                self.config.gmat_ephemeris.resolve()
+                if not self.config.gmat_ephemeris.is_absolute()
+                else self.config.gmat_ephemeris,
+                cadence,
+            )
+            self._science_soft_payload = _build_base_payload(ephemeris, cadence)
+            return self._science_soft_payload
+        except Exception as exc:
+            self._science_soft_payload_failed = True
+            LOGGER.warning(
+                "Unable to initialise science soft-ST payload (%s); science sequence tails will not be extended",
+                exc,
+            )
+            return None
+
+    @staticmethod
+    def _slice_orbit_slices(
+        orbit_slices: Sequence[slice],
+        start_idx: int,
+        stop_idx: int,
+    ) -> List[slice]:
+        """Project global orbit slices onto a local [start_idx, stop_idx) window."""
+        projected: List[slice] = []
+        for orb_slice in orbit_slices:
+            local_start = max(start_idx, int(orb_slice.start or 0))
+            local_stop = min(stop_idx, int(orb_slice.stop or 0))
+            if local_start < local_stop:
+                projected.append(slice(local_start - start_idx, local_stop - start_idx))
+        if not projected and stop_idx > start_idx:
+            projected = [slice(0, stop_idx - start_idx)]
+        return projected
+
+    def _soft_science_extension_stop(
+        self,
+        ra_deg: float,
+        dec_deg: float,
+        tail_start: datetime,
+        tail_stop: datetime,
+    ) -> datetime:
+        """Return the furthest extension stop that passes the softened ST check."""
+        if tail_stop <= tail_start:
+            return tail_start
+        payload = self._get_science_soft_payload()
+        if payload is None:
+            return tail_start
+
+        times = np.asarray(payload["Time_UTC"], dtype="datetime64[ns]")
+        start_dt64 = np.datetime64(tail_start)
+        stop_dt64 = np.datetime64(tail_stop)
+        mask = (times >= start_dt64) & (times < stop_dt64)
+        if not bool(mask.any()):
+            return tail_start
+
+        window_indices = np.flatnonzero(mask)
+        start_idx = int(window_indices[0])
+        stop_idx = int(window_indices[-1]) + 1
+
+        star_coord = SkyCoord(ra=float(ra_deg) * u.deg, dec=float(dec_deg) * u.deg, frame="icrs")
+        earth_center_sep_deg = payload["earth_pc"][start_idx:stop_idx].separation(
+            star_coord
+        ).deg
+
+        tgt_cart = star_coord.icrs.cartesian
+        tgt_unit_1 = np.array([tgt_cart.x.value, tgt_cart.y.value, tgt_cart.z.value])
+        tgt_unit_1 = tgt_unit_1 / np.linalg.norm(tgt_unit_1)
+        target_unit = np.broadcast_to(tgt_unit_1, (stop_idx - start_idx, 3)).copy()
+
+        soft_config = self._science_soft_st_config()
+        results = compute_visibility_with_constraints(
+            target_unit=target_unit,
+            nadir_unit=payload["nadir_unit"][start_idx:stop_idx],
+            sun_unit=payload["sun_unit"][start_idx:stop_idx],
+            moon_unit=payload["moon_unit"][start_idx:stop_idx],
+            observer_dist_km=payload["observer_dist_km"][start_idx:stop_idx],
+            zenith_unit=payload["zenith_unit"][start_idx:stop_idx],
+            limb_angle_rad=payload["limb_angle_rad"][start_idx:stop_idx],
+            orbit_slices=self._slice_orbit_slices(
+                payload["orbit_slices"], start_idx, stop_idx
+            ),
+            earth_center_sep_deg=earth_center_sep_deg,
+            config=soft_config,
+        )
+        visible = np.asarray(results["visible"], dtype=bool)
+        if visible.size == 0 or not bool(visible[0]):
+            return tail_start
+
+        consecutive = 0
+        for minute_ok in visible:
+            if not bool(minute_ok):
+                break
+            consecutive += 1
+        return tail_start + timedelta(minutes=consecutive)
+
+    def _extend_science_segments_with_soft_st_tail(
+        self,
+        segments: Sequence[Tuple[datetime, datetime, bool]],
+        ra_deg: float,
+        dec_deg: float,
+        visit_stop: datetime,
+    ) -> List[Tuple[datetime, datetime, bool]]:
+        """Extend science-visible segments into the following non-visible gap.
+
+        Only science-visible segments are eligible. The extension is bounded by
+        the configured tail duration and must pass the softened ST check
+        minute-by-minute while retaining hard boresight constraints.
+        """
+        if not self.config.allow_science_soft_startracker_tail:
+            return list(segments)
+
+        tail_minutes = self.config.science_soft_startracker_tail_minutes
+        if tail_minutes <= 0:
+            return list(segments)
+
+        adjusted = list(segments)
+        tolerance = timedelta(seconds=1)
+        max_extension = timedelta(minutes=tail_minutes)
+        idx = 0
+        while idx + 1 < len(adjusted):
+            seg_start, seg_stop, is_visible = adjusted[idx]
+            if not is_visible:
+                idx += 1
+                continue
+
+            gap_start, gap_stop, gap_visible = adjusted[idx + 1]
+            if gap_visible or gap_start > seg_stop + tolerance:
+                idx += 1
+                continue
+
+            candidate_stop = min(seg_stop + max_extension, gap_stop, visit_stop)
+            if candidate_stop <= seg_stop:
+                idx += 1
+                continue
+
+            extension_stop = self._soft_science_extension_stop(
+                ra_deg, dec_deg, seg_stop, candidate_stop
+            )
+            if extension_stop <= seg_stop:
+                idx += 1
+                continue
+
+            adjusted[idx] = (seg_start, extension_stop, True)
+
+            if extension_stop >= gap_stop - tolerance:
+                del adjusted[idx + 1]
+                adjusted = self._coalesce_segments(adjusted)
+                continue
+
+            adjusted[idx + 1] = (extension_stop, gap_stop, False)
+            idx += 1
+
+        return self._coalesce_segments(adjusted)
 
     def _apply_science_fragment_policy(
         self,
@@ -1143,6 +1360,12 @@ class _ScienceCalendarBuilder:
             visit_times,
             visibility_flags,
             start,
+            final_time,
+        )
+        raw_segments = self._extend_science_segments_with_soft_st_tail(
+            raw_segments,
+            ra_value,
+            dec_value,
             final_time,
         )
         if not raw_segments:
