@@ -21,7 +21,7 @@
   "science_soft_startracker_tail_minutes": 10,
   "science_soft_st_sun_min_deg": 34,
   "science_soft_st_moon_min_deg": 10,
-  "science_soft_stTh_earthlimb_min_deg": 20,
+  "science_soft_st_earthlimb_min_deg": 20,
   "science_soft_st1_earthlimb_min_deg": null,
   "science_soft_st2_earthlimb_min_deg": null,
   "science_soft_st_required": 1,
@@ -55,7 +55,7 @@
   "schedule_csv_row_start": null,
   "schedule_csv_row_end": null,
   "xml_data_dir": null,
-
+  
   "extra_inputs": {
     "target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",
     "target_definition_files": [
