@@ -50,7 +50,7 @@ import json
 import logging
 import subprocess
 import sys
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -693,7 +693,7 @@ def _write_json_config_manifest(
     destination_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = destination_dir / "run_config_manifest.json"
     payload = {
-        "generated_at_utc": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        "generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "source_config_path": str(config_path.resolve()) if config_path else None,
         "json_config": json_config,
     }

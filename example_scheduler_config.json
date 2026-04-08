@@ -4,7 +4,7 @@
   "min_visibility": 0.4,
   "transit_scheduling_weights": [0.8, 0.0, 0.2],
 
-  "sun_avoidance_deg": 101.0,
+  "sun_avoidance_deg": 91.0,
   "moon_avoidance_deg": 20.0,
   "earth_avoidance_day_deg": 115.0,
   "earth_avoidance_night_deg": 86.0,
@@ -21,7 +21,7 @@
   "science_soft_startracker_tail_minutes": 10,
   "science_soft_st_sun_min_deg": 34,
   "science_soft_st_moon_min_deg": 10,
-  "science_soft_st_earthlimb_min_deg": 20,
+  "science_soft_stTh_earthlimb_min_deg": 20,
   "science_soft_st1_earthlimb_min_deg": null,
   "science_soft_st2_earthlimb_min_deg": null,
   "science_soft_st_required": 1,
@@ -63,7 +63,7 @@
       "monitoring-standard",
       "occultation-standard"
     ],
-    "generate_visibility": true,
+    "generate_visibility": false,
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260303-VF-20260303-EX-20270403-R001.txt"
   }
 }
