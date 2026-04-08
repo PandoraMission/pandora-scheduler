@@ -179,6 +179,10 @@ class _ScienceCalendarBuilder:
     def write_sequence_provenance(self, output_path: Path) -> None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         df = pd.DataFrame(self.sequence_provenance)
+        if "visibility_fraction" in df.columns:
+            df["visibility_fraction"] = pd.to_numeric(
+                df["visibility_fraction"], errors="coerce"
+            ).round(2)
         if not self.config.allow_science_soft_startracker_tail:
             df = df.drop(
                 columns=["science_soft_tail_used", "science_soft_tail_minutes"],
