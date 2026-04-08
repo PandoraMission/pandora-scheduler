@@ -59,10 +59,29 @@ import pandas as pd
 
 from pandorascheduler_rework.config import (
     PandoraSchedulerConfig,
-    apply_output_suffix,
-    output_filename_suffix,
     resolve_data_subdir,
 )
+try:
+    from pandorascheduler_rework.config import (
+        apply_output_suffix,
+        output_filename_suffix,
+    )
+except ImportError:
+    def output_filename_suffix(config: PandoraSchedulerConfig) -> str:
+        logging.getLogger(__name__).warning(
+            "pandorascheduler_rework.config is missing output suffix helpers; "
+            "falling back to local compatibility shims. This usually means the "
+            "checkout is mixed across commits or branches."
+        )
+        return "_soft_ST" if getattr(config, "allow_science_soft_startracker_tail", False) else ""
+
+    def apply_output_suffix(path: Path, suffix: str) -> Path:
+        if not suffix:
+            return path
+        if path.stem.endswith(suffix):
+            return path
+        return path.with_name(f"{path.stem}{suffix}{path.suffix}")
+
 from pandorascheduler_rework.pipeline import SchedulerResult, build_schedule
 from pandorascheduler_rework.science_calendar import (
     ScienceCalendarInputs,

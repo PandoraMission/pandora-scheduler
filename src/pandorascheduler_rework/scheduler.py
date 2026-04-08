@@ -15,11 +15,30 @@ from astropy.time import Time
 from tqdm import tqdm
 
 from pandorascheduler_rework import observation_utils
-from pandorascheduler_rework.config import (
-    PandoraSchedulerConfig,
-    apply_output_suffix,
-    output_filename_suffix,
-)
+from pandorascheduler_rework.config import PandoraSchedulerConfig
+try:
+    from pandorascheduler_rework.config import (
+        apply_output_suffix,
+        output_filename_suffix,
+    )
+except ImportError:
+    logger = logging.getLogger(__name__)
+
+    def output_filename_suffix(config: PandoraSchedulerConfig) -> str:
+        logger.warning(
+            "pandorascheduler_rework.config is missing output suffix helpers; "
+            "falling back to local compatibility shims. This usually means the "
+            "checkout is mixed across commits or branches."
+        )
+        return "_soft_ST" if getattr(config, "allow_science_soft_startracker_tail", False) else ""
+
+    def apply_output_suffix(path: Path, suffix: str) -> Path:
+        if not suffix:
+            return path
+        if path.stem.endswith(suffix):
+            return path
+        return path.with_name(f"{path.stem}{suffix}{path.suffix}")
+
 from pandorascheduler_rework.utils.io import (
     build_star_visibility_path,
     build_visibility_path,
