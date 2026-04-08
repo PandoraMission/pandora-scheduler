@@ -45,7 +45,8 @@ This writes:
 
 - schedule CSVs under `output_standalone_test7_short/`
 - visibility parquet files under `output_standalone_test7_short/data_*`
-- science calendar XML at `output_standalone_test7_short/Pandora_science_calendar.xml` unless `skip_xml` is `true`
+- science calendar XML at `output_standalone_test7_short/Pandora_science_calendar.xml` when `generate_xml` is `true`
+- run configuration manifest at `output_standalone_test7_short/run_config_manifest.json`
 
 Notes:
 - If you pass `--start`, `--end`, and `--output` explicitly, those force a full pipeline run even if the JSON also contains `schedule_csv`.
@@ -54,10 +55,35 @@ Notes:
 If you want the visualizer to run automatically after the pipeline:
 
 ```json
-"skip_xml": false,
+"generate_xml": true,
 "run_visualizer_after_pipeline": true,
 "visualizer_mode": "priority"
 ```
+
+## What's New On `soft_ST_test`
+
+This branch adds a few XML-generation and provenance improvements that are helpful for science-tail experiments:
+
+- science soft-ST tail extension for XML sequence generation only
+  - applies only to science-visible segments
+  - keeps hard boresight limits (`sun_avoidance_deg`, `moon_avoidance_deg`, `earth_avoidance_*`) unchanged
+  - can relax or disable star-tracker constraints only in the final `science_soft_startracker_tail_minutes`
+- one-run XML A/B generation when `allow_science_soft_startracker_tail` is `true`
+  - baseline outputs:
+    - `Pandora_science_calendar.xml`
+    - `Pandora_science_calendar_sequence_provenance.csv`
+  - soft-ST outputs:
+    - `Pandora_science_calendar_soft_ST.xml`
+    - `Pandora_science_calendar_soft_ST_sequence_provenance.csv`
+- root-level run manifest
+  - every run writes `output_*/run_config_manifest.json`
+- explicit soft-tail provenance on soft-ST runs
+  - `science_soft_tail_used`
+  - `science_soft_tail_minutes`
+  - these columns are omitted from the baseline provenance CSV
+- dedicated plotting helper for soft-ST provenance comparisons:
+  - `scripts/plot_soft_st_provenance_comparison.py`
+- non-exoplanet target manifests no longer inject fake `Planet Name` values into monitoring/occultation standard catalogs
 
 ## XML-Only From Existing Schedule
 
@@ -72,7 +98,10 @@ poetry run python run_scheduler.py \
 Notes:
 - `--start` / `--end` are optional in this mode; they are inferred from the schedule CSV if omitted.
 - `--output` is optional in this mode; it defaults to the schedule CSV parent directory.
-- The XML is still written to `output_*/Pandora_science_calendar.xml`.
+- The XML is written to `output_*/Pandora_science_calendar.xml`.
+- If `allow_science_soft_startracker_tail` is `true`, the same run also writes:
+  - `output_*/Pandora_science_calendar_soft_ST.xml`
+  - `output_*/Pandora_science_calendar_soft_ST_sequence_provenance.csv`
 - If you only want to test the XML builder on the first few schedule rows, add `--schedule-row-limit N`.
 
 Example:
@@ -110,6 +139,33 @@ The validation CSV includes:
 - provenance fields (`sequence_type`, `occultation_pass`, `sequence_visibility_fraction`)
 
 The provenance CSV is written automatically during XML generation and records one row per emitted XML sequence.
+
+When `allow_science_soft_startracker_tail` is `true`, the soft-ST provenance CSV also includes:
+
+- `science_soft_tail_used`
+- `science_soft_tail_minutes`
+
+These columns are intentionally omitted from the baseline provenance CSV.
+
+## Plot Soft-ST Provenance
+
+To visualise only the science rows affected by soft-ST tail extension:
+
+```bash
+MPLCONFIGDIR=/tmp/mplcache python3 scripts/plot_soft_st_provenance_comparison.py \
+  --soft-provenance output_test1/Pandora_science_calendar_soft_ST_sequence_provenance.csv \
+  --out output_test1/soft_ST_provenance_comparison.png
+```
+
+To generate the older two-panel baseline-vs-soft comparison:
+
+```bash
+MPLCONFIGDIR=/tmp/mplcache python3 scripts/plot_soft_st_provenance_comparison.py \
+  --base-provenance output_test1/Pandora_science_calendar_sequence_provenance.csv \
+  --soft-provenance output_test1/Pandora_science_calendar_soft_ST_sequence_provenance.csv \
+  --layout two-panel \
+  --out output_test1/soft_ST_provenance_comparison_two_panel.png
+```
 
 ## Debug a Visit
 
@@ -221,7 +277,14 @@ Renderer scripts live under `scripts/` if you want to regenerate them:
 - `daynight_mode` accepts two values:
   - `subsatellite`: classify day/night from whether the subsatellite point is sunlit
   - `limb`: classify day/night from whether the nearest Earth limb point in the target direction is sunlit
-- `generate_occultation_xml` can be set in the JSON config to turn occultation filling in the science calendar XML on or off.
+- `generate_xml` turns XML generation on or off.
+- `include_occultation_sequences_in_xml` controls whether occultation filling is included in the science calendar XML.
+- `allow_science_soft_startracker_tail` enables the science-tail XML A/B mode and writes both baseline and `_soft_ST` XML/provenance outputs in one run.
+- `science_soft_startracker_tail_minutes` sets the maximum science-tail extension window.
+- `science_soft_st_required` controls how many star trackers must pass inside the soft tail:
+  - `2`: both trackers
+  - `1`: at least one tracker
+  - `0`: disable ST constraints for the tail and use hard boresight limits only
 - `min_science_sequence_minutes` sets the minimum standalone science-visible fragment. Shorter science fragments are merged into a contiguous preceding science chunk when possible; otherwise they are handed to occultation filling.
 - `min_occultation_sequence_minutes` sets the minimum standalone occultation tail. Short trailing occultation chunks are only absorbed into the preceding occultation chunk when the same occultation target remains visible there.
 - `occultation_nonvisible_tolerance_minutes` sets how many non-visible minutes are tolerated inside an occultation interval before a later occultation pass or validation failure is triggered. This applies to occultation only.
