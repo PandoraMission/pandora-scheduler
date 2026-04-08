@@ -77,10 +77,13 @@ def generate_science_calendar(
     inputs: ScienceCalendarInputs,
     config: PandoraSchedulerConfig,
     output_path: Optional[Path] = None,
+    progress_label: str = "Building science calendar",
 ) -> Path:
     """Generate the science calendar XML, matching the legacy behaviour."""
 
-    builder = _ScienceCalendarBuilder(inputs, config)
+    builder = _ScienceCalendarBuilder(
+        inputs, config, progress_label=progress_label
+    )
     calendar_element = builder.build_calendar()
     xml_string = _serialise_calendar(calendar_element)
 
@@ -97,10 +100,14 @@ class _ScienceCalendarBuilder:
     """Encapsulates the translation from CSV schedules to XML."""
 
     def __init__(
-        self, inputs: ScienceCalendarInputs, config: PandoraSchedulerConfig
+        self,
+        inputs: ScienceCalendarInputs,
+        config: PandoraSchedulerConfig,
+        progress_label: str = "Building science calendar",
     ) -> None:
         self.inputs = inputs
         self.config = config
+        self.progress_label = progress_label
         self.schedule = read_csv_cached(str(inputs.schedule_csv))
         if self.schedule is None:
             raise FileNotFoundError(f"Schedule CSV missing: {inputs.schedule_csv}")
@@ -1242,7 +1249,7 @@ class _ScienceCalendarBuilder:
         iterator = tqdm(
             visits.iterrows(),
             total=len(visits),
-            desc="Building science calendar",
+            desc=self.progress_label,
             disable=not self.config.show_progress,
         )
 

@@ -1347,15 +1347,18 @@ def main() -> int:
                     config,
                     allow_science_soft_startracker_tail=False,
                 )
+                logger.info("Building baseline science calendar...")
                 baseline_xml_path = generate_science_calendar(
                     inputs=inputs,
                     config=baseline_config,
                     output_path=output_dir / "Pandora_science_calendar.xml",
+                    progress_label="Building baseline science calendar",
                 )
                 logger.info(
                     "Baseline science calendar written to: %s", baseline_xml_path
                 )
 
+                logger.info("Building soft-ST science calendar...")
                 xml_path = generate_science_calendar(
                     inputs=inputs,
                     config=config,
@@ -1363,13 +1366,16 @@ def main() -> int:
                         output_dir / "Pandora_science_calendar.xml",
                         output_filename_suffix(config),
                     ),
+                    progress_label="Building soft-ST science calendar",
                 )
                 logger.info("Soft-ST science calendar written to: %s", xml_path)
             else:
+                logger.info("Building science calendar...")
                 xml_path = generate_science_calendar(
                     inputs=inputs,
                     config=config,
                     output_path=output_dir / "Pandora_science_calendar.xml",
+                    progress_label="Building science calendar",
                 )
                 logger.info("Science calendar written to: %s", xml_path)
 

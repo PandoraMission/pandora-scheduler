@@ -374,7 +374,7 @@ def schedule_occultation_targets(
 
     # PASS 1: Search for a single target that covers ALL intervals
     if not use_pass1:
-        LOGGER.info("%sPass 1 skipped (enable_occultation_pass1=False)", visit_prefix)
+        LOGGER.debug("%sPass 1 skipped (enable_occultation_pass1=False)", visit_prefix)
     for v_name in tqdm(v_names, desc=f"{description} (Pass 1)", leave=False, disable=not show_progress or not use_pass1):
         vis_data = _get_visibility(v_name)
         if vis_data is None:
