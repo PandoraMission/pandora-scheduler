@@ -167,6 +167,16 @@ MPLCONFIGDIR=/tmp/mplcache python3 scripts/plot_soft_st_provenance_comparison.py
   --out output_test1/soft_ST_provenance_comparison_two_panel.png
 ```
 
+To compare `science_soft_st_required = 0, 1, 2` side by side:
+
+```bash
+MPLCONFIGDIR=/tmp/mplcache python3 scripts/plot_soft_st_required_comparison.py \
+  --provenance-0 output_test1/Pandora_science_calendar_soft_ST_sequence_provenance_0.csv \
+  --provenance-1 output_test1/Pandora_science_calendar_soft_ST_sequence_provenance_1.csv \
+  --provenance-2 output_test1/Pandora_science_calendar_soft_ST_sequence_provenance_2.csv \
+  --out output_test1/soft_ST_required_comparison.png
+```
+
 ## Debug a Visit
 
 If you want to inspect how occultation scheduling behaved for one specific XML visit, use the visit debug helper:
