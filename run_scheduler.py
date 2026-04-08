@@ -50,6 +50,7 @@ import json
 import logging
 import subprocess
 import sys
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
@@ -1341,15 +1342,36 @@ def main() -> int:
                 schedule_row_end=schedule_row_end if xml_only_from_schedule else None,
             )
 
-            xml_path = generate_science_calendar(
-                inputs=inputs,
-                config=config,
-                output_path=apply_output_suffix(
-                    output_dir / "Pandora_science_calendar.xml",
-                    output_filename_suffix(config),
-                ),
-            )
-            logger.info(f"Science calendar written to: {xml_path}")
+            if config.allow_science_soft_startracker_tail:
+                baseline_config = replace(
+                    config,
+                    allow_science_soft_startracker_tail=False,
+                )
+                baseline_xml_path = generate_science_calendar(
+                    inputs=inputs,
+                    config=baseline_config,
+                    output_path=output_dir / "Pandora_science_calendar.xml",
+                )
+                logger.info(
+                    "Baseline science calendar written to: %s", baseline_xml_path
+                )
+
+                xml_path = generate_science_calendar(
+                    inputs=inputs,
+                    config=config,
+                    output_path=apply_output_suffix(
+                        output_dir / "Pandora_science_calendar.xml",
+                        output_filename_suffix(config),
+                    ),
+                )
+                logger.info("Soft-ST science calendar written to: %s", xml_path)
+            else:
+                xml_path = generate_science_calendar(
+                    inputs=inputs,
+                    config=config,
+                    output_path=output_dir / "Pandora_science_calendar.xml",
+                )
+                logger.info("Science calendar written to: %s", xml_path)
 
             if run_visualizer_after_pipeline:
                 visualizer_script = Path(__file__).parent / "scripts" / "visualizer.py"
