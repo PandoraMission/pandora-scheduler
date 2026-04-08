@@ -17,7 +17,7 @@
   "roll_step_deg": 5.0,
   "min_power_frac": 0.7,
 
-  "allow_science_soft_startracker_tail": false,
+  "allow_science_soft_startracker_tail": true,
   "science_soft_startracker_tail_minutes": 10,
   "science_soft_st_sun_min_deg": 34,
   "science_soft_st_moon_min_deg": 10,
@@ -64,7 +64,7 @@
       "monitoring-standard",
       "occultation-standard"
     ],
-    "generate_visibility": false,
+    "generate_visibility": true,
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260303-VF-20260303-EX-20270403-R001.txt"
   }
 }
