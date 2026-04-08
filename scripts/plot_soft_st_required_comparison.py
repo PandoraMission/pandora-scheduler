@@ -116,10 +116,10 @@ def main() -> None:
     heat["max_tail"] = heat.max(axis=1)
     heat = heat.sort_values(["max_tail"], ascending=False).drop(columns=["max_tail"])
 
-    fig_h = max(8, 0.28 * len(heat) + 4.5)
-    fig = plt.figure(figsize=(12, fig_h))
+    fig_h = max(8, 0.24 * len(heat) + 1.5)
+    fig = plt.figure(figsize=(16, fig_h))
     gs = fig.add_gridspec(
-        nrows=2, ncols=1, height_ratios=[1.0, max(2.2, 0.22 * len(heat))]
+        nrows=1, ncols=2, width_ratios=[1.0, 1.45]
     )
 
     ax0 = fig.add_subplot(gs[0])
@@ -162,7 +162,7 @@ def main() -> None:
     ax0.set_xticklabels([f"st_required={s}" for s in summary_df["setting"]])
     ax0.set_ylabel("Count / Minutes")
     ax0.set_title("Soft-ST Summary By science_soft_st_required")
-    ax0.legend(loc="upper right")
+    ax0.legend(loc="lower right")
     ax0.grid(axis="y", alpha=0.25)
 
     im = ax1.imshow(heat[["0", "1", "2"]].to_numpy(), aspect="auto", cmap="YlOrRd", vmin=0)
@@ -187,7 +187,7 @@ def main() -> None:
                     color="black",
                 )
 
-    cbar = fig.colorbar(im, ax=ax1, fraction=0.02, pad=0.01)
+    cbar = fig.colorbar(im, ax=ax1, fraction=0.03, pad=0.02)
     cbar.set_label("Tail minutes")
 
     fig.suptitle(
