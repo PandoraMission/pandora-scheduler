@@ -153,6 +153,8 @@ class _ScienceCalendarBuilder:
         visibility_fraction: float = 1.0,
         visible_minutes: float = float("nan"),
         non_visible_minutes: float = float("nan"),
+        science_soft_tail_used: bool = False,
+        science_soft_tail_minutes: float = 0.0,
     ) -> None:
         self.sequence_provenance.append(
             {
@@ -169,12 +171,20 @@ class _ScienceCalendarBuilder:
                 "visibility_fraction": visibility_fraction,
                 "visible_minutes": visible_minutes,
                 "non_visible_minutes": non_visible_minutes,
+                "science_soft_tail_used": bool(science_soft_tail_used),
+                "science_soft_tail_minutes": float(science_soft_tail_minutes),
             }
         )
 
     def write_sequence_provenance(self, output_path: Path) -> None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        pd.DataFrame(self.sequence_provenance).to_csv(output_path, index=False)
+        df = pd.DataFrame(self.sequence_provenance)
+        if not self.config.allow_science_soft_startracker_tail:
+            df = df.drop(
+                columns=["science_soft_tail_used", "science_soft_tail_minutes"],
+                errors="ignore",
+            )
+        df.to_csv(output_path, index=False)
 
     def _visibility_stats_in_df(
         self, vis_df: Optional[pd.DataFrame], seg_start: datetime, seg_stop: datetime
@@ -567,7 +577,10 @@ class _ScienceCalendarBuilder:
         ra_deg: float,
         dec_deg: float,
         visit_stop: datetime,
-    ) -> List[Tuple[datetime, datetime, bool]]:
+    ) -> tuple[
+        List[Tuple[datetime, datetime, bool]],
+        Dict[datetime, tuple[datetime, datetime]],
+    ]:
         """Extend science-visible segments into the following non-visible gap.
 
         Only science-visible segments are eligible. The extension is bounded by
@@ -575,13 +588,14 @@ class _ScienceCalendarBuilder:
         minute-by-minute while retaining hard boresight constraints.
         """
         if not self.config.allow_science_soft_startracker_tail:
-            return list(segments)
+            return list(segments), {}
 
         tail_minutes = self.config.science_soft_startracker_tail_minutes
         if tail_minutes <= 0:
-            return list(segments)
+            return list(segments), {}
 
         adjusted = list(segments)
+        soft_tail_windows: Dict[datetime, tuple[datetime, datetime]] = {}
         tolerance = timedelta(seconds=1)
         max_extension = timedelta(minutes=tail_minutes)
         idx = 0
@@ -604,11 +618,13 @@ class _ScienceCalendarBuilder:
             extension_stop = self._soft_science_extension_stop(
                 ra_deg, dec_deg, seg_stop, candidate_stop
             )
+            extension_stop = min(extension_stop, candidate_stop)
             if extension_stop <= seg_stop:
                 idx += 1
                 continue
 
             adjusted[idx] = (seg_start, extension_stop, True)
+            soft_tail_windows[seg_start] = (seg_stop, extension_stop)
 
             if extension_stop >= gap_stop - tolerance:
                 del adjusted[idx + 1]
@@ -618,7 +634,7 @@ class _ScienceCalendarBuilder:
             adjusted[idx + 1] = (extension_stop, gap_stop, False)
             idx += 1
 
-        return self._coalesce_segments(adjusted)
+        return self._coalesce_segments(adjusted), soft_tail_windows
 
     def _apply_science_fragment_policy(
         self,
@@ -816,6 +832,7 @@ class _ScienceCalendarBuilder:
         priority_flag: bool,
         transit_start: Sequence[datetime],
         transit_stop: Sequence[datetime],
+        soft_tail_window: Optional[tuple[datetime, datetime]] = None,
     ) -> int:
         """Emit chunked science observation sequences.  Returns updated
         *seq_counter*."""
@@ -851,6 +868,36 @@ class _ScienceCalendarBuilder:
             science_visibility_fraction, science_visible_minutes, science_non_visible_minutes = (
                 self._visibility_stats_in_df(science_visibility_df, current, next_value)
             )
+            science_soft_tail_used = False
+            science_soft_tail_minutes = 0.0
+            if soft_tail_window is not None:
+                tail_start, tail_stop = soft_tail_window
+                overlap_start = max(current, tail_start)
+                overlap_stop = min(next_value, tail_stop)
+                if overlap_stop > overlap_start:
+                    tail_window_minutes = max(
+                        0,
+                        int(
+                            round(
+                                (tail_stop - tail_start).total_seconds() / 60.0
+                            )
+                        ),
+                    )
+                    overlap_minutes = max(
+                        0,
+                        int(
+                            round(
+                                (overlap_stop - overlap_start).total_seconds() / 60.0
+                            )
+                        ),
+                    )
+                    capped_minutes = min(
+                        overlap_minutes,
+                        tail_window_minutes,
+                        self.config.science_soft_startracker_tail_minutes,
+                    )
+                    science_soft_tail_used = True
+                    science_soft_tail_minutes = float(capped_minutes)
             self._record_sequence_provenance(
                 visit_id,
                 sequence_id,
@@ -863,6 +910,8 @@ class _ScienceCalendarBuilder:
                 visibility_fraction=science_visibility_fraction,
                 visible_minutes=science_visible_minutes,
                 non_visible_minutes=science_non_visible_minutes,
+                science_soft_tail_used=science_soft_tail_used,
+                science_soft_tail_minutes=science_soft_tail_minutes,
             )
             seq_counter += 1
             current = next_value
@@ -1362,7 +1411,7 @@ class _ScienceCalendarBuilder:
             start,
             final_time,
         )
-        raw_segments = self._extend_science_segments_with_soft_st_tail(
+        raw_segments, science_soft_tail_windows = self._extend_science_segments_with_soft_st_tail(
             raw_segments,
             ra_value,
             dec_value,
@@ -1386,6 +1435,7 @@ class _ScienceCalendarBuilder:
                         visit_element, visit_id, seq_counter, target_name,
                         seg_start, seg_stop, ra_value, dec_value,
                         target_info, visibility_df, priority_flag, transit_start, transit_stop,
+                        soft_tail_window=science_soft_tail_windows.get(seg_start),
                     )
             return
 
@@ -1401,6 +1451,7 @@ class _ScienceCalendarBuilder:
                         visit_element, visit_id, seq_counter, target_name,
                         seg_start, seg_stop, ra_value, dec_value,
                         target_info, visibility_df, priority_flag, transit_start, transit_stop,
+                        soft_tail_window=science_soft_tail_windows.get(seg_start),
                     )
             return
 
@@ -1451,6 +1502,7 @@ class _ScienceCalendarBuilder:
                         visit_element, visit_id, seq_counter, target_name,
                         seg_start, seg_stop, ra_value, dec_value,
                         target_info, visibility_df, priority_flag, transit_start, transit_stop,
+                        soft_tail_window=science_soft_tail_windows.get(seg_start),
                     )
                 else:
                     # Select per-segment so the visibility check uses the
@@ -1518,6 +1570,7 @@ class _ScienceCalendarBuilder:
                     visit_element, visit_id, seq_counter, target_name,
                     seg_start, seg_stop, ra_value, dec_value,
                     target_info, visibility_df, priority_flag, transit_start, transit_stop,
+                    soft_tail_window=science_soft_tail_windows.get(seg_start),
                 )
                 continue
 

@@ -17,7 +17,7 @@
   "roll_step_deg": 5.0,
   "min_power_frac": 0.7,
 
-  "allow_science_soft_startracker_tail": true,
+  "allow_science_soft_startracker_tail": false,
   "science_soft_startracker_tail_minutes": 10,
   "science_soft_st_sun_min_deg": 34,
   "science_soft_st_moon_min_deg": 10,
@@ -55,7 +55,7 @@
   "schedule_csv_row_start": null,
   "schedule_csv_row_end": null,
   "xml_data_dir": null,
-  
+
   "extra_inputs": {
     "target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",
     "target_definition_files": [

@@ -1186,11 +1186,17 @@ def main() -> int:
 
         output_dir = args.output
 
+        targets_manifest_dir = (
+            xml_data_dir
+            if (xml_only_from_schedule and xml_data_dir is not None)
+            else (output_dir / data_subdir)
+        )
+
         config = PandoraSchedulerConfig(
             window_start=parse_datetime(args.start),
             window_end=parse_datetime(args.end),
             schedule_step=timedelta(hours=schedule_step_hours),
-            targets_manifest=output_dir / data_subdir,
+            targets_manifest=targets_manifest_dir,
             gmat_ephemeris=gmat_path,
             output_dir=output_dir,
             # Scheduling Thresholds
@@ -1262,8 +1268,12 @@ def main() -> int:
             target_filters=target_filters,
         )
 
-        # 3. Ensure targets manifest location exists (may be an output/data dir)
-        if config.targets_manifest and not config.targets_manifest.exists():
+        # 3. Ensure targets manifest location exists when the pipeline may write to it.
+        if (
+            not xml_only_from_schedule
+            and config.targets_manifest
+            and not config.targets_manifest.exists()
+        ):
             try:
                 config.targets_manifest.mkdir(parents=True, exist_ok=True)
                 logger.info(
@@ -1275,12 +1285,16 @@ def main() -> int:
                     config.targets_manifest,
                 )
 
-        run_data_dir = output_dir / data_subdir
+        run_data_dir = (
+            xml_data_dir
+            if (xml_only_from_schedule and xml_data_dir is not None)
+            else (output_dir / data_subdir)
+        )
         config_manifest_path = None
         if args.config is not None:
             try:
                 config_manifest_path = _write_json_config_manifest(
-                    run_data_dir,
+                    output_dir,
                     json_config,
                     args.config,
                 )
@@ -1288,7 +1302,7 @@ def main() -> int:
             except Exception as exc:
                 logger.warning(
                     "Unable to write run config manifest to %s: %s",
-                    run_data_dir,
+                    output_dir,
                     exc,
                 )
 
