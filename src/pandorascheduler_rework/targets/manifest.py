@@ -272,13 +272,11 @@ def _apply_identity_columns(row: MutableMapping[str, object], category: str) -> 
             row["Transit Epoch (BJD_TDB-2400000.5)"] = (
                 float(row["Transit Epoch (BJD_TDB)"]) - 2400000.5
             )
-    elif category == "auxiliary-standard":
+    elif category in _STANDARD_CATEGORIES:
         row["Planet Name"] = ""
         row["Planet Simbad Name"] = ""
         row["Star Simbad Name"] = star_name
     else:
-        row["Planet Name"] = star_name
-        row["Planet Simbad Name"] = star_name
         row["Star Simbad Name"] = star_name
 
 
