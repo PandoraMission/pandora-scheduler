@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence
@@ -20,6 +20,34 @@ from pandorascheduler_rework.visibility.catalog import build_visibility_catalog
 
 LOGGER = logging.getLogger(__name__)
 
+
+def _compute_visibility_window_end(
+    target_list,
+    config: PandoraSchedulerConfig,
+) -> datetime:
+    """Return the visibility horizon needed to finish late-starting visits."""
+    max_extension = max(
+        timedelta(hours=float(config.std_obs_duration_hours)),
+        timedelta(minutes=float(config.occ_sequence_limit_min)),
+    )
+
+    if {"Planet Name", "Obs Window (hrs)"}.issubset(
+        set(getattr(target_list, "columns", []))
+    ):
+        for _, row in target_list.iterrows():
+            planet = str(row.get("Planet Name", "") or "").strip()
+            if not planet:
+                continue
+            try:
+                visit_duration = rework_helper.get_target_visit_duration(
+                    planet, target_list
+                )
+            except Exception:
+                continue
+            if visit_duration > max_extension:
+                max_extension = visit_duration
+
+    return config.window_end + max_extension
 
 
 @dataclass
@@ -159,11 +187,24 @@ def build_schedule(config: PandoraSchedulerConfig) -> SchedulerResult:
 
     _validate_primary_visit_windows(target_list, config)
 
+    visibility_window_end = _compute_visibility_window_end(target_list, config)
+    visibility_config = (
+        replace(config, window_end=visibility_window_end)
+        if visibility_window_end > config.window_end
+        else config
+    )
+    if visibility_window_end > config.window_end:
+        LOGGER.info(
+            "Extending visibility generation horizon from %s to %s so boundary visits can complete",
+            config.window_end,
+            visibility_window_end,
+        )
+
     _maybe_generate_visibility(
-        config,
+        visibility_config,
         paths,
-        config.window_start,
-        config.window_end,
+        visibility_config.window_start,
+        visibility_config.window_end,
         primary_target_csv,
         auxiliary_target_csv,
         monitoring_target_csv,
@@ -437,4 +478,3 @@ def _as_bool(value: object, default: bool) -> bool:
     if isinstance(value, (int, float)):
         return bool(value)
     return default
-

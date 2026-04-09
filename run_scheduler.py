@@ -506,6 +506,25 @@ def _derive_window_from_schedule(
     return starts.min().to_pydatetime(), stops.max().to_pydatetime()
 
 
+def _calendar_config_for_schedule(
+    config: PandoraSchedulerConfig,
+    schedule_csv: Path,
+    row_start: Optional[int] = None,
+    row_end: Optional[int] = None,
+) -> PandoraSchedulerConfig:
+    """Extend XML-generation visibility support to the actual schedule stop."""
+    try:
+        _, schedule_stop = _derive_window_from_schedule(
+            schedule_csv, row_start=row_start, row_end=row_end
+        )
+    except Exception:
+        return config
+
+    if schedule_stop <= config.window_end:
+        return config
+    return replace(config, window_end=schedule_stop)
+
+
 def print_summary(result: SchedulerResult, xml_path: Optional[Path]) -> None:
     """Print a summary of the scheduling run."""
     try:
@@ -1353,6 +1372,18 @@ def main() -> int:
         xml_path = None
         if generate_xml and result.schedule_csv:
             data_dir = xml_data_dir if (xml_only_from_schedule and xml_data_dir is not None) else (output_dir / data_subdir)
+            calendar_config = _calendar_config_for_schedule(
+                config,
+                result.schedule_csv,
+                row_start=schedule_row_start if xml_only_from_schedule else None,
+                row_end=schedule_row_end if xml_only_from_schedule else None,
+            )
+            if calendar_config.window_end > config.window_end:
+                logger.info(
+                    "Extending science-calendar visibility support from %s to %s to match the final scheduled visit",
+                    config.window_end,
+                    calendar_config.window_end,
+                )
 
             inputs = ScienceCalendarInputs(
                 schedule_csv=result.schedule_csv,
@@ -1361,9 +1392,9 @@ def main() -> int:
                 schedule_row_end=schedule_row_end if xml_only_from_schedule else None,
             )
 
-            if config.allow_science_soft_startracker_tail:
+            if calendar_config.allow_science_soft_startracker_tail:
                 baseline_config = replace(
-                    config,
+                    calendar_config,
                     allow_science_soft_startracker_tail=False,
                 )
                 logger.info("Building baseline science calendar...")
@@ -1380,10 +1411,10 @@ def main() -> int:
                 logger.info("Building soft-ST science calendar...")
                 xml_path = generate_science_calendar(
                     inputs=inputs,
-                    config=config,
+                    config=calendar_config,
                     output_path=apply_output_suffix(
                         output_dir / "Pandora_science_calendar.xml",
-                        output_filename_suffix(config),
+                        output_filename_suffix(calendar_config),
                     ),
                     progress_label="Building soft-ST science calendar",
                 )
@@ -1392,7 +1423,7 @@ def main() -> int:
                 logger.info("Building science calendar...")
                 xml_path = generate_science_calendar(
                     inputs=inputs,
-                    config=config,
+                    config=calendar_config,
                     output_path=output_dir / "Pandora_science_calendar.xml",
                     progress_label="Building science calendar",
                 )
