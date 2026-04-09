@@ -1202,6 +1202,14 @@ def main() -> int:
             ),
             False,
         )
+        try_catalog_fallback = _as_bool(
+            _get_val(
+                "try_catalog_fallback",
+                None,
+                False,
+            ),
+            False,
+        )
 
         commissioning_days = int(_get_val("commissioning_days", None, 0))
 
@@ -1297,6 +1305,7 @@ def main() -> int:
             enable_occultation_pass1=enable_occultation_pass1,
             requested_occ_time_override=requested_occ_time_override,
             allow_occ_startracker_violation=allow_occ_startracker_violation,
+            try_catalog_fallback=try_catalog_fallback,
             use_legacy_mode=use_legacy_mode,
             parallel_workers=parallel_workers,
             # Sorting / metadata

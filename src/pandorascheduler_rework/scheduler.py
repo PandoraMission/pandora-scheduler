@@ -318,7 +318,11 @@ def run_scheduler(
             )
             if not aux_df.empty:
                 schedule_rows.append(aux_df)
-            logger.info(f"{log_info}; window {start} to {stop}")
+            log_message = f"{log_info}; window {start} to {stop}"
+            if config.primary_only_mode and "skipping non-primary scheduling" in log_info:
+                logger.debug(log_message)
+            else:
+                logger.info(log_message)
             start = stop
             stop = start + config.schedule_step
             advance_progress(start)
@@ -578,7 +582,18 @@ def _persist_outputs(
         f"{pandora_start.strftime('%Y-%m-%d')}_to_{pandora_stop.strftime('%Y-%m-%d')}.csv"
     )
     schedule_path = apply_output_suffix(inputs.output_dir / schedule_name, suffix)
-    schedule.to_csv(schedule_path, index=False)
+    schedule_export = schedule.copy()
+    for column in [
+        "Transit Coverage",
+        "SAA Overlap",
+        "Schedule Factor",
+        "Quality Factor",
+    ]:
+        if column in schedule_export.columns:
+            schedule_export[column] = pd.to_numeric(
+                schedule_export[column], errors="coerce"
+            ).round(2)
+    schedule_export.to_csv(schedule_path, index=False)
 
     tracker_csv_path = apply_output_suffix(inputs.output_dir / "tracker.csv", suffix)
     tracker.to_csv(tracker_csv_path, index=False)
@@ -1462,7 +1477,11 @@ def _schedule_primary_target(
         )
         if not aux_df.empty:
             dfs.append(aux_df)
-        logger.info(f"{aux_log}; window {start} to {obs_start}")
+        aux_message = f"{aux_log}; window {start} to {obs_start}"
+        if config.primary_only_mode and "skipping non-primary scheduling" in aux_log:
+            logger.debug(aux_message)
+        else:
+            logger.info(aux_message)
 
     transit_comment = _primary_transit_comment(inputs.target_list, planet_name)
     main_schedule = pd.DataFrame(

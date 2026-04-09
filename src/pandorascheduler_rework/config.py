@@ -338,6 +338,9 @@ class PandoraSchedulerConfig:
     rejected.
     """
 
+    try_catalog_fallback: bool = False
+    """When true, drop too-short scheduled occultation rows so XML emission can try catalog fallback."""
+
     # ============================================================================
     # PARALLELISM
     # ============================================================================

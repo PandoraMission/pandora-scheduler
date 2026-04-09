@@ -781,6 +781,23 @@ def save_observation_time_report(
         str(name)
         for name in target_list.get("Planet Name", pd.Series(dtype=object)).dropna()
     }
+    primary_requested_hours_by_target: dict[str, float] = {}
+    if not target_list.empty:
+        required_primary_columns = {"Planet Name", "Number of Transits to Capture", "Obs Window (hrs)"}
+        if required_primary_columns.issubset(target_list.columns):
+            for _, row in target_list.iterrows():
+                planet_name = row.get("Planet Name")
+                if pd.isna(planet_name):
+                    continue
+                transits_needed = row.get("Number of Transits to Capture")
+                obs_window_hours = row.get("Obs Window (hrs)")
+                if pd.isna(transits_needed) or pd.isna(obs_window_hours):
+                    continue
+                try:
+                    requested_primary_hours = float(transits_needed) * float(obs_window_hours)
+                except (TypeError, ValueError):
+                    continue
+                primary_requested_hours_by_target[str(planet_name)] = requested_primary_hours
 
     requested_hours_by_target: dict[str, float] = {}
     requested_hours_sources_by_target: dict[str, set[str]] = {}
@@ -865,7 +882,14 @@ def save_observation_time_report(
             hours = duration.total_seconds() / 3600
 
             if is_primary == "Yes":
-                handle.write(f"{label},{is_primary},,{hours:.2f},\n")
+                requested = primary_requested_hours_by_target.get(label)
+                if requested is None:
+                    handle.write(f"{label},{is_primary},,{hours:.2f},\n")
+                    continue
+                delta = hours - requested
+                handle.write(
+                    f"{label},{is_primary},{requested:.2f},{hours:.2f},{delta:.2f}\n"
+                )
                 continue
 
             if label == "STD" or label.endswith(" STD"):

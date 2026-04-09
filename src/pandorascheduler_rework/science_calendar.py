@@ -1509,15 +1509,28 @@ class _ScienceCalendarBuilder:
         run_passes: list[str] = []
         run_indices: list[int] = []
         tolerance = timedelta(seconds=1)
+        min_occ_duration = self._occultation_min_duration()
+        dropped_short_rows = 0
 
         def _flush_run() -> None:
-            nonlocal run_chunks, run_passes, run_indices
+            nonlocal run_chunks, run_passes, run_indices, dropped_short_rows
             if not run_chunks:
                 return
             merged_chunks = self._merge_short_occultation_chunks(run_chunks)
             if len(merged_chunks) == len(run_chunks):
                 for idx in run_indices:
                     row = working.loc[idx]
+                    start_dt = row.get("_start_dt")
+                    stop_dt = row.get("_stop_dt")
+                    if (
+                        pd.notna(start_dt)
+                        and pd.notna(stop_dt)
+                        and self.config.try_catalog_fallback
+                        and min_occ_duration > timedelta(0)
+                        and (stop_dt - start_dt) < min_occ_duration
+                    ):
+                        dropped_short_rows += 1
+                        continue
                     rebuilt_rows.append(
                         {
                             "Target": row.get("Target", ""),
@@ -1536,6 +1549,14 @@ class _ScienceCalendarBuilder:
                     else "Merged"
                 )
                 for chunk in merged_chunks:
+                    if (
+                        self.config.try_catalog_fallback
+                        and
+                        min_occ_duration > timedelta(0)
+                        and (chunk.stop - chunk.start) < min_occ_duration
+                    ):
+                        dropped_short_rows += 1
+                        continue
                     rebuilt_rows.append(
                         {
                             "Target": chunk.target,
@@ -1614,6 +1635,12 @@ class _ScienceCalendarBuilder:
             prev_stop = stop_dt
 
         _flush_run()
+        if self.config.try_catalog_fallback and dropped_short_rows:
+            LOGGER.debug(
+                "Dropped %d scheduled occultation row(s) shorter than %d min during Step A merge",
+                dropped_short_rows,
+                self.config.effective_min_occultation_sequence_minutes,
+            )
         return pd.DataFrame(rebuilt_rows)
 
     def build_calendar(self) -> ET.Element:
@@ -2227,7 +2254,14 @@ class _ScienceCalendarBuilder:
             expanded_starts: list[datetime] = []
             expanded_stops: list[datetime] = []
             for start, stop in zip(starts, stops):
-                segments = break_long_sequences(start, stop, self.occultation_limit)
+                segments = break_long_sequences(
+                    start,
+                    stop,
+                    self.occultation_limit,
+                    min_chunk=timedelta(
+                        minutes=self.config.effective_min_occultation_sequence_minutes
+                    ),
+                )
                 if not segments:
                     expanded_starts.append(start)
                     expanded_stops.append(stop)
