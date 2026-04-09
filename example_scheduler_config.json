@@ -49,6 +49,7 @@
   "enable_occultation_pass1": false,
   "requested_occ_time_override": true,
   "allow_occ_startracker_violation": true,
+  "allow_partial_occultation_sequences_in_xml": false,
 
   "schedule_csv": null,
   "schedule_csv_row_limit": null,

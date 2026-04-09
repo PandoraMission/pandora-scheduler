@@ -1127,7 +1127,7 @@ class _ScienceCalendarBuilder:
 
             occ_target = str(occ_row.get("Target", "")).strip()
             occ_pass = str(occ_row.get("Occultation Pass", "") or "")
-            exact_start = max(seg_start, occ_row["_start_dt"])
+            exact_start = max(current, seg_start, occ_row["_start_dt"])
             exact_stop = min(seg_stop, occ_row["_stop_dt"])
 
             if not occ_target or occ_target.lower() == "no target":

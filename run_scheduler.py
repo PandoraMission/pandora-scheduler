@@ -1192,7 +1192,7 @@ def main() -> int:
                 True if args.requested_occ_time_override else None,
                 None,
             ),
-            False,
+            True,
         )
         allow_occ_startracker_violation = _as_bool(
             _get_val(

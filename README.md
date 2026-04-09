@@ -296,9 +296,10 @@ Renderer scripts live under `scripts/` if you want to regenerate them:
   - `1`: at least one tracker
   - `0`: disable ST constraints for the tail and use hard boresight limits only
 - `min_science_sequence_minutes` sets the minimum standalone science-visible fragment. Shorter science fragments are merged into a contiguous preceding science chunk when possible; otherwise they are handed to occultation filling.
-- `min_occultation_sequence_minutes` sets the minimum standalone occultation tail. Short trailing occultation chunks are only absorbed into the preceding occultation chunk when the same occultation target remains visible there.
+- `min_occultation_sequence_minutes` sets the minimum standalone occultation chunk. Scheduled occultation rows are now chunked and merged upstream in the visit-level occultation planner; XML-time fallback chunks still use the local short-chunk merge rule when needed.
 - `occultation_nonvisible_tolerance_minutes` sets how many non-visible minutes are tolerated inside an occultation interval before a later occultation pass or validation failure is triggered. This applies to occultation only.
-- `requested_occ_time_override` can be set in the JSON config to allow occultation scheduling to continue when requested-hours bookkeeping is incomplete or would otherwise block assignment.
+- `requested_occ_time_override` defaults to `true` and allows occultation scheduling to continue when requested-hours bookkeeping is incomplete or would otherwise block assignment.
+- Scheduled occultation XML rows now come directly from the visit-level occultation planner: Step A chunks and merges the occultation intervals first, then Step B emits those exact rows and only falls back to catalog search for genuinely uncovered time.
 - `run_visualizer_after_pipeline` can be set in the JSON config to generate a plot automatically after the XML is written.
 - `visualizer_mode` accepts:
   - `priority`: main Gantt-style plot colored by sequence priority

@@ -58,7 +58,7 @@ XML generation parameters
 - `occ_sequence_limit_min` (int, default `50`): maximum occultation sequence length in minutes for XML emission.
 - `min_sequence_minutes` (int, default `8`): legacy fallback minimum sequence length used when the more specific thresholds below are omitted.
 - `min_science_sequence_minutes` (int, optional): minimum standalone science-visible fragment. Shorter science fragments are merged into a contiguous preceding science chunk when possible; otherwise they are converted into occultation-fill intervals.
-- `min_occultation_sequence_minutes` (int, optional): minimum standalone occultation tail after chunking. A short trailing occultation fragment is only absorbed into the preceding occultation chunk when the same occultation target remains visible in the combined interval; otherwise it stays separate so a different occultation target can be assigned.
+- `min_occultation_sequence_minutes` (int, optional): minimum standalone occultation chunk after chunking. Scheduled occultation rows are chunked and merged upstream by the visit-level occultation planner; XML-time fallback chunks can still be merged locally when a neighboring target can absorb them cleanly.
 - `occultation_nonvisible_tolerance_minutes` (int, default `3`): allowed non-visible minutes inside an occultation interval before it is treated as needing a later occultation pass. This applies only to occultation scheduling/validation, not science sequences.
 - `break_occultation_sequences` (bool, default `true`): whether to break long occultation sequences into chunks.
 
@@ -83,7 +83,7 @@ Behavior flags
   - `simple`: lighter-weight priority timeline
   - `visibility`: priority plot with non-visible intervals overlaid from the run's visibility parquet files
 - `enable_occultation_pass1` (bool, default `true`): run Pass 1 of the occultation search (single target covers all intervals). Set to `false` to skip directly to the multi-target greedy search (Pass 2).
-- `requested_occ_time_override` (bool, default `false`): when `true`, allow occultation scheduling to continue when requested-hours bookkeeping is incomplete or would otherwise block assignment.
+- `requested_occ_time_override` (bool, default `true`): when `true`, allow occultation scheduling to continue when requested-hours bookkeeping is incomplete or would otherwise block assignment.
 - `allow_occ_startracker_violation` (bool, default `false`): when `true`, allow occultation targets that fail only star-tracker keepout while still passing boresight keepouts.
 
 Auxiliary sorting & metadata
@@ -107,5 +107,6 @@ Notes & tips
 - The example file `example_scheduler_config.json` in the repository root contains the keys above and can be used as a starting point.
 - Most keys may be provided in the JSON config; a subset of common options are still available on the CLI (weights, keepout angles, `--skip-manifests`, etc.). CLI flags take precedence.
 - If you need additional keys added to the `PandoraSchedulerConfig`, update `src/pandorascheduler_rework/config.py` and ensure `create_scheduler_config` (in `run_scheduler.py`) maps them through.
+- Occultation XML generation now uses a two-stage model: Step A chunks the occultation gaps for a visit, assigns Pass 1/2/3/4 targets, and merges tiny scheduled occultation rows upstream; Step B then emits those exact planned rows and only uses catalog fallback for time that Step A left uncovered.
 
 If you'd like, I can copy this content into `README.md` or expand it into a short examples page under `docs/`.
