@@ -197,11 +197,11 @@ class _ScienceCalendarBuilder:
             )
         df.to_csv(output_path, index=False)
 
-    def _visibility_stats_in_df(
+    def _aligned_visibility_in_df(
         self, vis_df: Optional[pd.DataFrame], seg_start: datetime, seg_stop: datetime
-    ) -> tuple[float, float, float]:
+    ) -> Optional[pd.Series]:
         if vis_df is None or vis_df.empty:
-            return float("nan"), float("nan"), float("nan")
+            return None
 
         if "Time_UTC" in vis_df.columns and pd.api.types.is_datetime64_any_dtype(
             vis_df["Time_UTC"]
@@ -216,7 +216,7 @@ class _ScienceCalendarBuilder:
                 ).to_datetime()
             )
         else:
-            return float("nan"), float("nan"), float("nan")
+            return None
 
         index = pd.DatetimeIndex(times)
         if getattr(index, "tz", None) is not None:
@@ -231,12 +231,58 @@ class _ScienceCalendarBuilder:
 
         n_minutes = int(round((seg_stop - seg_start).total_seconds() / 60.0))
         if n_minutes <= 0:
-            return float("nan"), float("nan"), float("nan")
+            return None
         minute_index = pd.date_range(seg_start, periods=n_minutes, freq="min")
-        aligned = prepared["Visible"].reindex(minute_index, fill_value=False)
+        return prepared["Visible"].reindex(minute_index, fill_value=False)
+
+    def _visibility_stats_in_df(
+        self, vis_df: Optional[pd.DataFrame], seg_start: datetime, seg_stop: datetime
+    ) -> tuple[float, float, float]:
+        aligned = self._aligned_visibility_in_df(vis_df, seg_start, seg_stop)
+        if aligned is None:
+            return float("nan"), float("nan"), float("nan")
         visible_minutes = float(aligned.sum())
         non_visible_minutes = float((~aligned).sum())
         return float(aligned.mean()), visible_minutes, non_visible_minutes
+
+    def _visible_subsegments_in_df(
+        self,
+        vis_df: Optional[pd.DataFrame],
+        seg_start: datetime,
+        seg_stop: datetime,
+        *,
+        min_duration: Optional[timedelta] = None,
+    ) -> List[Tuple[datetime, datetime]]:
+        """Return contiguous visible sub-intervals in [seg_start, seg_stop)."""
+        aligned = self._aligned_visibility_in_df(vis_df, seg_start, seg_stop)
+        if aligned is None or aligned.empty:
+            return []
+
+        threshold = min_duration or timedelta(0)
+        visible = aligned.to_numpy(dtype=bool)
+        segments: List[Tuple[datetime, datetime]] = []
+        run_start_idx: Optional[int] = None
+
+        for idx, minute_ok in enumerate(visible):
+            if minute_ok and run_start_idx is None:
+                run_start_idx = idx
+                continue
+            if minute_ok or run_start_idx is None:
+                continue
+
+            run_start = seg_start + timedelta(minutes=run_start_idx)
+            run_stop = seg_start + timedelta(minutes=idx)
+            if run_stop - run_start >= threshold:
+                segments.append((run_start, run_stop))
+            run_start_idx = None
+
+        if run_start_idx is not None:
+            run_start = seg_start + timedelta(minutes=run_start_idx)
+            run_stop = seg_start + timedelta(minutes=len(visible))
+            if run_stop - run_start >= threshold:
+                segments.append((run_start, run_stop))
+
+        return segments
 
     def _visibility_fraction_in_df(
         self, vis_df: Optional[pd.DataFrame], seg_start: datetime, seg_stop: datetime
@@ -971,6 +1017,49 @@ class _ScienceCalendarBuilder:
                 if fallback is not None:
                     chunk_target, chunk_ra, chunk_dec, chunk_info = fallback
                     acceptable = True
+
+            if (
+                not acceptable
+                and self.config.allow_partial_occultation_sequences_in_xml
+                and reference_ra is not None
+                and reference_dec is not None
+            ):
+                partial = self._select_partial_occultation_target(
+                    reference_ra,
+                    reference_dec,
+                    current,
+                    next_value,
+                )
+                if partial is not None:
+                    (
+                        partial_target,
+                        partial_ra,
+                        partial_dec,
+                        partial_info,
+                        partial_segments,
+                    ) = partial
+                    current_occ_time = self.occultation_obs_time.get(
+                        partial_target, timedelta()
+                    )
+                    target_time_limit = self._get_occultation_time_limit(
+                        partial_target
+                    )
+                    if current_occ_time < target_time_limit:
+                        for partial_start, partial_stop in partial_segments:
+                            planned_chunks.append(
+                                _OccultationChunk(
+                                    start=partial_start,
+                                    stop=partial_stop,
+                                    target=partial_target,
+                                    ra=partial_ra,
+                                    dec=partial_dec,
+                                    info=partial_info,
+                                    assignment_source="partial_occultation_visibility",
+                                    occultation_pass=occultation_pass,
+                                )
+                            )
+                    current = next_value
+                    continue
 
             if not acceptable:
                 LOGGER.warning(
@@ -1894,6 +1983,112 @@ class _ScienceCalendarBuilder:
             return False
         return bool((segment_vis > 0).any())
 
+    def _is_target_fully_visible_in_segment(
+        self,
+        star_name: str,
+        seg_start: datetime,
+        seg_stop: datetime,
+    ) -> bool:
+        """Return True only when every minute in the interval is visible."""
+        vis_df = _read_visibility(
+            self.data_dir / "aux_targets" / star_name,
+            star_name,
+        )
+        aligned = self._aligned_visibility_in_df(vis_df, seg_start, seg_stop)
+        if aligned is None or aligned.empty:
+            return False
+        return bool(aligned.all())
+
+    def _occultation_visible_subsegments(
+        self,
+        star_name: str,
+        seg_start: datetime,
+        seg_stop: datetime,
+    ) -> List[Tuple[datetime, datetime]]:
+        vis_df = _read_visibility(
+            self.data_dir / "aux_targets" / star_name,
+            star_name,
+        )
+        return self._visible_subsegments_in_df(
+            vis_df,
+            seg_start,
+            seg_stop,
+            min_duration=self._occultation_min_duration(),
+        )
+
+    def _select_partial_occultation_target(
+        self,
+        reference_ra: float,
+        reference_dec: float,
+        seg_start: datetime,
+        seg_stop: datetime,
+    ) -> Optional[
+        tuple[str, float, float, Optional[pd.DataFrame], List[Tuple[datetime, datetime]]]
+    ]:
+        """Choose the best partially visible occultation target for an interval."""
+        if self.occ_catalog is None or self.occ_catalog.empty:
+            return None
+        if "Star Name" not in self.occ_catalog.columns:
+            return None
+
+        scored_rows: list[tuple[pd.Series, float, List[Tuple[datetime, datetime]]]] = []
+        for _, row in self.occ_catalog.iterrows():
+            name = str(row.get("Star Name", "")).strip()
+            if not name:
+                continue
+            current_occ_time = self.occultation_obs_time.get(name, timedelta())
+            if current_occ_time >= self._get_occultation_time_limit(name):
+                continue
+            visible_segments = self._occultation_visible_subsegments(
+                name, seg_start, seg_stop
+            )
+            if not visible_segments:
+                continue
+            visible_minutes = sum(
+                (stop - start).total_seconds() / 60.0
+                for start, stop in visible_segments
+            )
+            scored_rows.append((row, visible_minutes, visible_segments))
+
+        if not scored_rows:
+            return None
+
+        scored_rows.sort(key=lambda item: item[1], reverse=True)
+        best_visible_minutes = scored_rows[0][1]
+        best_rows = [
+            (row, visible_segments)
+            for row, visible_minutes, visible_segments in scored_rows
+            if abs(visible_minutes - best_visible_minutes) < 1e-9
+        ]
+
+        chosen_row = best_rows[0][0]
+        chosen_segments = best_rows[0][1]
+        if self.config.prioritise_occultations_by_slew and len(best_rows) > 1:
+            tier_df = pd.DataFrame([row for row, _ in best_rows])
+            tier_df = _prioritise_occultation_targets(
+                tier_df, reference_ra, reference_dec,
+            )
+            chosen_name = str(tier_df.iloc[0].get("Star Name", "")).strip()
+            for row, visible_segments in best_rows:
+                if str(row.get("Star Name", "")).strip() == chosen_name:
+                    chosen_row = row
+                    chosen_segments = visible_segments
+                    break
+
+        occ_target = str(chosen_row.get("Star Name", "")).strip()
+        if not occ_target:
+            return None
+
+        occ_info = _lookup_occultation_info(
+            occ_target,
+            self.target_catalog,
+            self.aux_catalog,
+            self.occ_catalog,
+        )
+        ra_occ = _fallback_float(chosen_row.get("RA"), occ_info, "RA")
+        dec_occ = _fallback_float(chosen_row.get("DEC"), occ_info, "DEC")
+        return occ_target, ra_occ, dec_occ, occ_info, chosen_segments
+
     def _occ_visibility_score(
         self,
         star_name: str,
@@ -1913,7 +2108,7 @@ class _ScienceCalendarBuilder:
           Used to rank candidates: lower is better.
         """
         # Fast path: fully visible → always acceptable.
-        if self._is_target_visible_in_segment(star_name, seg_start, seg_stop):
+        if self._is_target_fully_visible_in_segment(star_name, seg_start, seg_stop):
             return True, 0.0
 
         if not self.config.allow_occ_startracker_violation:

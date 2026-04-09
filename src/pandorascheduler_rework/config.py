@@ -338,6 +338,15 @@ class PandoraSchedulerConfig:
     rejected.
     """
 
+    allow_partial_occultation_sequences_in_xml: bool = False
+    """Emit only the visible part of an occultation chunk when no full target exists.
+
+    When enabled, and no occultation target can cover an XML chunk fully, the
+    builder may choose the best partially visible occultation target and emit
+    only its actually visible sub-intervals, leaving the non-visible gap out of
+    the XML.
+    """
+
     # ============================================================================
     # PARALLELISM
     # ============================================================================

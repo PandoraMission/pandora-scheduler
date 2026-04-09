@@ -37,12 +37,13 @@
   "show_progress": true,
   "parallel_workers": 13,
 
-  "primary_only_mode": true,
+  "primary_only_mode": false,
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
 
-  "generate_xml": false,
+  "generate_xml": true,
   "include_occultation_sequences_in_xml": true,
+  "allow_partial_occultation_sequences_in_xml": true,
 
   "run_visualizer_after_pipeline": false,
   "visualizer_mode": "priority",
@@ -64,7 +65,8 @@
       "monitoring-standard",
       "occultation-standard"
     ],
-    "generate_visibility": true,
+    "skip_manifests": true,
+    "generate_visibility": false,
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260303-VF-20260303-EX-20270403-R001.txt"
   }
 }
