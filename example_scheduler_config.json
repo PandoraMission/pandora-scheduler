@@ -27,7 +27,7 @@
   "science_soft_st_required": 1,
 
   "obs_sequence_duration_min": 90,
-  "occ_sequence_limit_min": 30,
+  "occ_sequence_limit_min": 10,
   "min_sequence_minutes": 5,
   "min_science_sequence_minutes": 8,
   "min_occultation_sequence_minutes": 8,
@@ -43,7 +43,6 @@
 
   "generate_xml": true,
   "include_occultation_sequences_in_xml": true,
-  "allow_partial_occultation_sequences_in_xml": true,
 
   "run_visualizer_after_pipeline": false,
   "visualizer_mode": "priority",
@@ -65,7 +64,6 @@
       "monitoring-standard",
       "occultation-standard"
     ],
-    "skip_manifests": true,
     "generate_visibility": false,
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260303-VF-20260303-EX-20270403-R001.txt"
   }
