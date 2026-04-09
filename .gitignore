@@ -94,3 +94,16 @@ src/pandorascheduler/data/Deprioritized_Targets_*.json
 src/pandorascheduler/data/Non_Primary_Obs_Time_*.json
 src/pandorascheduler/scheduler_debug.log
 gmat/
+5_HJs/auxiliary-standard
+5_HJs/exoplanet/exoplanet_priorities.csv
+5_HJs/exoplanet/GJ_367b_target_definition.json
+5_HJs/exoplanet/HAT-P-26b_target_definition.json
+5_HJs/exoplanet/TOI-3235b_target_definition.json
+5_HJs/exoplanet/TOI-561b_target_definition.json
+5_HJs/exoplanet/TOI-674b_target_definition.json
+5_HJs/monitoring-standard
+5_HJs/occultation-standard
+example_scheduler_config.json
+example_scheduler_config_5_HJs.json
+5_HJs/nirda_readout_schemes.json
+5_HJs/vda_readout_schemes.json
