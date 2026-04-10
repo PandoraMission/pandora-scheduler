@@ -27,7 +27,7 @@
   "science_soft_st_required": 1,
 
   "obs_sequence_duration_min": 90,
-  "occ_sequence_limit_min": 20,
+  "occ_sequence_limit_min": 30,
   "min_sequence_minutes": 5,
   "min_science_sequence_minutes": 8,
   "min_occultation_sequence_minutes": 8,
