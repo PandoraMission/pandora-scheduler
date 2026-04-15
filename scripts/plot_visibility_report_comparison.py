@@ -27,14 +27,14 @@ def _parse_args() -> argparse.Namespace:
         "--reference",
         type=Path,
         required=True,
-        help="Reference visibility report, e.g. PAN-SCICAL-...-violations.txt",
+        help="Short-term sched visibility report, e.g. PAN-SCICAL-...-violations.txt",
     )
     parser.add_argument(
         "--candidate",
         type=Path,
         required=True,
         help=(
-            "Candidate visibility report, e.g. "
+            "Long-term sched visibility report, e.g. "
             "Pandora_science_calendar_sequence_provenance_visibility_report.txt"
         ),
     )
@@ -135,12 +135,12 @@ def _plot_totals(ax: plt.Axes, reference: pd.DataFrame, candidate: pd.DataFrame)
     totals = pd.DataFrame(
         [
             {
-                "report": "Reference",
+                "report": "Short-term sched",
                 "minutes": len(reference),
                 "violations": int(reference["violation"].sum()),
             },
             {
-                "report": "Candidate",
+                "report": "Long-term sched",
                 "minutes": len(candidate),
                 "violations": int(candidate["violation"].sum()),
             },
@@ -173,24 +173,24 @@ def _plot_totals(ax: plt.Axes, reference: pd.DataFrame, candidate: pd.DataFrame)
 
 
 def _plot_visit_violations(ax: plt.Axes, reference: pd.DataFrame, candidate: pd.DataFrame) -> None:
-    ref_visit = reference.groupby("visit_id")["violation"].sum().rename("Reference")
-    cand_visit = candidate.groupby("visit_id")["violation"].sum().rename("Candidate")
+    ref_visit = reference.groupby("visit_id")["violation"].sum().rename("Short-term sched")
+    cand_visit = candidate.groupby("visit_id")["violation"].sum().rename("Long-term sched")
     visit_df = pd.concat([ref_visit, cand_visit], axis=1).fillna(0).astype(int).reset_index()
     x = range(len(visit_df))
     width = 0.42
     ax.bar(
         [i - width / 2 for i in x],
-        visit_df["Reference"],
+        visit_df["Short-term sched"],
         width=width,
         color="#6baed6",
-        label="Reference",
+        label="Short-term sched",
     )
     ax.bar(
         [i + width / 2 for i in x],
-        visit_df["Candidate"],
+        visit_df["Long-term sched"],
         width=width,
         color="#fb6a4a",
-        label="Candidate",
+        label="Long-term sched",
     )
     ax.set_xticks(list(x))
     ax.set_xticklabels([f"{int(v):02d}" for v in visit_df["visit_id"]], rotation=90, fontsize=7)
@@ -223,8 +223,8 @@ def _plot_sequence_scatter(ax: plt.Axes, summary: pd.DataFrame) -> None:
     ax.plot([min_val, max_val], [min_val, max_val], linestyle="--", color="#666666", linewidth=1)
     ax.set_xlim(min_val, max_val)
     ax.set_ylim(min_val, max_val)
-    ax.set_xlabel("Reference minutes per sequence")
-    ax.set_ylabel("Candidate minutes per sequence")
+    ax.set_xlabel("Short-term sched minutes per sequence")
+    ax.set_ylabel("Long-term sched minutes per sequence")
     ax.set_title("Per-Sequence Minute Count")
     ax.grid(alpha=0.25)
     ax.legend(fontsize=8, loc="lower right")
@@ -248,7 +248,7 @@ def _plot_top_deltas(ax: plt.Axes, summary: pd.DataFrame) -> None:
     ax.set_yticklabels(top["sequence_label"], fontsize=7)
     ax.axvline(0, color="#666666", linewidth=1)
     ax.set_title("Largest Sequence-Level Deltas")
-    ax.set_xlabel("Candidate - Reference")
+    ax.set_xlabel("Long-term sched - short-term sched")
     ax.grid(axis="x", alpha=0.25)
     ax.legend(fontsize=8)
 
