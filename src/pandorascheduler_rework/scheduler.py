@@ -788,7 +788,13 @@ def _handle_targets_of_opportunity(
     obs_start = starts[idx]
     obs_stop = stops[idx]
     target_name = targets[idx]
-    target_ra, target_dec = _lookup_target_coordinates(inputs.target_list, target_name)
+    too_fields = _lookup_too_schedule_fields(
+        inputs,
+        config,
+        target_name,
+        obs_start,
+        obs_stop,
+    )
 
     logger.info("Attempting to schedule Target of Opportunity")
 
@@ -867,6 +873,10 @@ def _handle_targets_of_opportunity(
                     obs_stop,
                     forced_ra,
                     forced_dec,
+                    pd.NA,
+                    pd.NA,
+                    pd.NA,
+                    pd.NA,
                     f"{planet_name} forced over ToO due to transit factor <=1",
                 ]
             ],
@@ -876,6 +886,10 @@ def _handle_targets_of_opportunity(
                 "Observation Stop",
                 "RA",
                 "DEC",
+                "Transit Coverage",
+                "SAA Overlap",
+                "Schedule Factor",
+                "Quality Factor",
                 "Comments",
             ],
         )
@@ -955,9 +969,13 @@ def _handle_targets_of_opportunity(
                 target_name,
                 obs_start,
                 obs_stop,
-                target_ra,
-                target_dec,
-                " ".join(tf_warning_messages).strip(),
+                too_fields["RA"],
+                too_fields["DEC"],
+                too_fields["Transit Coverage"],
+                too_fields["SAA Overlap"],
+                too_fields["Schedule Factor"],
+                too_fields["Quality Factor"],
+                "ToO",
             ]
         ],
         columns=[
@@ -966,6 +984,10 @@ def _handle_targets_of_opportunity(
             "Observation Stop",
             "RA",
             "DEC",
+            "Transit Coverage",
+            "SAA Overlap",
+            "Schedule Factor",
+            "Quality Factor",
             "Comments",
         ],
     )
@@ -994,6 +1016,87 @@ def _lookup_target_coordinates(
         return pd.NA, pd.NA
     row = match.iloc[0]
     return row.get("RA", pd.NA), row.get("DEC", pd.NA)
+
+
+def _lookup_too_schedule_fields(
+    inputs: SchedulerInputs,
+    config: PandoraSchedulerConfig,
+    target_name: str,
+    obs_start: datetime,
+    obs_stop: datetime,
+) -> dict[str, object]:
+    ra_value, dec_value = _lookup_target_coordinates(inputs.target_list, target_name)
+    fields: dict[str, object] = {
+        "RA": ra_value,
+        "DEC": dec_value,
+        "Transit Coverage": pd.NA,
+        "SAA Overlap": pd.NA,
+        "Schedule Factor": pd.NA,
+        "Quality Factor": pd.NA,
+    }
+
+    if inputs.target_list.empty or "Planet Name" not in inputs.target_list.columns:
+        return fields
+    match = inputs.target_list.loc[inputs.target_list["Planet Name"] == target_name]
+    if match.empty:
+        return fields
+
+    star_name = str(match.iloc[0].get("Star Name", "") or "")
+    if not star_name:
+        return fields
+
+    visibility_path = build_visibility_path(
+        inputs.paths.targets_dir,
+        star_name,
+        target_name,
+    )
+    if not visibility_path.is_file():
+        logger.warning("ToO visibility file not found: %s", visibility_path)
+        return fields
+
+    try:
+        visibility = read_parquet_cached(
+            str(visibility_path),
+            columns=[
+                "Transit_Start_UTC",
+                "Transit_Stop_UTC",
+                "Transit_Coverage",
+                "SAA_Overlap",
+            ],
+        )
+    except Exception as exc:
+        logger.warning("Unable to read ToO visibility metrics from %s: %s", visibility_path, exc)
+        return fields
+
+    if visibility is None or visibility.empty:
+        return fields
+
+    transit_start = pd.to_datetime(visibility["Transit_Start_UTC"])
+    transit_stop = pd.to_datetime(visibility["Transit_Stop_UTC"])
+    start_ts = pd.Timestamp(obs_start)
+    stop_ts = pd.Timestamp(obs_stop)
+
+    exact_mask = (transit_start == start_ts) & (transit_stop == stop_ts)
+    matching = visibility.loc[exact_mask]
+    if matching.empty:
+        overlap_mask = (transit_start < stop_ts) & (transit_stop > start_ts)
+        matching = visibility.loc[overlap_mask]
+    if matching.empty:
+        return fields
+
+    row = matching.iloc[0]
+    fields["Transit Coverage"] = row.get("Transit_Coverage", pd.NA)
+    fields["SAA Overlap"] = row.get("SAA_Overlap", pd.NA)
+    if not pd.isna(fields["Transit Coverage"]) and not pd.isna(fields["SAA Overlap"]):
+        schedule_factor = 1.0
+        weights = list(config.transit_scheduling_weights)
+        fields["Schedule Factor"] = schedule_factor
+        fields["Quality Factor"] = (
+            (weights[0] * float(fields["Transit Coverage"]))
+            + (weights[1] * (1.0 - float(fields["SAA Overlap"])))
+            + (weights[2] * schedule_factor)
+        )
+    return fields
 
 
 def _schedule_auxiliary_target(

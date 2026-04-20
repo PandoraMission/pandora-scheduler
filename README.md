@@ -62,52 +62,43 @@ If you want the visualizer to run automatically after the pipeline:
 
 ## Select ToO Targets
 
-After running a full-exoplanet visibility pass, you can select exoplanet
-Targets of Opportunity from that run's `data_*` directory while keeping the
-regular science list restricted to the 10 HJs:
-
-```bash
-poetry run python scripts/select_too_targets.py \
-  --data-dir output_1_week_10_HJs_5_ToOs/data_95_30_115 \
-  --start 2026-04-27 \
-  --end 2026-05-04 \
-  --threshold 0.4 \
-  --top-n 5 \
-  --exclude-priorities 10_HJs/exoplanet/exoplanet_priorities.csv \
-  --ranked-out output_1_week_10_HJs_5_ToOs_corrected/data_95_30_115/eligible_too_targets_ranked_by_coverage.csv \
-  --windows-out output_1_week_10_HJs_5_ToOs_corrected/data_95_30_115/eligible_too_windows_ranked_by_coverage.csv \
-  --too-out output_1_week_10_HJs_5_ToOs_corrected/data_95_30_115/ToO_list.csv \
-  --target-definition-out 10_HJs_5_ToOs \
-  --main-target-definition-dir 10_HJs \
-  --candidate-target-definition-dir /Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files
-```
-
-This writes:
-
-- `ToO_list.csv`: scheduler-readable fixed windows for the top N targets
-- `eligible_too_targets_ranked_by_coverage.csv`: one row per eligible target,
-  ranked by best transit coverage and augmented with transit depths
-- `eligible_too_windows_ranked_by_coverage.csv`: every eligible transit window
-- `transit_depth_cache.csv`: cached NASA Exoplanet Archive depth lookups
-- `10_HJs_5_ToOs/`: target definitions for the 10 HJs plus selected ToOs
-
-Depths are queried from NASA Exoplanet Archive `pscomppars` when possible. For
-TOI-only candidates, the script falls back to the TOI table and matches by TOI
-prefix plus orbital period. Use `--no-depth-query` to rely only on an existing
-cache and avoid network access.
-
-The generated `10_HJs_5_ToOs/exoplanet/exoplanet_priorities.csv` keeps the 10
-HJs at their requested transit counts and sets the selected ToOs to
-`transits_req=0`, so they do not compete as ordinary science targets. To apply
-the generated ToO list, rerun the scheduler with the corrected config and output
-directory. The scheduler automatically loads `<output>/<data_*>/ToO_list.csv`:
+The scheduler can now select fixed-window exoplanet Targets of Opportunity
+inside a normal pipeline run. The main science target list remains `10_HJs/`,
+while `extra_inputs.too_candidate_target_definition_base` points at the full
+Pandora exoplanet target list used only for visibility generation and ToO
+selection.
 
 ```bash
 poetry run python run_scheduler.py \
   --start "2026-04-27" \
   --end "2026-05-04" \
-  --output output_1_week_10_HJs_5_ToOs_corrected \
+  --output output_1_week_10_HJs_5_ToOs \
   --config example_scheduler_config_10_HJs_5_ToOs.json
+```
+
+The run writes all products under the same output data directory, for example
+`output_1_week_10_HJs_5_ToOs/data_95_30_115/`:
+
+- `exoplanet_targets.csv`: 10 HJs plus the selected ToO targets appended with
+  `Number of Transits to Capture = 0`
+- `all_exoplanet_targets.csv`: full exoplanet candidate manifest
+- `targets/`: visibility products for the full exoplanet candidate list
+- `all_too_candidates_ranked_by_transit_depth.csv`: all non-10-HJ candidates
+  with visible transits, ranked by transit depth
+- `all_too_windows_ranked_by_transit_depth.csv`: every eligible candidate
+  transit window
+- `ToO_list.csv`: top selected fixed ToO windows used by the scheduler
+- `transit_depth_cache.csv`: cached NASA Exoplanet Archive depth lookups
+
+Configure the selection in `example_scheduler_config_10_HJs_5_ToOs.json`:
+
+```json
+"auto_select_toos": true,
+"too_candidate_target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",
+"too_top_n": 5,
+"too_depth_min_percent": 1.0,
+"too_transit_coverage_min": 0.4,
+"too_query_depths": true
 ```
 
 ## Run 10 HJs Plus 5 Visible Science Targets

@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
+import pandas as pd
+
 from pandorascheduler_rework import observation_utils as rework_helper
 from pandorascheduler_rework.config import PandoraSchedulerConfig, resolve_data_subdir
 from pandorascheduler_rework.scheduler import (
@@ -15,6 +17,7 @@ from pandorascheduler_rework.scheduler import (
     SchedulerPaths,
     run_scheduler,
 )
+from pandorascheduler_rework.too_selection import select_depth_ranked_toos
 from pandorascheduler_rework.utils.io import read_csv_cached
 from pandorascheduler_rework.visibility.catalog import build_visibility_catalog
 
@@ -172,6 +175,11 @@ def build_schedule(config: PandoraSchedulerConfig) -> SchedulerResult:
             _target_definition_from_csv(occultation_target_csv),
         ]
 
+    too_candidate_target_csv = _maybe_generate_too_candidate_manifest(
+        config,
+        out_data,
+    )
+
     if config.targets_manifest and not config.targets_manifest.exists():
         raise FileNotFoundError(
             f"Provided targets_manifest not found: {config.targets_manifest}"
@@ -209,7 +217,27 @@ def build_schedule(config: PandoraSchedulerConfig) -> SchedulerResult:
         auxiliary_target_csv,
         monitoring_target_csv,
         occultation_target_csv,
+        primary_visibility_csv=too_candidate_target_csv,
     )
+
+    if too_candidate_target_csv is not None:
+        too_result = _maybe_select_and_apply_auto_toos(
+            config,
+            out_data,
+            primary_target_csv,
+            too_candidate_target_csv,
+        )
+        if too_result is not None:
+            LOGGER.info(
+                "Selected %d automatic ToO target(s): %s",
+                len(too_result.selected_targets),
+                ", ".join(too_result.selected_targets) or "none",
+            )
+            target_list = read_csv_cached(str(primary_target_csv))
+            if target_list is None:
+                raise FileNotFoundError(
+                    f"Primary target manifest not found after ToO selection: {primary_target_csv}"
+                )
 
     scheduler_inputs = SchedulerInputs(
         pandora_start=config.window_start,
@@ -323,6 +351,130 @@ def _validate_primary_visit_windows(
         )
 
 
+def _maybe_generate_too_candidate_manifest(
+    config: PandoraSchedulerConfig,
+    out_data: Path,
+) -> Path | None:
+    extra_inputs = config.extra_inputs
+    if not _as_bool(extra_inputs.get("auto_select_toos"), False):
+        return None
+
+    raw_base = extra_inputs.get("too_candidate_target_definition_base")
+    if raw_base is None:
+        raise ValueError(
+            "extra_inputs.auto_select_toos requires "
+            "extra_inputs.too_candidate_target_definition_base"
+        )
+
+    candidate_base = Path(str(raw_base)).expanduser().resolve()
+    candidate_csv = _coerce_path(
+        extra_inputs.get("too_candidate_exoplanet_csv"),
+        out_data / "all_exoplanet_targets.csv",
+    ).resolve()
+    LOGGER.info(
+        "Building automatic ToO candidate manifest from %s",
+        candidate_base,
+    )
+    manifest = rework_helper.process_target_files(
+        "exoplanet",
+        base_path=candidate_base,
+    )
+    candidate_csv.parent.mkdir(parents=True, exist_ok=True)
+    manifest.to_csv(candidate_csv, index=False)
+    return candidate_csv
+
+
+def _maybe_select_and_apply_auto_toos(
+    config: PandoraSchedulerConfig,
+    out_data: Path,
+    primary_target_csv: Path,
+    too_candidate_target_csv: Path,
+):
+    extra_inputs = config.extra_inputs
+    if not _as_bool(extra_inputs.get("auto_select_toos"), False):
+        return None
+
+    primary_targets = pd.read_csv(primary_target_csv)
+    main_target_names = set(primary_targets["Planet Name"].dropna().astype(str))
+
+    top_n = int(extra_inputs.get("too_top_n", 5))
+    if top_n < 0:
+        raise ValueError("extra_inputs.too_top_n must be >= 0")
+    depth_min_percent = float(extra_inputs.get("too_depth_min_percent", 1.0))
+    coverage_min = float(
+        extra_inputs.get("too_transit_coverage_min", config.transit_coverage_min)
+    )
+    query_depths = _as_bool(extra_inputs.get("too_query_depths"), True)
+
+    result = select_depth_ranked_toos(
+        data_dir=out_data,
+        candidate_manifest=too_candidate_target_csv,
+        main_targets=main_target_names,
+        start=config.window_start,
+        end=config.window_end,
+        coverage_min=coverage_min,
+        depth_min_percent=depth_min_percent,
+        top_n=top_n,
+        query_depths=query_depths,
+    )
+    _append_selected_toos_to_primary_manifest(
+        primary_target_csv,
+        too_candidate_target_csv,
+        result.selected_targets,
+    )
+    LOGGER.info("Wrote ranked automatic ToO candidates: %s", result.ranked_targets_path)
+    LOGGER.info("Wrote automatic ToO list: %s", result.too_list_path)
+    return result
+
+
+def _append_selected_toos_to_primary_manifest(
+    primary_target_csv: Path,
+    candidate_target_csv: Path,
+    selected_targets: Sequence[str],
+) -> None:
+    if not selected_targets:
+        return
+
+    primary = pd.read_csv(primary_target_csv)
+    candidate = pd.read_csv(candidate_target_csv)
+    existing = set(primary["Planet Name"].dropna().astype(str))
+
+    rows = []
+    for target in selected_targets:
+        if target in existing:
+            continue
+        match = candidate.loc[candidate["Planet Name"].astype(str) == str(target)]
+        if match.empty:
+            LOGGER.warning("Selected ToO %s missing from candidate manifest", target)
+            continue
+        row = match.iloc[0].copy()
+        if "Number of Transits to Capture" in row.index:
+            row["Number of Transits to Capture"] = 0
+        if "Primary Target" in row.index:
+            row["Primary Target"] = 0
+        rows.append(row)
+
+    if not rows:
+        return
+
+    appended = pd.concat([primary, pd.DataFrame(rows)], ignore_index=True)
+    appended.to_csv(primary_target_csv, index=False)
+    rework_helper.create_aux_list(
+        [
+            "exoplanet",
+            "auxiliary-standard",
+            "monitoring-standard",
+            "occultation-standard",
+        ],
+        primary_target_csv.parent,
+    )
+    LOGGER.info(
+        "Appended %d selected ToO target(s) to scheduler manifest %s",
+        len(rows),
+        primary_target_csv,
+    )
+
+
 def _maybe_generate_visibility(
     config: PandoraSchedulerConfig,
     paths: SchedulerPaths,
@@ -332,6 +484,8 @@ def _maybe_generate_visibility(
     auxiliary_target_csv: Path,
     monitoring_target_csv: Path,
     occultation_target_csv: Path,
+    *,
+    primary_visibility_csv: Path | None = None,
 ) -> None:
     # Three-way generate_visibility logic:
     #   explicit "true"/"yes"/"1"  -> always generate
@@ -355,7 +509,7 @@ def _maybe_generate_visibility(
     )
     build_visibility_catalog(
         config,
-        target_list=primary_target_csv,
+        target_list=primary_visibility_csv or primary_target_csv,
         partner_list=auxiliary_target_csv,
         output_subpath="targets",
     )
