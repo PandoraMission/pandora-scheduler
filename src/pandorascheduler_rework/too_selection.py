@@ -74,13 +74,6 @@ def select_depth_ranked_toos(
         coverage_min=coverage_min,
         excluded_targets=excluded_targets,
     )
-    ranked_windows = windows.sort_values(
-        ["target", "transit_coverage", "obs_window_start"],
-        ascending=[True, False, True],
-        ignore_index=True,
-    )
-    ranked_windows_path.parent.mkdir(parents=True, exist_ok=True)
-    ranked_windows.to_csv(ranked_windows_path, index=False)
 
     ranked_targets = build_ranked_targets(windows)
     ranked_targets = enrich_with_depths(
@@ -90,6 +83,10 @@ def select_depth_ranked_toos(
     )
     ranked_targets = rank_by_depth(ranked_targets)
     ranked_targets.to_csv(ranked_targets_path, index=False)
+
+    ranked_windows = rank_windows_by_depth(windows, ranked_targets)
+    ranked_windows_path.parent.mkdir(parents=True, exist_ok=True)
+    ranked_windows.to_csv(ranked_windows_path, index=False)
 
     if ranked_targets.empty:
         selected = ranked_targets
@@ -220,6 +217,38 @@ def rank_by_depth(ranked: pd.DataFrame) -> pd.DataFrame:
     ).drop(columns=["_depth_sort"])
     sortable.insert(0, "rank_by_transit_depth", range(1, len(sortable) + 1))
     return sortable
+
+
+def rank_windows_by_depth(windows: pd.DataFrame, ranked_targets: pd.DataFrame) -> pd.DataFrame:
+    if windows.empty:
+        return windows.copy()
+
+    depth_columns = [
+        "target",
+        "rank_by_transit_depth",
+        "transit_depth_percent",
+        "transit_depth_ppm",
+        "transit_depth_source_table",
+        "transit_depth_archive_name",
+    ]
+    available_columns = [
+        column for column in depth_columns if column in ranked_targets.columns
+    ]
+    depth_rank = ranked_targets.loc[:, available_columns].copy()
+    ranked_windows = windows.merge(depth_rank, on="target", how="left")
+    ranked_windows["_depth_sort"] = pd.to_numeric(
+        ranked_windows.get("transit_depth_percent"),
+        errors="coerce",
+    ).fillna(-1.0)
+    ranked_windows["_rank_sort"] = pd.to_numeric(
+        ranked_windows.get("rank_by_transit_depth"),
+        errors="coerce",
+    ).fillna(10**9)
+    return ranked_windows.sort_values(
+        ["_depth_sort", "_rank_sort", "transit_coverage", "obs_window_start"],
+        ascending=[False, True, False, True],
+        ignore_index=True,
+    ).drop(columns=["_depth_sort", "_rank_sort"])
 
 
 def enrich_with_depths(

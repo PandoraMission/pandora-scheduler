@@ -67,13 +67,14 @@
       "occultation-standard"
     ],
     "skip_manifests": false,
-    "generate_visibility": true,
+    "generate_visibility": false,
+    "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260402-VF20260402-EX20270502.txt",
+
     "auto_select_toos": true,
     "too_candidate_target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",
     "too_top_n": 5,
     "too_depth_min_percent": 1.0,
     "too_transit_coverage_min": 0.4,
-    "too_query_depths": true,
-    "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260402-VF20260402-EX20270502.txt"
+    "too_query_depths": true
   }
 }
