@@ -6,6 +6,7 @@ authors = ["Pandora Scheduler Developers <pandora-dev@example.com>"]
 packages = [
   { include = "pandorascheduler", from = "src" },
   { include = "pandorascheduler_rework", from = "src" },
+  { include = "pandorascheduler_experiments", from = "src" },
 ]
 
 [tool.poetry.dependencies]

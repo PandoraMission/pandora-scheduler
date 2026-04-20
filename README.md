@@ -60,29 +60,45 @@ If you want the visualizer to run automatically after the pipeline:
 "visualizer_mode": "priority"
 ```
 
-## Select ToO Targets
+## Experimental 10 HJs Plus ToOs
 
-The scheduler can now select fixed-window exoplanet Targets of Opportunity
-inside a normal pipeline run. The main science target list remains `10_HJs/`,
-while `extra_inputs.too_candidate_target_definition_base` points at the full
-Pandora exoplanet target list used only for visibility generation and ToO
-selection.
+The `10_HJs` plus automatic fixed-window exoplanet ToO workflow is an
+experiment, not part of the main long-term calendar pipeline. Run it through the
+standalone experiment wrapper:
 
 ```bash
-poetry run python run_scheduler.py \
+poetry run python run_10_hjs_toos.py \
   --start "2026-04-27" \
   --end "2026-05-04" \
   --output output_1_week_10_HJs_5_ToOs \
   --config example_scheduler_config_10_HJs_5_ToOs.json
 ```
 
+Equivalently:
+
+```bash
+poetry run python -m pandorascheduler_experiments.ten_hjs_toos \
+  --start "2026-04-27" \
+  --end "2026-05-04" \
+  --output output_1_week_10_HJs_5_ToOs \
+  --config example_scheduler_config_10_HJs_5_ToOs.json
+```
+
+The main science target list remains `10_HJs/`, while
+`extra_inputs.too_candidate_target_definition_base` points at the full Pandora
+exoplanet target list used only for visibility generation and ToO selection.
+The production `run_scheduler.py` entry point no longer performs this automatic
+ToO experiment.
+
 The run writes all products under the same output data directory, for example
 `output_1_week_10_HJs_5_ToOs/data_95_30_115/`:
 
 - `exoplanet_targets.csv`: 10 HJs plus the selected ToO targets appended with
   `Number of Transits to Capture = 0`
-- `all_exoplanet_targets.csv`: full exoplanet candidate manifest
-- `targets/`: visibility products for the full exoplanet candidate list
+- `all_exoplanet_targets.csv`: full exoplanet candidate manifest plus the
+  authoritative 10 HJ rows from the main science list; this single manifest is
+  used for visibility generation, while ToO selection still excludes the 10 HJs
+- `targets/`: visibility products for `all_exoplanet_targets.csv`
 - `all_too_candidates_ranked_by_transit_depth.csv`: all non-10-HJ candidates
   with visible transits, ranked by transit depth
 - `all_too_windows_ranked_by_transit_depth.csv`: every eligible candidate
@@ -90,10 +106,15 @@ The run writes all products under the same output data directory, for example
 - `ToO_list.csv`: top selected fixed ToO windows used by the scheduler
 - `transit_depth_cache.csv`: cached NASA Exoplanet Archive depth lookups
 
+The aggregate legacy file `all_targets.csv` is no longer written by default.
+The science-calendar builder synthesizes the same combined catalog from the
+category manifests when XML generation needs it. Set
+`extra_inputs.write_all_targets_csv = true` only for older scripts that still
+expect that file on disk.
+
 Configure the selection in `example_scheduler_config_10_HJs_5_ToOs.json`:
 
 ```json
-"auto_select_toos": true,
 "too_candidate_target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",
 "too_top_n": 5,
 "too_depth_min_percent": 1.0,

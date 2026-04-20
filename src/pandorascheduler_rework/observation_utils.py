@@ -1149,8 +1149,11 @@ def process_target_files(keyword: str, *, base_path: Path) -> pd.DataFrame:
     return build_target_manifest(keyword, base_path)
 
 
-def create_aux_list(target_definition_files: Sequence[str], package_dir):
-    """Build ``all_targets.csv`` from the provided target manifest CSVs.
+def combine_target_manifests(
+    target_definition_files: Sequence[str],
+    package_dir,
+) -> pd.DataFrame:
+    """Return a combined target catalog from the provided manifest CSVs.
 
     The legacy helper concatenated the partner target lists that share a common
     column set.  Reimplement the same behaviour explicitly to avoid importing
@@ -1161,7 +1164,9 @@ def create_aux_list(target_definition_files: Sequence[str], package_dir):
         raise ValueError("target_definition_files must contain at least one entry")
 
     base_dir = Path(package_dir)
-    candidate_paths = [base_dir / f"{name}_targets.csv" for name in target_definition_files]
+    candidate_paths = [
+        base_dir / f"{name}_targets.csv" for name in target_definition_files
+    ]
     if any(candidate.exists() for candidate in candidate_paths):
         data_dir = base_dir
     else:
@@ -1197,6 +1202,22 @@ def create_aux_list(target_definition_files: Sequence[str], package_dir):
         pd.concat(trimmed, ignore_index=True).drop_duplicates().reset_index(drop=True)
     )
 
+    return combined
+
+
+def create_aux_list(target_definition_files: Sequence[str], package_dir):
+    """Build ``all_targets.csv`` from the provided target manifest CSVs."""
+
+    base_dir = Path(package_dir)
+    candidate_paths = [
+        base_dir / f"{name}_targets.csv" for name in target_definition_files
+    ]
+    data_dir = (
+        base_dir
+        if any(candidate.exists() for candidate in candidate_paths)
+        else base_dir / "data"
+    )
+    combined = combine_target_manifests(target_definition_files, package_dir)
     output_path = data_dir / "all_targets.csv"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     combined.to_csv(output_path, index=False)

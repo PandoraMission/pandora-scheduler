@@ -128,7 +128,7 @@ class _ScienceCalendarBuilder:
 
         self.data_dir = inputs.data_dir
         self.target_catalog = _read_catalog(self.data_dir / "exoplanet_targets.csv")
-        self.aux_catalog = _read_catalog(self.data_dir / "all_targets.csv")
+        self.aux_catalog = _read_or_synthesise_all_targets(self.data_dir)
         self.occ_catalog = _read_catalog(
             self.data_dir / "occultation-standard_targets.csv"
         )
@@ -2354,6 +2354,22 @@ def _read_catalog(path: Path) -> pd.DataFrame:
     if df is None:
         raise FileNotFoundError(f"Unable to read catalog: {path}")
     return df
+
+
+def _read_or_synthesise_all_targets(data_dir: Path) -> pd.DataFrame:
+    all_targets_path = data_dir / "all_targets.csv"
+    if all_targets_path.exists():
+        return _read_catalog(all_targets_path)
+
+    return observation_utils.combine_target_manifests(
+        [
+            "exoplanet",
+            "auxiliary-standard",
+            "monitoring-standard",
+            "occultation-standard",
+        ],
+        data_dir,
+    )
 
 
 def _normalise_target_name(target: str) -> tuple[str, str]:
