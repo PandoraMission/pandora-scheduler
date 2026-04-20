@@ -60,6 +60,74 @@ If you want the visualizer to run automatically after the pipeline:
 "visualizer_mode": "priority"
 ```
 
+## Select ToO Targets
+
+After running a full-exoplanet visibility pass, you can select exoplanet
+Targets of Opportunity from that run's `data_*` directory while keeping the
+regular science list restricted to the 10 HJs:
+
+```bash
+poetry run python scripts/select_too_targets.py \
+  --data-dir output_1_week_10_HJs_5_ToOs/data_95_30_115 \
+  --start 2026-04-27 \
+  --end 2026-05-04 \
+  --threshold 0.4 \
+  --top-n 5 \
+  --exclude-priorities 10_HJs/exoplanet/exoplanet_priorities.csv \
+  --ranked-out output_1_week_10_HJs_5_ToOs_corrected/data_95_30_115/eligible_too_targets_ranked_by_coverage.csv \
+  --windows-out output_1_week_10_HJs_5_ToOs_corrected/data_95_30_115/eligible_too_windows_ranked_by_coverage.csv \
+  --too-out output_1_week_10_HJs_5_ToOs_corrected/data_95_30_115/ToO_list.csv \
+  --target-definition-out 10_HJs_5_ToOs \
+  --main-target-definition-dir 10_HJs \
+  --candidate-target-definition-dir /Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files
+```
+
+This writes:
+
+- `ToO_list.csv`: scheduler-readable fixed windows for the top N targets
+- `eligible_too_targets_ranked_by_coverage.csv`: one row per eligible target,
+  ranked by best transit coverage and augmented with transit depths
+- `eligible_too_windows_ranked_by_coverage.csv`: every eligible transit window
+- `transit_depth_cache.csv`: cached NASA Exoplanet Archive depth lookups
+- `10_HJs_5_ToOs/`: target definitions for the 10 HJs plus selected ToOs
+
+Depths are queried from NASA Exoplanet Archive `pscomppars` when possible. For
+TOI-only candidates, the script falls back to the TOI table and matches by TOI
+prefix plus orbital period. Use `--no-depth-query` to rely only on an existing
+cache and avoid network access.
+
+The generated `10_HJs_5_ToOs/exoplanet/exoplanet_priorities.csv` keeps the 10
+HJs at their requested transit counts and sets the selected ToOs to
+`transits_req=0`, so they do not compete as ordinary science targets. To apply
+the generated ToO list, rerun the scheduler with the corrected config and output
+directory. The scheduler automatically loads `<output>/<data_*>/ToO_list.csv`:
+
+```bash
+poetry run python run_scheduler.py \
+  --start "2026-04-27" \
+  --end "2026-05-04" \
+  --output output_1_week_10_HJs_5_ToOs_corrected \
+  --config example_scheduler_config_10_HJs_5_ToOs.json
+```
+
+## Run 10 HJs Plus 5 Visible Science Targets
+
+As an alternative to fixed-window ToOs, `10_HJs_plus_5_visible/` treats the five
+selected full-list exoplanets as ordinary science targets. Its priority file
+puts those five first, ranked by best visible transit coverage, followed by the
+10 HJs in their existing priority order:
+
+```bash
+poetry run python run_scheduler.py \
+  --start "2026-04-27" \
+  --end "2026-05-04" \
+  --output output_1_week_10_HJs_plus_5_visible \
+  --config example_scheduler_config_10_HJs_plus_5_visible.json
+```
+
+Use a fresh output directory for this run so no previous `ToO_list.csv` is
+picked up.
+
 ## What's New On `soft_ST_test`
 
 This branch adds a few XML-generation and provenance improvements that are helpful for science-tail experiments:

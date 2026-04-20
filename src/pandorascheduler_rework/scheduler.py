@@ -328,6 +328,33 @@ def run_scheduler(
             advance_progress(start)
             continue
 
+        temp_df = _filter_primary_candidates_for_too_conflicts(
+            temp_df,
+            current_start=start,
+            too_starts=too_starts,
+            too_stops=too_stops,
+        )
+        if temp_df.empty:
+            aux_df, log_info = _schedule_auxiliary_target(
+                start,
+                stop,
+                config,
+                state,
+                inputs,
+            )
+            if not aux_df.empty:
+                schedule_rows.append(aux_df)
+            logger.info(
+                "%s; window %s to %s after filtering primary candidates that overlap upcoming ToOs",
+                log_info,
+                start,
+                stop,
+            )
+            start = stop
+            stop = start + config.schedule_step
+            advance_progress(start)
+            continue
+
         scheduled_visit = _schedule_primary_target(
             temp_df,
             state,
@@ -630,6 +657,51 @@ def _load_too_table(data_dir: Path) -> tuple[list[str], list[datetime], list[dat
     )
 
 
+def _filter_primary_candidates_for_too_conflicts(
+    temp_df: pd.DataFrame,
+    *,
+    current_start: datetime,
+    too_starts: list[datetime],
+    too_stops: list[datetime],
+) -> pd.DataFrame:
+    if temp_df.empty or not too_starts:
+        return temp_df
+
+    remaining_toos = [
+        (too_start, too_stop)
+        for too_start, too_stop in zip(too_starts, too_stops)
+        if too_stop > current_start
+    ]
+    if not remaining_toos:
+        return temp_df
+
+    keep: list[bool] = []
+    for _, row in temp_df.iterrows():
+        obs_start = pd.Timestamp(row["Obs Start"]).to_pydatetime()
+        visit_duration = row.get("Visit Duration")
+        if visit_duration is None or pd.isna(visit_duration):
+            keep.append(True)
+            continue
+        if isinstance(visit_duration, pd.Timedelta):
+            visit_duration = visit_duration.to_pytimedelta()
+        obs_stop = obs_start + visit_duration
+
+        conflict = any(
+            obs_start < too_stop and obs_stop > too_start
+            for too_start, too_stop in remaining_toos
+        )
+        if conflict:
+            logger.info(
+                "Skipping primary candidate %s from %s to %s because it overlaps an upcoming ToO",
+                row.get("Planet Name"),
+                obs_start,
+                obs_stop,
+            )
+        keep.append(not conflict)
+
+    return temp_df.loc[keep].reset_index(drop=True)
+
+
 def _load_planet_transit_windows(
     planet_names: pd.Index,
     inputs: SchedulerInputs,
@@ -716,6 +788,7 @@ def _handle_targets_of_opportunity(
     obs_start = starts[idx]
     obs_stop = stops[idx]
     target_name = targets[idx]
+    target_ra, target_dec = _lookup_target_coordinates(inputs.target_list, target_name)
 
     logger.info("Attempting to schedule Target of Opportunity")
 
@@ -782,18 +855,35 @@ def _handle_targets_of_opportunity(
             )
             schedule_parts.append(free_df)
 
+        forced_ra, forced_dec = _lookup_target_coordinates(
+            inputs.target_list,
+            planet_name_str,
+        )
         forced_df = pd.DataFrame(
             [
                 [
                     planet_name,
                     forced_start,
                     obs_stop,
+                    forced_ra,
+                    forced_dec,
                     f"{planet_name} forced over ToO due to transit factor <=1",
                 ]
             ],
-            columns=["Target", "Observation Start", "Observation Stop", "Comments"],
+            columns=[
+                "Target",
+                "Observation Start",
+                "Observation Stop",
+                "RA",
+                "DEC",
+                "Comments",
+            ],
         )
         schedule_parts.append(forced_df)
+        state.all_target_obs_time[planet_name] = state.all_target_obs_time.get(
+            planet_name,
+            timedelta(),
+        ) + (obs_stop - forced_start)
         logger.info(
             "Forced observation of %s over ToO due to critical transit factor",
             planet_name,
@@ -865,12 +955,25 @@ def _handle_targets_of_opportunity(
                 target_name,
                 obs_start,
                 obs_stop,
+                target_ra,
+                target_dec,
                 " ".join(tf_warning_messages).strip(),
             ]
         ],
-        columns=["Target", "Observation Start", "Observation Stop", "Comments"],
+        columns=[
+            "Target",
+            "Observation Start",
+            "Observation Stop",
+            "RA",
+            "DEC",
+            "Comments",
+        ],
     )
     schedule_parts.append(too_df)
+    state.all_target_obs_time[target_name] = state.all_target_obs_time.get(
+        target_name,
+        timedelta(),
+    ) + (obs_stop - obs_start)
 
     logger.info(f"Scheduled Target of Opportunity: {target_name}")
     for message in tf_warning_messages:
@@ -878,6 +981,19 @@ def _handle_targets_of_opportunity(
 
     combined = pd.concat(schedule_parts, ignore_index=True)
     return combined, obs_stop
+
+
+def _lookup_target_coordinates(
+    target_list: pd.DataFrame,
+    target_name: str,
+) -> tuple[object, object]:
+    if target_list.empty or "Planet Name" not in target_list.columns:
+        return pd.NA, pd.NA
+    match = target_list.loc[target_list["Planet Name"] == target_name]
+    if match.empty:
+        return pd.NA, pd.NA
+    row = match.iloc[0]
+    return row.get("RA", pd.NA), row.get("DEC", pd.NA)
 
 
 def _schedule_auxiliary_target(

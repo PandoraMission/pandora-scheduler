@@ -1,5 +1,5 @@
 {
-  "schedule_step_hours": 6.0,
+  "schedule_step_hours": 4.0,
   "transit_coverage_min": 0.4,
   "min_visibility": 0.4,
   "transit_scheduling_weights": [0.8, 0.0, 0.2],
@@ -59,7 +59,7 @@
   "xml_data_dir": null,
 
   "extra_inputs": {
-    "target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",
+    "target_definition_base": "/Users/vkostov/Documents/GitHub/pandora-scheduler/10_HJs_plus_5_visible",
     "target_definition_files": [
       "exoplanet",
       "auxiliary-standard",
@@ -67,7 +67,7 @@
       "occultation-standard"
     ],
     "skip_manifests": false,
-    "generate_visibility": false,
+    "generate_visibility": true,
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260402-VF20260402-EX20270502.txt"
   }
 }
