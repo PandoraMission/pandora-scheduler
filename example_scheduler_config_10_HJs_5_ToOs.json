@@ -69,6 +69,8 @@
     "skip_manifests": false,
     "generate_visibility": true,
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260402-VF20260402-EX20270502.txt",
+    "write_all_targets_csv": true,
+    "too_list_csv": null,
 
     "too_candidate_target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",
     "too_top_n": 5,
