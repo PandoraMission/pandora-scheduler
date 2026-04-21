@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import logging
+import shutil
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence
+
+import pandas as pd
 
 from pandorascheduler_rework import observation_utils as rework_helper
 from pandorascheduler_rework.config import PandoraSchedulerConfig, resolve_data_subdir
@@ -106,7 +109,7 @@ def build_schedule(config: PandoraSchedulerConfig) -> SchedulerResult:
     extra_inputs = config.extra_inputs
     write_all_targets_csv = _as_bool(
         extra_inputs.get("write_all_targets_csv"),
-        False,
+        True,
     )
 
     # When generating target manifests from a provided target definition base,
@@ -177,6 +180,8 @@ def build_schedule(config: PandoraSchedulerConfig) -> SchedulerResult:
             _target_definition_from_csv(occultation_target_csv),
         ]
 
+    too_list_csv = _stage_too_list(extra_inputs, out_data)
+
     if config.targets_manifest and not config.targets_manifest.exists():
         raise FileNotFoundError(
             f"Provided targets_manifest not found: {config.targets_manifest}"
@@ -191,6 +196,8 @@ def build_schedule(config: PandoraSchedulerConfig) -> SchedulerResult:
         )
 
     _validate_primary_visit_windows(target_list, config)
+    if too_list_csv is not None:
+        _validate_too_list(too_list_csv, target_list)
 
     visibility_window_end = _compute_visibility_window_end(target_list, config)
     visibility_config = (
@@ -326,6 +333,73 @@ def _validate_primary_visit_windows(
             "Obs Window (hrs), or adjust edge buffer parameters if that is intended.\n"
             + sample
             + extra
+        )
+
+
+def _stage_too_list(extra_inputs: dict[str, object], out_data: Path) -> Path | None:
+    """Copy an explicit ToO list into the run data directory, if provided."""
+
+    raw_too_list = extra_inputs.get("too_list_csv")
+    destination = out_data / "ToO_list.csv"
+
+    if raw_too_list is None:
+        return destination if destination.exists() else None
+
+    source = Path(str(raw_too_list)).expanduser().resolve()
+    if not source.exists():
+        raise FileNotFoundError(f"Configured ToO list not found: {source}")
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if source != destination.resolve():
+        shutil.copyfile(source, destination)
+    LOGGER.info("Using ToO list: %s", destination)
+    return destination
+
+
+def _validate_too_list(too_list_csv: Path, target_list: pd.DataFrame) -> None:
+    """Validate a scheduler ToO list against the active target manifest."""
+
+    too_table = pd.read_csv(too_list_csv)
+    required = {"Target", "Obs Window Start", "Obs Window Stop"}
+    missing = required.difference(too_table.columns)
+    if missing:
+        raise ValueError(
+            f"ToO list {too_list_csv} is missing required columns: "
+            + ", ".join(sorted(missing))
+        )
+
+    if "Planet Name" not in target_list.columns:
+        raise ValueError(
+            "Cannot validate ToO list because the primary target manifest lacks "
+            "'Planet Name'"
+        )
+
+    known_targets = set(target_list["Planet Name"].dropna().astype(str))
+    requested_targets = set(too_table["Target"].dropna().astype(str))
+    unknown = sorted(requested_targets.difference(known_targets))
+    if unknown:
+        raise ValueError(
+            "ToO list contains target(s) that are not present in "
+            f"{too_list_csv.parent / 'exoplanet_targets.csv'}: "
+            + ", ".join(unknown)
+            + ". Add these targets to the active target manifest, or use the "
+            "10 HJs + ToOs experiment wrapper if you want automatic ToO target "
+            "manifest construction."
+        )
+
+    starts = pd.to_datetime(too_table["Obs Window Start"], errors="coerce")
+    stops = pd.to_datetime(too_table["Obs Window Stop"], errors="coerce")
+    bad_times = too_table.loc[starts.isna() | stops.isna()]
+    if not bad_times.empty:
+        raise ValueError(
+            f"ToO list {too_list_csv} contains unparseable time rows: "
+            + str(bad_times[["Target", "Obs Window Start", "Obs Window Stop"]].head(10).to_dict(orient="records"))
+        )
+    bad_windows = too_table.loc[stops <= starts]
+    if not bad_windows.empty:
+        raise ValueError(
+            f"ToO list {too_list_csv} contains non-positive windows: "
+            + str(bad_windows[["Target", "Obs Window Start", "Obs Window Stop"]].head(10).to_dict(orient="records"))
         )
 
 

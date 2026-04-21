@@ -60,6 +60,29 @@ If you want the visualizer to run automatically after the pipeline:
 "visualizer_mode": "priority"
 ```
 
+## Explicit ToO Lists
+
+The main `run_scheduler.py` pipeline supports explicitly supplied ToO windows.
+This is separate from the experimental automatic ToO selector: the target rows
+must already be present in the active `exoplanet_targets.csv` manifest, and the
+normal visibility build must produce their `targets/<star>/<planet>/` parquet
+files.
+
+Add a ToO CSV with columns `Target`, `Obs Window Start`, and `Obs Window Stop`,
+then point the JSON at it:
+
+```json
+"extra_inputs": {
+  "too_list_csv": "/path/to/ToO_list.csv"
+}
+```
+
+The pipeline copies that file into the run data directory as `ToO_list.csv`,
+validates that every ToO target exists in the active exoplanet manifest, and the
+scheduler inserts those fixed windows into the calendar. If the target rows are
+not already in the manifest, use the standalone `10_HJs + ToOs` experiment
+wrapper, which builds that experimental manifest for you.
+
 ## Experimental 10 HJs Plus ToOs
 
 The `10_HJs` plus automatic fixed-window exoplanet ToO workflow is an
@@ -106,11 +129,10 @@ The run writes all products under the same output data directory, for example
 - `ToO_list.csv`: top selected fixed ToO windows used by the scheduler
 - `transit_depth_cache.csv`: cached NASA Exoplanet Archive depth lookups
 
-The aggregate legacy file `all_targets.csv` is no longer written by default.
-The science-calendar builder synthesizes the same combined catalog from the
-category manifests when XML generation needs it. Set
-`extra_inputs.write_all_targets_csv = true` only for older scripts that still
-expect that file on disk.
+The main `run_scheduler.py` pipeline still writes the aggregate legacy
+`all_targets.csv` by default. The experiment wrapper also supports that file via
+`extra_inputs.write_all_targets_csv`; set it to `false` only if you want the
+experiment output directory to omit that compatibility CSV.
 
 Configure the selection in `example_scheduler_config_10_HJs_5_ToOs.json`:
 

@@ -849,17 +849,15 @@ def _handle_targets_of_opportunity(
         forced_start = overlap_times[0].to_pydatetime()
 
         if obs_range[0].to_pydatetime() < forced_start:
-            free_df = pd.DataFrame(
-                [
-                    [
-                        "FREE PRE-TOO, REPLACE WITH AUX",
-                        obs_range[0].to_pydatetime(),
-                        forced_start,
-                    ]
-                ],
-                columns=["Target", "Observation Start", "Observation Stop"],
+            schedule_parts.append(
+                _schedule_pre_too_gap(
+                    obs_range[0].to_pydatetime(),
+                    forced_start,
+                    config,
+                    state,
+                    inputs,
+                )
             )
-            schedule_parts.append(free_df)
 
         forced_ra, forced_dec = _lookup_target_coordinates(
             inputs.target_list,
@@ -951,17 +949,15 @@ def _handle_targets_of_opportunity(
             )
 
     if obs_range[0].to_pydatetime() < obs_start:
-        free_df = pd.DataFrame(
-            [
-                [
-                    "FREE PRE-TOO, REPLACE WITH AUX",
-                    obs_range[0].to_pydatetime(),
-                    obs_start,
-                ]
-            ],
-            columns=["Target", "Observation Start", "Observation Stop"],
+        schedule_parts.append(
+            _schedule_pre_too_gap(
+                obs_range[0].to_pydatetime(),
+                obs_start,
+                config,
+                state,
+                inputs,
+            )
         )
-        schedule_parts.append(free_df)
 
     too_df = pd.DataFrame(
         [
@@ -1003,6 +999,28 @@ def _handle_targets_of_opportunity(
 
     combined = pd.concat(schedule_parts, ignore_index=True)
     return combined, obs_stop
+
+
+def _schedule_pre_too_gap(
+    start: datetime,
+    stop: datetime,
+    config: PandoraSchedulerConfig,
+    state: SchedulerState,
+    inputs: SchedulerInputs,
+) -> pd.DataFrame:
+    """Fill the gap before a ToO with the normal non-primary scheduler."""
+
+    if start >= stop:
+        return pd.DataFrame()
+
+    gap_df, message = _schedule_auxiliary_target(start, stop, config, state, inputs)
+    logger.info(
+        "Filled pre-ToO gap from %s to %s: %s",
+        start,
+        stop,
+        message,
+    )
+    return gap_df
 
 
 def _lookup_target_coordinates(
