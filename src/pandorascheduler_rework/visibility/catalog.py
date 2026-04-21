@@ -117,6 +117,7 @@ def build_visibility_catalog(
         sun_avoidance_deg=config.sun_avoidance_deg,
         moon_avoidance_deg=config.moon_avoidance_deg,
         earth_avoidance_deg=config.earth_avoidance_deg,
+        earth_avoidance_day_deg=config.earth_avoidance_day_deg,
     )
     output_root = config.output_dir / data_subdir / output_subpath
     output_root.mkdir(parents=True, exist_ok=True)
