@@ -129,6 +129,12 @@ The run writes all products under the same output data directory, for example
 - `ToO_list.csv`: top selected fixed ToO windows used by the scheduler
 - `transit_depth_cache.csv`: cached NASA Exoplanet Archive depth lookups
 
+If `extra_inputs.too_list_csv` points to a CSV, or if
+`ToO_list.csv` already exists in the run data directory, the experiment wrapper
+uses that existing ToO list instead of rebuilding one from the ranked automatic
+selection. The listed ToO targets are still appended to `exoplanet_targets.csv`
+from the full candidate manifest when needed.
+
 The main `run_scheduler.py` pipeline still writes the aggregate legacy
 `all_targets.csv` by default. The experiment wrapper also supports that file via
 `extra_inputs.write_all_targets_csv`; set it to `false` only if you want the

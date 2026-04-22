@@ -17,6 +17,8 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import subprocess
+import sys
 from dataclasses import fields, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -35,6 +37,7 @@ from pandorascheduler_rework.pipeline import (
     _generate_target_manifests,
     _maybe_generate_visibility,
     _resolve_target_definition_files,
+    _stage_too_list,
     _target_definition_from_csv,
     _validate_primary_visit_windows,
 )
@@ -293,6 +296,30 @@ def _select_and_apply_toos(
     extra_inputs = config.extra_inputs
     primary_targets = pd.read_csv(primary_target_csv)
     main_target_names = set(primary_targets["Planet Name"].dropna().astype(str))
+    existing_too_list = _stage_too_list(extra_inputs, out_data)
+    if existing_too_list is not None:
+        candidate_targets = pd.read_csv(too_candidate_target_csv)
+        selected_targets = _selected_targets_from_existing_too_list(
+            existing_too_list,
+            primary_targets,
+            candidate_targets,
+        )
+        _append_selected_toos_to_primary_manifest(
+            primary_target_csv,
+            too_candidate_target_csv,
+            selected_targets,
+            write_all_targets_csv=write_all_targets_csv,
+        )
+        LOGGER.info(
+            "Using existing ToO list instead of automatic ToO selection: %s",
+            existing_too_list,
+        )
+        return TooSelectionResult(
+            ranked_targets_path=out_data / "all_too_candidates_ranked_by_transit_depth.csv",
+            ranked_windows_path=out_data / "all_too_windows_ranked_by_transit_depth.csv",
+            too_list_path=existing_too_list,
+            selected_targets=selected_targets,
+        )
 
     top_n = int(extra_inputs.get("too_top_n", 5))
     if top_n < 0:
@@ -323,6 +350,67 @@ def _select_and_apply_toos(
     LOGGER.info("Wrote ranked automatic ToO candidates: %s", result.ranked_targets_path)
     LOGGER.info("Wrote automatic ToO list: %s", result.too_list_path)
     return result
+
+
+def _selected_targets_from_existing_too_list(
+    too_list_csv: Path,
+    primary_targets: pd.DataFrame,
+    candidate_targets: pd.DataFrame,
+) -> list[str]:
+    """Validate and read selected targets from an existing ToO list."""
+
+    too_table = pd.read_csv(too_list_csv)
+    required = {"Target", "Obs Window Start", "Obs Window Stop"}
+    missing = required.difference(too_table.columns)
+    if missing:
+        raise ValueError(
+            f"ToO list {too_list_csv} is missing required columns: "
+            + ", ".join(sorted(missing))
+        )
+
+    starts = pd.to_datetime(too_table["Obs Window Start"], errors="coerce")
+    stops = pd.to_datetime(too_table["Obs Window Stop"], errors="coerce")
+    bad_times = too_table.loc[starts.isna() | stops.isna()]
+    if not bad_times.empty:
+        raise ValueError(
+            f"ToO list {too_list_csv} contains unparseable time rows: "
+            + str(
+                bad_times[
+                    ["Target", "Obs Window Start", "Obs Window Stop"]
+                ]
+                .head(10)
+                .to_dict(orient="records")
+            )
+        )
+    bad_windows = too_table.loc[stops <= starts]
+    if not bad_windows.empty:
+        raise ValueError(
+            f"ToO list {too_list_csv} contains non-positive windows: "
+            + str(
+                bad_windows[
+                    ["Target", "Obs Window Start", "Obs Window Stop"]
+                ]
+                .head(10)
+                .to_dict(orient="records")
+            )
+        )
+
+    selected_targets = [
+        str(target)
+        for target in too_table["Target"].dropna().astype(str).tolist()
+        if str(target).strip()
+    ]
+    known_targets = set(primary_targets["Planet Name"].dropna().astype(str))
+    known_targets.update(candidate_targets["Planet Name"].dropna().astype(str))
+    unknown = sorted(set(selected_targets).difference(known_targets))
+    if unknown:
+        raise ValueError(
+            "ToO list contains target(s) that are not present in the 10 HJ "
+            "manifest or full exoplanet candidate manifest: "
+            + ", ".join(unknown)
+        )
+
+    return list(dict.fromkeys(selected_targets))
 
 
 def _append_selected_toos_to_primary_manifest(
@@ -495,6 +583,62 @@ def _generate_xml_if_requested(
     )
 
 
+def _run_visualizer_if_requested(
+    config: PandoraSchedulerConfig,
+    raw_config: dict[str, Any],
+    xml_path: Optional[Path],
+) -> Optional[Path]:
+    if not _as_bool(raw_config.get("run_visualizer_after_pipeline"), False):
+        return None
+    if xml_path is None:
+        LOGGER.warning(
+            "run_visualizer_after_pipeline is enabled, but no XML was generated. "
+            "Set generate_xml=true to enable automatic visualization."
+        )
+        return None
+    if config.output_dir is None:
+        return None
+
+    visualizer_mode = str(raw_config.get("visualizer_mode", "priority")).strip().lower()
+    visualizer_script = Path(__file__).resolve().parents[2] / "scripts" / "visualizer.py"
+    visualizer_output = config.output_dir / f"visualizer_{visualizer_mode}.png"
+    visualizer_cmd = [
+        sys.executable,
+        str(visualizer_script),
+        str(xml_path),
+        "--mode",
+        visualizer_mode,
+        "--out",
+        str(visualizer_output),
+    ]
+    if visualizer_mode == "visibility":
+        data_dir = config.output_dir / resolve_data_subdir(
+            config.extra_inputs,
+            sun_avoidance_deg=config.sun_avoidance_deg,
+            moon_avoidance_deg=config.moon_avoidance_deg,
+            earth_avoidance_deg=config.earth_avoidance_deg,
+            earth_avoidance_day_deg=config.earth_avoidance_day_deg,
+        )
+        visualizer_cmd.extend(["--data-dir", str(data_dir)])
+
+    try:
+        completed = subprocess.run(
+            visualizer_cmd,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.strip() if exc.stderr else str(exc)
+        LOGGER.warning("Visualizer generation failed: %s", stderr)
+        return None
+
+    if completed.stdout.strip():
+        LOGGER.info(completed.stdout.strip())
+    LOGGER.info("Visualizer written to: %s", visualizer_output)
+    return visualizer_output
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run the standalone 10 HJs + automatic ToOs experiment."
@@ -528,10 +672,13 @@ def main() -> int:
     LOGGER.info("Starting standalone 10 HJs + ToOs experiment")
     result = build_schedule(config)
     xml_path = _generate_xml_if_requested(config, raw_config, result)
+    visualizer_path = _run_visualizer_if_requested(config, raw_config, xml_path)
     if result.schedule_csv is not None:
         print(f"Schedule generated: {result.schedule_csv}")
     if xml_path is not None:
         print(f"Science calendar generated: {xml_path}")
+    if visualizer_path is not None:
+        print(f"Visualizer generated: {visualizer_path}")
     return 0
 
 
