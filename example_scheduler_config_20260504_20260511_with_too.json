@@ -46,7 +46,7 @@
   "allow_partial_occultation_sequences_in_xml": false,
 
   "run_visualizer_after_pipeline": false,
-  "visualizer_mode": "priority",
+  "visualizer_mode": "visibility",
   "enable_occultation_pass1": false,
   "requested_occ_time_override": true,
   "allow_occ_startracker_violation": true,
@@ -66,11 +66,12 @@
       "monitoring-standard",
       "occultation-standard"
     ],
+
     "skip_manifests": false,
     "generate_visibility": true,
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260428-VF20260428-EX20270528.txt",
     
     "write_all_targets_csv": true,
-    "too_list_csv": null
+    "too_list_csv": "/Users/vkostov/Documents/GitHub/pandora-scheduler/output_20260504_20260511/ToO_list.csv"
   }
 }
