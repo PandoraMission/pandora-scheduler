@@ -2441,6 +2441,7 @@ class ScheduleVisualizer:
         priority_colors = self._get_priority_colors(
             [1, 2, 3, 4, 5, 6, 7, 8]
         )
+        free_time_color = "lightgreen"
 
         fig, ax = plt.subplots(figsize=figsize)
 
@@ -2513,7 +2514,11 @@ class ScheduleVisualizer:
             x_max = max(x_max, stop_num)
 
             # Background bar: priority color
-            color = priority_colors.get(seq.priority, "lightgray")
+            color = (
+                free_time_color
+                if seq.target == "Free Time"
+                else priority_colors.get(seq.priority, "lightgray")
+            )
             rect = Rectangle(
                 (start_num, y - 0.35), dur_days, 0.7,
                 facecolor=color, edgecolor="none",
@@ -2582,9 +2587,10 @@ class ScheduleVisualizer:
         # Legend
         legend_items = [
             Patch(facecolor="red", alpha=0.75, label="Non-visible"),
+            Patch(facecolor=free_time_color, label="Free Time"),
         ]
         used_priorities = sorted(
-            set(s.priority for _, s, _ in rows)
+            set(s.priority for _, s, _ in rows if s.target != "Free Time")
         )
         for p in used_priorities:
             c = priority_colors.get(p, "silver")
@@ -2606,6 +2612,7 @@ class ScheduleVisualizer:
     ):
         fig, ax = plt.subplots(figsize=figsize)
         priority_colors = self._get_priority_colors([1, 2, 3, 4, 5, 6, 7, 8])
+        free_time_color = "lightgreen"
 
         exoplanet_csv = data_dir / "exoplanet_targets.csv"
         planet_to_star: dict[str, str] = {}
@@ -2728,7 +2735,11 @@ class ScheduleVisualizer:
             x_min = min(x_min, start_num)
             x_max = max(x_max, stop_num)
 
-            color = priority_colors.get(seq.priority, "lightgray")
+            color = (
+                free_time_color
+                if seq.target == "Free Time"
+                else priority_colors.get(seq.priority, "lightgray")
+            )
             rect = Rectangle(
                 (start_num, y - 0.35),
                 dur_days,
@@ -2802,8 +2813,11 @@ class ScheduleVisualizer:
 
         from matplotlib.patches import Patch
 
-        legend_items = [Patch(facecolor="black", alpha=1.0, label="Non-visible")]
-        used_priorities = sorted(set(s.priority for _, s, _ in rows))
+        legend_items = [
+            Patch(facecolor="black", alpha=1.0, label="Non-visible"),
+            Patch(facecolor=free_time_color, label="Free Time"),
+        ]
+        used_priorities = sorted(set(s.priority for _, s, _ in rows if s.target != "Free Time"))
         for p in used_priorities:
             c = priority_colors.get(p, "silver")
             legend_items.append(Patch(facecolor=c, label=f"Priority {p}"))
