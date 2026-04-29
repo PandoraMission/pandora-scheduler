@@ -41,16 +41,19 @@
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
 
-  "generate_xml": false,
+  "generate_xml": true,
   "include_occultation_sequences_in_xml": true,
   "allow_partial_occultation_sequences_in_xml": false,
+  "write_run_config_manifest": true,
 
-  "run_visualizer_after_pipeline": false,
-  "visualizer_mode": "priority",
   "enable_occultation_pass1": false,
+  "only_occultation_pass1": false,
   "requested_occ_time_override": true,
   "allow_occ_startracker_violation": true,
   "try_catalog_fallback": false,
+
+  "run_visualizer_after_pipeline": true,
+  "visualizer_mode": "visibility",
 
   "schedule_csv": null,
   "schedule_csv_row_limit": null,
@@ -59,7 +62,7 @@
   "xml_data_dir": null,
 
   "extra_inputs": {
-    "target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",
+    "target_definition_base": "/Users/vkostov/Documents/GitHub/pandora-scheduler/10_HJs",
     "target_definition_files": [
       "exoplanet",
       "auxiliary-standard",
@@ -67,10 +70,16 @@
       "occultation-standard"
     ],
     "skip_manifests": false,
-    "generate_visibility": true,
-    "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260428-VF20260428-EX20270528.txt",
+    "generate_visibility": false,
+    "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260402-VF20260402-EX20270502.txt",
     
     "write_all_targets_csv": true,
-    "too_list_csv": null
+    "too_list_csv": null,
+
+    "too_candidate_target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",
+    "too_top_n": 5,
+    "too_depth_min_percent": 1.0,
+    "too_transit_coverage_min": 0.4,
+    "too_query_depths": true
   }
 }

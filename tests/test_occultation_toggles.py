@@ -4,12 +4,14 @@ Covers:
   - Config defaults and explicit construction
   - requested_occ_time_override=True (relaxed mode)
   - enable_occultation_pass1=False (Pass 1 is skipped)
+  - only_occultation_pass1=True (later passes are disabled)
   - use_pass1 parameter in schedule_occultation_targets
 """
 
 from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
+import xml.etree.ElementTree as ET
 
 import numpy as np
 import pandas as pd
@@ -99,16 +101,19 @@ class TestConfigDefaults:
         cfg = _make_config()
         assert cfg.enable_occultation_xml is True
         assert cfg.enable_occultation_pass1 is True
+        assert cfg.only_occultation_pass1 is False
         assert cfg.requested_occ_time_override is False
 
     def test_explicit_false(self):
         cfg = _make_config(
             enable_occultation_xml=False,
             enable_occultation_pass1=False,
+            only_occultation_pass1=True,
             requested_occ_time_override=True,
         )
         assert cfg.enable_occultation_xml is False
         assert cfg.enable_occultation_pass1 is False
+        assert cfg.only_occultation_pass1 is True
         assert cfg.requested_occ_time_override is True
 
 
@@ -225,6 +230,126 @@ class TestUsePass1:
         assert flag is True
         assert result_df["Target"].notna().any()
 
+    def test_only_pass1_stops_before_later_passes(self, tmp_path):
+        """When Pass 1-only mode is active, later passes must not fill gaps."""
+        vis_dir = tmp_path / "vis"
+        vis_dir.mkdir(parents=True, exist_ok=True)
+
+        t0 = datetime(2026, 1, 1)
+        times = [t0 + timedelta(minutes=m) for m in range(120)]
+        flags_a = [1] * 60 + [0] * 60
+        flags_b = [0] * 60 + [1] * 60
+        _write_star_visibility(vis_dir, "StarA", times, flags_a)
+        _write_star_visibility(vis_dir, "StarB", times, flags_b)
+
+        starts = [
+            Time(t0, scale="utc").to_value("mjd"),
+            Time(t0 + timedelta(hours=1), scale="utc").to_value("mjd"),
+        ]
+        stops = [
+            Time(t0 + timedelta(hours=1), scale="utc").to_value("mjd"),
+            Time(t0 + timedelta(hours=2), scale="utc").to_value("mjd"),
+        ]
+
+        o_df = pd.DataFrame({
+            "Target": [None, None],
+            "start": [
+                t0.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                (t0 + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            ],
+            "stop": [
+                (t0 + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                (t0 + timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            ],
+            "RA": [np.nan, np.nan],
+            "DEC": [np.nan, np.nan],
+        })
+        o_list = pd.DataFrame({
+            "Star Name": ["StarA", "StarB"],
+            "RA": [10.0, 11.0],
+            "DEC": [20.0, 21.0],
+        })
+
+        result_df, flag = observation_utils.schedule_occultation_targets(
+            np.array(["StarA", "StarB"]),
+            starts,
+            stops,
+            t0,
+            t0 + timedelta(hours=2),
+            str(vis_dir),
+            o_df,
+            o_list,
+            "test",
+            use_pass1=True,
+            only_pass1=True,
+        )
+
+        assert flag is False
+        assert result_df["Target"].isna().all()
+
+    def test_only_pass1_caches_runs_for_all_intervals(self, tmp_path):
+        """Best Pass-1-only candidate must retain per-interval runs for the whole visit."""
+        vis_dir = tmp_path / "vis"
+        vis_dir.mkdir(parents=True, exist_ok=True)
+
+        t0 = datetime(2026, 1, 1)
+        times = [t0 + timedelta(minutes=m) for m in range(180)]
+        # Visible only in the first and third occultation intervals.
+        flags = ([1] * 12) + ([0] * 48) + ([0] * 60) + ([1] * 12) + ([0] * 48)
+        _write_star_visibility(vis_dir, "StarA", times, flags)
+
+        starts = [
+            Time(t0, scale="utc").to_value("mjd"),
+            Time(t0 + timedelta(hours=1), scale="utc").to_value("mjd"),
+            Time(t0 + timedelta(hours=2), scale="utc").to_value("mjd"),
+        ]
+        stops = [
+            Time(t0 + timedelta(minutes=30), scale="utc").to_value("mjd"),
+            Time(t0 + timedelta(hours=1, minutes=30), scale="utc").to_value("mjd"),
+            Time(t0 + timedelta(hours=2, minutes=30), scale="utc").to_value("mjd"),
+        ]
+
+        o_df = pd.DataFrame({
+            "Target": [None, None, None],
+            "start": [
+                t0.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                (t0 + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                (t0 + timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            ],
+            "stop": [
+                (t0 + timedelta(minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                (t0 + timedelta(hours=1, minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                (t0 + timedelta(hours=2, minutes=30)).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            ],
+            "RA": [np.nan, np.nan, np.nan],
+            "DEC": [np.nan, np.nan, np.nan],
+        })
+        o_list = pd.DataFrame({
+            "Star Name": ["StarA"],
+            "RA": [10.0],
+            "DEC": [20.0],
+        })
+
+        result_df, flag = observation_utils.schedule_occultation_targets(
+            np.array(["StarA"]),
+            starts,
+            stops,
+            t0,
+            t0 + timedelta(hours=3),
+            str(vis_dir),
+            o_df,
+            o_list,
+            "test",
+            use_pass1=True,
+            only_pass1=True,
+        )
+
+        assert flag is False
+        selection = result_df.attrs.get("pass1_only_selection")
+        assert isinstance(selection, dict)
+        assert selection["target"] == "StarA"
+        assert len(selection["segment_runs"]) == 3
+
     def test_pass1_does_not_assign_when_interval_has_no_samples(self, tmp_path):
         """An empty interval must not be treated as fully visible by Pass 1."""
         vis_dir = tmp_path / "vis"
@@ -271,3 +396,147 @@ class TestUsePass1:
 
         assert flag is False
         assert (result_df["Target"] == "No target").all()
+
+
+class TestOnlyPass1VisitFallback:
+    def test_cached_visible_occultation_runs_bypass_revalidation(self, tmp_path):
+        config = _make_config(only_occultation_pass1=True)
+        builder = _make_builder(tmp_path, config)
+
+        visit_element = ET.Element("Visit")
+        start = datetime(2026, 1, 1, 0, 13, 59)
+        stop = datetime(2026, 1, 1, 0, 26, 0)
+        occ_info = pd.DataFrame(
+            {
+                "Star Name": ["OccA"],
+                "RA": [10.0],
+                "DEC": [20.0],
+            }
+        )
+
+        seq_counter = builder._emit_cached_visible_occultation_sequences(
+            visit_element,
+            "0001",
+            1,
+            "OccA",
+            start,
+            stop,
+            10.0,
+            20.0,
+            occ_info,
+            "pass1_only_best_visit_target",
+            "Pass 1 only",
+        )
+
+        assert seq_counter == 2
+        assert len(visit_element.findall("./Observation_Sequence")) == 1
+        assert len(builder.sequence_provenance) == 1
+        row = builder.sequence_provenance[0]
+        assert row["assignment_source"] == "pass1_only_best_visit_target"
+        assert row["visibility_fraction"] == pytest.approx(1.0)
+        assert row["visible_minutes"] == pytest.approx(
+            (stop - start).total_seconds() / 60.0
+        )
+        assert row["non_visible_minutes"] == pytest.approx(0.0)
+
+    def test_find_occultation_target_preserves_pass1_cached_selection(self, tmp_path):
+        config = _make_config(only_occultation_pass1=True)
+        builder = _make_builder(tmp_path, config)
+
+        aux_dir = tmp_path / "data" / "aux_targets"
+        aux_dir.mkdir(parents=True, exist_ok=True)
+
+        t0 = datetime(2026, 1, 1)
+        times = [t0 + timedelta(minutes=m) for m in range(120)]
+        flags_a = [1] * 60 + [0] * 60
+        flags_b = [0] * 60 + [1] * 30 + [0] * 30
+        _write_star_visibility(aux_dir, "OccA", times, flags_a)
+        _write_star_visibility(aux_dir, "OccB", times, flags_b)
+
+        builder.occ_catalog = pd.DataFrame(
+            {
+                "Star Name": ["OccA", "OccB"],
+                "RA": [10.0, 11.0],
+                "DEC": [20.0, 21.0],
+                "Number of Hours Requested": [600, 600],
+            }
+        )
+        builder.aux_catalog = pd.concat(
+            [
+                builder.aux_catalog,
+                pd.DataFrame(
+                    {
+                        "Star Name": ["OccB"],
+                        "RA": [11.0],
+                        "DEC": [21.0],
+                    }
+                ),
+            ],
+            ignore_index=True,
+        )
+
+        result = builder._find_occultation_target(
+            [t0],
+            [t0 + timedelta(hours=2)],
+            t0,
+            t0 + timedelta(hours=2),
+            0.0,
+            0.0,
+            "0001",
+        )
+
+        assert result is not None
+        occ_df, scheduled = result
+        assert scheduled is False
+        selection = occ_df.attrs.get("pass1_only_selection")
+        assert isinstance(selection, dict)
+        assert selection["target"] == "OccA"
+        assert selection["visible_fraction"] == pytest.approx(0.5)
+        assert len(selection["segment_runs"]) == 1
+
+    def test_selects_single_best_target_for_whole_visit(self, tmp_path):
+        config = _make_config(only_occultation_pass1=True)
+        builder = _make_builder(tmp_path, config)
+
+        aux_dir = tmp_path / "data" / "aux_targets"
+        aux_dir.mkdir(parents=True, exist_ok=True)
+
+        t0 = datetime(2026, 1, 1)
+        times = [t0 + timedelta(minutes=m) for m in range(120)]
+        flags_a = [1] * 60 + [0] * 60
+        flags_b = [0] * 60 + [1] * 30 + [0] * 30
+        _write_star_visibility(aux_dir, "OccA", times, flags_a)
+        _write_star_visibility(aux_dir, "OccB", times, flags_b)
+
+        builder.occ_catalog = pd.DataFrame(
+            {
+                "Star Name": ["OccA", "OccB"],
+                "RA": [10.0, 11.0],
+                "DEC": [20.0, 21.0],
+                "Number of Hours Requested": [600, 600],
+            }
+        )
+        builder.aux_catalog = pd.concat(
+            [
+                builder.aux_catalog,
+                pd.DataFrame(
+                    {
+                        "Star Name": ["OccB"],
+                        "RA": [11.0],
+                        "DEC": [21.0],
+                    }
+                ),
+            ],
+            ignore_index=True,
+        )
+
+        result = builder._select_best_visit_occultation_target(
+            0.0,
+            0.0,
+            [(t0, t0 + timedelta(hours=2))],
+        )
+
+        assert result is not None
+        assert result.target == "OccA"
+        assert result.visible_fraction == pytest.approx(0.5)
+        assert len(result.segment_runs) == 1

@@ -73,6 +73,18 @@ class _OccultationChunk:
     occultation_pass: str = ""
 
 
+@dataclass
+class _Pass1OnlyVisitSelection:
+    """Chosen visit-wide occultation target for Pass-1-only XML fallback."""
+
+    target: str
+    ra: float
+    dec: float
+    info: Optional[pd.DataFrame]
+    visible_fraction: float
+    segment_runs: List[List[Tuple[datetime, datetime, bool]]]
+
+
 def generate_science_calendar(
     inputs: ScienceCalendarInputs,
     config: PandoraSchedulerConfig,
@@ -145,6 +157,7 @@ class _ScienceCalendarBuilder:
         self.sequence_provenance: list[dict[str, object]] = []
         self._science_soft_payload: Optional[dict[str, object]] = None
         self._science_soft_payload_failed = False
+        self._occ_visibility_series_cache: Dict[str, Optional[pd.Series]] = {}
 
     def _record_sequence_provenance(
         self,
@@ -200,8 +213,14 @@ class _ScienceCalendarBuilder:
     def _visibility_stats_in_df(
         self, vis_df: Optional[pd.DataFrame], seg_start: datetime, seg_stop: datetime
     ) -> tuple[float, float, float]:
+        prepared = self._prepared_visibility_series(vis_df)
+        return self._visibility_stats_in_series(prepared, seg_start, seg_stop)
+
+    @staticmethod
+    def _prepared_visibility_series(vis_df: Optional[pd.DataFrame]) -> Optional[pd.Series]:
+        """Convert a visibility DataFrame into a minute-aligned boolean series."""
         if vis_df is None or vis_df.empty:
-            return float("nan"), float("nan"), float("nan")
+            return None
 
         if "Time_UTC" in vis_df.columns and pd.api.types.is_datetime64_any_dtype(
             vis_df["Time_UTC"]
@@ -216,7 +235,7 @@ class _ScienceCalendarBuilder:
                 ).to_datetime()
             )
         else:
-            return float("nan"), float("nan"), float("nan")
+            return None
 
         index = pd.DatetimeIndex(times)
         if getattr(index, "tz", None) is not None:
@@ -227,13 +246,20 @@ class _ScienceCalendarBuilder:
             {"Visible": (vis_df["Visible"].to_numpy(dtype=float) > 0.5)},
             index=index,
         )
-        prepared = prepared.groupby(level=0)["Visible"].max().to_frame()
+        return prepared.groupby(level=0)["Visible"].max()
+
+    @staticmethod
+    def _visibility_stats_in_series(
+        prepared: Optional[pd.Series], seg_start: datetime, seg_stop: datetime
+    ) -> tuple[float, float, float]:
+        if prepared is None or prepared.empty:
+            return float("nan"), float("nan"), float("nan")
 
         n_minutes = int(round((seg_stop - seg_start).total_seconds() / 60.0))
         if n_minutes <= 0:
             return float("nan"), float("nan"), float("nan")
         minute_index = pd.date_range(seg_start, periods=n_minutes, freq="min")
-        aligned = prepared["Visible"].reindex(minute_index, fill_value=False)
+        aligned = prepared.reindex(minute_index, fill_value=False)
         visible_minutes = float(aligned.sum())
         non_visible_minutes = float((~aligned).sum())
         return float(aligned.mean()), visible_minutes, non_visible_minutes
@@ -247,14 +273,364 @@ class _ScienceCalendarBuilder:
     def _occultation_visibility_stats(
         self, target_name: str, seg_start: datetime, seg_stop: datetime
     ) -> tuple[float, float, float]:
-        vis_df = _read_visibility(self.data_dir / "aux_targets" / target_name, target_name)
-        return self._visibility_stats_in_df(vis_df, seg_start, seg_stop)
+        prepared = self._prepared_occultation_visibility_series(target_name)
+        return self._visibility_stats_in_series(prepared, seg_start, seg_stop)
 
     def _occultation_visibility_fraction(
         self, target_name: str, seg_start: datetime, seg_stop: datetime
     ) -> float:
         fraction, _, _ = self._occultation_visibility_stats(target_name, seg_start, seg_stop)
         return fraction
+
+    def _occultation_visibility_runs(
+        self,
+        target_name: str,
+        seg_start: datetime,
+        seg_stop: datetime,
+    ) -> List[Tuple[datetime, datetime, bool]]:
+        """Return contiguous visible/non-visible runs for one occultation target."""
+        if seg_stop <= seg_start:
+            return []
+
+        prepared = self._prepared_occultation_visibility_series(target_name)
+        if prepared is None or prepared.empty:
+            return [(seg_start, seg_stop, False)]
+
+        n_minutes = int(round((seg_stop - seg_start).total_seconds() / 60.0))
+        if n_minutes <= 0:
+            return []
+
+        minute_index = pd.date_range(seg_start, periods=n_minutes, freq="min")
+        aligned = prepared.reindex(minute_index, fill_value=False)
+        return self._visibility_runs_from_aligned(aligned, seg_start, seg_stop)
+
+    @staticmethod
+    def _visibility_runs_from_aligned(
+        aligned: pd.Series,
+        seg_start: datetime,
+        seg_stop: datetime,
+    ) -> List[Tuple[datetime, datetime, bool]]:
+        """Return contiguous visible/non-visible runs from an aligned minute series."""
+        flags = [int(value) for value in aligned.to_numpy(dtype=bool)]
+        changes = _visibility_change_indices(flags)
+
+        runs: List[Tuple[datetime, datetime, bool]] = []
+        current = seg_start
+        for change_idx in changes:
+            next_value = seg_start + timedelta(minutes=change_idx + 1)
+            if next_value > current:
+                runs.append((current, next_value, bool(flags[change_idx])))
+            current = next_value
+
+        if seg_stop > current:
+            runs.append((current, seg_stop, bool(flags[-1])))
+        return runs
+
+    def _split_occultation_runs_by_segment(
+        self,
+        aligned: pd.Series,
+        occultation_segments: Sequence[Tuple[datetime, datetime]],
+    ) -> List[List[Tuple[datetime, datetime, bool]]]:
+        """Split a visit-wide aligned visibility series back into segment runs."""
+        runs_by_segment: List[List[Tuple[datetime, datetime, bool]]] = []
+        offset = 0
+        for seg_start, seg_stop in occultation_segments:
+            n_minutes = int(round((seg_stop - seg_start).total_seconds() / 60.0))
+            if n_minutes <= 0:
+                runs_by_segment.append([])
+                continue
+            segment_aligned = aligned.iloc[offset : offset + n_minutes]
+            runs_by_segment.append(self._visibility_runs_from_aligned(
+                segment_aligned,
+                seg_start,
+                seg_stop,
+            ))
+            offset += n_minutes
+        return runs_by_segment
+
+    def _prepared_occultation_visibility_series(
+        self,
+        target_name: str,
+    ) -> Optional[pd.Series]:
+        """Return cached minute-aligned visibility series for one occultation target."""
+        if target_name in self._occ_visibility_series_cache:
+            return self._occ_visibility_series_cache[target_name]
+
+        vis_df = _read_visibility(
+            self.data_dir / "aux_targets" / target_name,
+            target_name,
+        )
+        prepared = self._prepared_visibility_series(vis_df)
+        self._occ_visibility_series_cache[target_name] = prepared
+        return prepared
+
+    @staticmethod
+    def _combined_minute_index(
+        segments: Sequence[Tuple[datetime, datetime]],
+    ) -> pd.DatetimeIndex:
+        """Return one concatenated minute index spanning the provided segments."""
+        parts: list[pd.DatetimeIndex] = []
+        for seg_start, seg_stop in segments:
+            n_minutes = int(round((seg_stop - seg_start).total_seconds() / 60.0))
+            if n_minutes <= 0:
+                continue
+            parts.append(pd.date_range(seg_start, periods=n_minutes, freq="min"))
+        if not parts:
+            return pd.DatetimeIndex([])
+        if len(parts) == 1:
+            return parts[0]
+        return parts[0].append(parts[1:])
+
+    def _select_best_visit_occultation_target(
+        self,
+        reference_ra: float,
+        reference_dec: float,
+        occultation_segments: Sequence[Tuple[datetime, datetime]],
+    ) -> Optional[_Pass1OnlyVisitSelection]:
+        """Pick one occultation target with the highest total visible fraction."""
+        if self.occ_catalog is None or self.occ_catalog.empty:
+            return None
+        if "Star Name" not in self.occ_catalog.columns:
+            return None
+
+        occultation_minute_index = self._combined_minute_index(occultation_segments)
+        total_minutes = float(len(occultation_minute_index))
+        if total_minutes <= 0.0:
+            return None
+
+        eligible_rows: list[pd.Series] = []
+        for _, row in self.occ_catalog.iterrows():
+            name = str(row.get("Star Name", "")).strip()
+            if not name:
+                continue
+            current_occ_time = self.occultation_obs_time.get(name, timedelta())
+            if current_occ_time >= self._get_occultation_time_limit(name):
+                continue
+            eligible_rows.append(row)
+
+        candidate_count = len(eligible_rows)
+        LOGGER.info(
+            "Pass-1-only fallback: scoring %d occultation candidate(s) across %d occultation minute(s) in %d segment(s)",
+            candidate_count,
+            int(total_minutes),
+            len(occultation_segments),
+        )
+        if candidate_count == 0:
+            return None
+
+        progress = None
+        if self.config.show_progress and candidate_count > 1:
+            progress = tqdm(
+                total=candidate_count,
+                desc="Pass-1-only occultation target scan",
+                unit="target",
+                leave=False,
+                dynamic_ncols=True,
+            )
+
+        scored_rows: list[tuple[pd.Series, float]] = []
+        best_fraction_so_far = -1.0
+        best_aligned_by_name: Dict[str, pd.Series] = {}
+        log_every = max(1, candidate_count // 10)
+        for idx, row in enumerate(eligible_rows, start=1):
+            name = str(row.get("Star Name", "")).strip()
+            prepared = self._prepared_occultation_visibility_series(name)
+            if prepared is None or prepared.empty:
+                aligned = pd.Series(
+                    False,
+                    index=occultation_minute_index,
+                    dtype=bool,
+                )
+                visible_fraction = 0.0
+            else:
+                aligned = prepared.reindex(occultation_minute_index, fill_value=False)
+                visible_fraction = float(aligned.mean()) if len(aligned) > 0 else 0.0
+            visible_minutes = visible_fraction * total_minutes
+            scored_rows.append((row, visible_minutes / total_minutes))
+            if visible_fraction > best_fraction_so_far + 1e-9:
+                best_fraction_so_far = visible_fraction
+                best_aligned_by_name = {name: aligned}
+            elif abs(visible_fraction - best_fraction_so_far) <= 1e-9:
+                best_aligned_by_name[name] = aligned
+            if progress is not None:
+                progress.update(1)
+            if idx == 1 or idx == candidate_count or idx % log_every == 0:
+                LOGGER.info(
+                    "Pass-1-only fallback: scored %d/%d candidate(s)",
+                    idx,
+                    candidate_count,
+                )
+
+        if progress is not None:
+            progress.close()
+
+        if not scored_rows:
+            return None
+
+        best_fraction = max(score for _, score in scored_rows)
+        best_rows = [row for row, score in scored_rows if score >= best_fraction - 1e-9]
+        candidates = pd.DataFrame(best_rows)
+        if self.config.prioritise_occultations_by_slew and not candidates.empty:
+            candidates = _prioritise_occultation_targets(
+                candidates,
+                reference_ra,
+                reference_dec,
+            )
+
+        chosen = candidates.iloc[0]
+        occ_target = str(chosen.get("Star Name", "")).strip()
+        if not occ_target:
+            return None
+
+        occ_info = _lookup_occultation_info(
+            occ_target,
+            self.target_catalog,
+            self.aux_catalog,
+            self.occ_catalog,
+        )
+        ra_occ = _fallback_float(chosen.get("RA"), occ_info, "RA")
+        dec_occ = _fallback_float(chosen.get("DEC"), occ_info, "DEC")
+        aligned = best_aligned_by_name.get(occ_target)
+        if aligned is None:
+            prepared = self._prepared_occultation_visibility_series(occ_target)
+            aligned = (
+                pd.Series(False, index=occultation_minute_index, dtype=bool)
+                if prepared is None or prepared.empty
+                else prepared.reindex(occultation_minute_index, fill_value=False)
+            )
+        segment_runs = self._split_occultation_runs_by_segment(
+            aligned,
+            occultation_segments,
+        )
+        return _Pass1OnlyVisitSelection(
+            target=occ_target,
+            ra=ra_occ,
+            dec=dec_occ,
+            info=occ_info,
+            visible_fraction=float(best_fraction),
+            segment_runs=segment_runs,
+        )
+
+    def _emit_free_time_sequence(
+        self,
+        visit_element: ET.Element,
+        visit_id: str,
+        seq_counter: int,
+        start: datetime,
+        stop: datetime,
+        assignment_source: str,
+    ) -> int:
+        """Emit one explicit Free Time sequence into the XML."""
+        if stop <= start:
+            return seq_counter
+
+        sequence_id = f"{seq_counter:03d}"
+        free_time_info = pd.DataFrame(
+            [
+                {
+                    "Star Name": "Free Time",
+                    "RA": -999.0,
+                    "DEC": -999.0,
+                    "NIRDA_TargetID": "Free Time",
+                    "VDA_TargetID": "Free Time",
+                }
+            ]
+        )
+        observation_sequence(
+            visit_element,
+            sequence_id,
+            "Free Time",
+            "0",
+            start.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            stop.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            float("nan"),
+            float("nan"),
+            free_time_info,
+        )
+        self._record_sequence_provenance(
+            visit_id,
+            sequence_id,
+            "Free Time",
+            "0",
+            start,
+            stop,
+            "free_time",
+            assignment_source,
+            visibility_fraction=0.0,
+            visible_minutes=0.0,
+            non_visible_minutes=(stop - start).total_seconds() / 60.0,
+        )
+        return seq_counter + 1
+
+    def _emit_cached_visible_occultation_sequences(
+        self,
+        visit_element: ET.Element,
+        visit_id: str,
+        seq_counter: int,
+        occ_target: str,
+        start: datetime,
+        stop: datetime,
+        ra_occ: float,
+        dec_occ: float,
+        occ_info: Optional[pd.DataFrame],
+        assignment_source: str,
+        occultation_pass: str,
+    ) -> int:
+        """Emit cached Pass-1-only visible runs without revalidating them.
+
+        These runs already come from the minute-level Pass 1 visibility scan, so
+        the XML path should trust them directly and avoid a second visibility
+        gate that can disagree due to timestamp alignment.
+        """
+        if stop <= start:
+            return seq_counter
+
+        current = start
+        while current < stop:
+            if self.config.break_occultation_sequences:
+                next_value = min(current + self.occultation_limit, stop)
+                if next_value < stop:
+                    remainder = stop - next_value
+                    if remainder < self._occultation_min_duration():
+                        next_value = stop
+            else:
+                next_value = stop
+
+            sequence_id = f"{seq_counter:03d}"
+            observation_sequence(
+                visit_element,
+                sequence_id,
+                occ_target,
+                "0",
+                current.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                next_value.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                ra_occ,
+                dec_occ,
+                occ_info if occ_info is not None else pd.DataFrame(),
+            )
+            duration_minutes = (next_value - current).total_seconds() / 60.0
+            self._record_sequence_provenance(
+                visit_id,
+                sequence_id,
+                occ_target,
+                "0",
+                current,
+                next_value,
+                "occultation",
+                assignment_source,
+                occultation_pass,
+                visibility_fraction=1.0,
+                visible_minutes=duration_minutes,
+                non_visible_minutes=0.0,
+            )
+            self.occultation_obs_time[occ_target] = (
+                self.occultation_obs_time.get(occ_target, timedelta())
+                + (next_value - current)
+            )
+            seq_counter += 1
+            current = next_value
+
+        return seq_counter
 
     def _science_min_duration(self) -> timedelta:
         """Resolved minimum standalone science fragment duration."""
@@ -1881,9 +2257,31 @@ class _ScienceCalendarBuilder:
         fallback_occultation: Optional[
             tuple[str, float, float, Optional[pd.DataFrame]]
         ] = None
+        pass1_only_visit_target: Optional[_Pass1OnlyVisitSelection] = None
 
         if occultation_info is not None:
             occ_df, scheduled = occultation_info
+            if self.config.only_occultation_pass1 and occ_df is not None:
+                selection = occ_df.attrs.get("pass1_only_selection")
+                if isinstance(selection, dict):
+                    occ_target = str(selection.get("target", "")).strip()
+                    if occ_target:
+                        occ_info = _lookup_occultation_info(
+                            occ_target,
+                            self.target_catalog,
+                            self.aux_catalog,
+                            self.occ_catalog,
+                        )
+                        pass1_only_visit_target = _Pass1OnlyVisitSelection(
+                            target=occ_target,
+                            ra=float(selection.get("ra", float("nan"))),
+                            dec=float(selection.get("dec", float("nan"))),
+                            info=occ_info,
+                            visible_fraction=float(
+                                selection.get("visible_fraction", 0.0)
+                            ),
+                            segment_runs=list(selection.get("segment_runs", [])),
+                        )
             if occ_df is not None and not occ_df.empty and "Target" in occ_df.columns:
                 assigned_mask = occ_df["Target"].astype(str).str.strip().ne("")
                 has_assigned_rows = bool(assigned_mask.any())
@@ -1905,13 +2303,35 @@ class _ScienceCalendarBuilder:
                 )
 
         if occ_df is None:
-            LOGGER.warning(
-                "Visit %s: unable to schedule occultation target for %s between %s and %s",
-                visit_id, target_name, start, final_time,
-            )
+            if self.config.only_occultation_pass1 and pass1_only_visit_target is not None:
+                LOGGER.info(
+                    "Visit %s: Pass 1 did not fully assign %s between %s and %s; using cached Pass 1 target for XML emission",
+                    visit_id,
+                    target_name,
+                    start,
+                    final_time,
+                )
+            else:
+                LOGGER.warning(
+                    "Visit %s: unable to schedule occultation target for %s between %s and %s",
+                    visit_id, target_name, start, final_time,
+                )
 
         # --- Path 2: catalog-fallback occultation (no occ_df) ---------------
         if occ_df is None:
+            if self.config.only_occultation_pass1:
+                if pass1_only_visit_target is not None:
+                    LOGGER.info(
+                        "Visit %s: using Pass 1 only cached target %s with %.1f%% total occultation visibility",
+                        visit_id,
+                        pass1_only_visit_target.target,
+                        pass1_only_visit_target.visible_fraction * 100.0,
+                    )
+                else:
+                    LOGGER.warning(
+                        "Visit %s: Pass 1 only mode produced no cached occultation target; occultation time will be emitted as Free Time",
+                        visit_id,
+                    )
             for seg_start, seg_stop, is_visible in visit_segments:
                 if is_visible:
                     seq_counter = self._emit_science_sequences(
@@ -1921,22 +2341,64 @@ class _ScienceCalendarBuilder:
                         soft_tail_window=science_soft_tail_windows.get(seg_start),
                     )
                 else:
-                    # Select per-segment so the visibility check uses the
-                    # actual occultation-gap times — a target visible in one gap
-                    # may violate sun keepout in another.
-                    fallback_occultation = self._select_fallback_occultation_target(
-                        ra_value, dec_value,
-                        seg_start=seg_start, seg_stop=seg_stop,
-                    )
-                    if fallback_occultation is not None:
-                        occ_target, ra_occ, dec_occ, occ_info = fallback_occultation
-                        seq_counter = self._emit_occultation_sequences(
-                            visit_element, visit_id, seq_counter, occ_target,
-                            seg_start, seg_stop, ra_occ, dec_occ, occ_info,
-                            reference_ra=ra_value,
-                            reference_dec=dec_value,
-                            assignment_source="catalog_fallback",
+                    if self.config.only_occultation_pass1:
+                        if pass1_only_visit_target is None:
+                            seq_counter = self._emit_free_time_sequence(
+                                visit_element,
+                                visit_id,
+                                seq_counter,
+                                seg_start,
+                                seg_stop,
+                                assignment_source="pass1_only_no_candidate",
+                            )
+                            continue
+
+                        segment_runs = (
+                            pass1_only_visit_target.segment_runs.pop(0)
+                            if pass1_only_visit_target.segment_runs
+                            else []
                         )
+                        for run_start, run_stop, is_run_visible in segment_runs:
+                            if is_run_visible:
+                                seq_counter = self._emit_cached_visible_occultation_sequences(
+                                    visit_element,
+                                    visit_id,
+                                    seq_counter,
+                                    pass1_only_visit_target.target,
+                                    run_start,
+                                    run_stop,
+                                    pass1_only_visit_target.ra,
+                                    pass1_only_visit_target.dec,
+                                    pass1_only_visit_target.info,
+                                    assignment_source="pass1_only_best_visit_target",
+                                    occultation_pass="Pass 1 only",
+                                )
+                            else:
+                                seq_counter = self._emit_free_time_sequence(
+                                    visit_element,
+                                    visit_id,
+                                    seq_counter,
+                                    run_start,
+                                    run_stop,
+                                    assignment_source="pass1_only_uncovered",
+                                )
+                    else:
+                        # Select per-segment so the visibility check uses the
+                        # actual occultation-gap times — a target visible in one gap
+                        # may violate sun keepout in another.
+                        fallback_occultation = self._select_fallback_occultation_target(
+                            ra_value, dec_value,
+                            seg_start=seg_start, seg_stop=seg_stop,
+                        )
+                        if fallback_occultation is not None:
+                            occ_target, ra_occ, dec_occ, occ_info = fallback_occultation
+                            seq_counter = self._emit_occultation_sequences(
+                                visit_element, visit_id, seq_counter, occ_target,
+                                seg_start, seg_stop, ra_occ, dec_occ, occ_info,
+                                reference_ra=ra_value,
+                                reference_dec=dec_value,
+                                assignment_source="catalog_fallback",
+                            )
             return
 
         # --- Path 3: scheduled occ_df available -----------------------------
@@ -2053,32 +2515,19 @@ class _ScienceCalendarBuilder:
         pre-computed ``Visible`` flag.  Returns False when the target is not
         visible or when visibility data cannot be loaded.
         """
-        vis_df = _read_visibility(
-            self.data_dir / "aux_targets" / star_name, star_name,
-        )
-        if vis_df is None or vis_df.empty:
+        prepared = self._prepared_occultation_visibility_series(star_name)
+        if prepared is None or prepared.empty:
             return False
 
-        if "Time_UTC" in vis_df.columns and pd.api.types.is_datetime64_any_dtype(
-            vis_df["Time_UTC"]
-        ):
-            times = vis_df["Time_UTC"].to_numpy(dtype="datetime64[ns]")
-            mask = (
-                (times >= np.datetime64(seg_start))
-                & (times < np.datetime64(seg_stop))
-            )
-        elif "Time(MJD_UTC)" in vis_df.columns:
-            start_mjd = Time(seg_start).mjd
-            stop_mjd = Time(seg_stop).mjd
-            mjd = vis_df["Time(MJD_UTC)"].to_numpy(dtype=float)
-            mask = (mjd >= start_mjd) & (mjd < stop_mjd)
-        else:
+        n_minutes = int(round((seg_stop - seg_start).total_seconds() / 60.0))
+        if n_minutes <= 0:
             return False
 
-        segment_vis = vis_df.loc[mask, "Visible"]
-        if segment_vis.empty:
+        minute_index = pd.date_range(seg_start, periods=n_minutes, freq="min")
+        aligned = prepared.reindex(minute_index, fill_value=False)
+        if aligned.empty:
             return False
-        return bool((segment_vis > 0).any())
+        return bool(aligned.any())
 
     def _occ_visibility_score(
         self,
@@ -2250,7 +2699,10 @@ class _ScienceCalendarBuilder:
         if not starts or not stops:
             return None
 
-        if self.config.break_occultation_sequences:
+        if self.config.only_occultation_pass1:
+            expanded_starts = list(starts)
+            expanded_stops = list(stops)
+        elif self.config.break_occultation_sequences:
             expanded_starts: list[datetime] = []
             expanded_stops: list[datetime] = []
             for start, stop in zip(starts, stops):
@@ -2310,11 +2762,21 @@ class _ScienceCalendarBuilder:
                     excluded,
                     show_progress=self.config.show_progress,
                     use_pass1=self.config.enable_occultation_pass1,
+                    only_pass1=self.config.only_occultation_pass1,
                     occultation_nonvisible_tolerance_minutes=self.config.occultation_nonvisible_tolerance_minutes,
                     sun_avoidance_deg=self.config.sun_avoidance_deg,
                     visit_label=f"Visit {visit_id}" if visit_id else "",
                 )
-                if flag and result_df is not None:
+                if result_df is None:
+                    continue
+
+                if (
+                    self.config.only_occultation_pass1
+                    and isinstance(result_df.attrs.get("pass1_only_selection"), dict)
+                ):
+                    return result_df, bool(flag)
+
+                if flag:
                     result_df = self._merge_occ_df_rows(result_df)
                     return result_df, True
             return None
@@ -2827,6 +3289,7 @@ def _build_occultation_schedule(
     excluded_targets: Optional[set] = None,
     show_progress: bool = False,
     use_pass1: bool = True,
+    only_pass1: bool = False,
     occultation_nonvisible_tolerance_minutes: int = 3,
     sun_avoidance_deg: float = 91.0,
     visit_label: str = "",
@@ -2911,6 +3374,7 @@ def _build_occultation_schedule(
         label,
         show_progress=show_progress,
         use_pass1=use_pass1,
+        only_pass1=only_pass1,
         occultation_nonvisible_tolerance_minutes=occultation_nonvisible_tolerance_minutes,
         sun_avoidance_deg=sun_avoidance_deg,
         visit_label=visit_label,

@@ -241,6 +241,7 @@ def schedule_occultation_targets(
     try_occ_targets: str,
     show_progress: bool = False,
     use_pass1: bool = True,
+    only_pass1: bool = False,
     occultation_nonvisible_tolerance_minutes: int = 3,
     sun_avoidance_deg: float = 91.0,
     visit_label: str = "",
@@ -372,6 +373,73 @@ def schedule_occultation_targets(
             return True, nonvisible
         return _interval_sun_avoidance_ok(name, interval_mask), nonvisible
 
+    def _runs_from_interval_mask(
+        vis_times: np.ndarray,
+        visibility: np.ndarray,
+        interval_mask: np.ndarray,
+        start_mjd: float,
+        stop_mjd: float,
+    ) -> list[tuple[datetime, datetime, bool]]:
+        if stop_mjd <= start_mjd:
+            return []
+
+        sample_count = int(interval_mask.sum())
+        if sample_count == 0:
+            start_dt, stop_dt = Time(
+                [start_mjd, stop_mjd], format="mjd", scale="utc"
+            ).to_value("datetime")
+            return [(start_dt, stop_dt, False)]
+
+        masked_times = vis_times[interval_mask]
+        masked_flags = (visibility[interval_mask] == 1).astype(bool)
+        diffs = np.diff(masked_times)
+        positive_diffs = diffs[diffs > 0]
+        minute_step = (
+            float(np.median(positive_diffs))
+            if positive_diffs.size > 0
+            else (1.0 / 1440.0)
+        )
+
+        runs_mjd: list[tuple[float, float, bool]] = []
+        first_time = float(masked_times[0])
+        if first_time > start_mjd:
+            runs_mjd.append((start_mjd, min(first_time, stop_mjd), False))
+
+        current_start = first_time
+        current_flag = bool(masked_flags[0])
+        for idx in range(sample_count - 1):
+            if bool(masked_flags[idx]) == bool(masked_flags[idx + 1]):
+                continue
+            next_time = float(masked_times[idx + 1])
+            if next_time > current_start:
+                runs_mjd.append((current_start, next_time, current_flag))
+            current_start = next_time
+            current_flag = bool(masked_flags[idx + 1])
+
+        final_stop = min(stop_mjd, float(masked_times[-1]) + minute_step)
+        if final_stop > current_start:
+            runs_mjd.append((current_start, final_stop, current_flag))
+        if stop_mjd > final_stop:
+            runs_mjd.append((final_stop, stop_mjd, False))
+
+        converted: list[tuple[datetime, datetime, bool]] = []
+        for run_start_mjd, run_stop_mjd, is_visible in runs_mjd:
+            if run_stop_mjd <= run_start_mjd:
+                continue
+            run_start_dt, run_stop_dt = Time(
+                [run_start_mjd, run_stop_mjd], format="mjd", scale="utc"
+            ).to_value("datetime")
+            converted.append((run_start_dt, run_stop_dt, is_visible))
+        return converted
+
+    best_pass1_only_name: Optional[str] = None
+    best_pass1_only_fraction = -1.0
+    best_pass1_only_runs: list[list[tuple[datetime, datetime, bool]]] = []
+    best_pass1_only_match: Optional[pd.Series] = None
+    total_interval_duration = float(
+        np.maximum(stops_array - starts_array, 0.0).sum()
+    )
+
     # PASS 1: Search for a single target that covers ALL intervals
     if not use_pass1:
         LOGGER.debug("%sPass 1 skipped (enable_occultation_pass1=False)", visit_prefix)
@@ -388,22 +456,49 @@ def schedule_occultation_targets(
         # Check if visible for ALL intervals individually (less strict)
         all_visible = True
         has_nonzero_interval_samples = False
+        if only_pass1:
+            visible_duration = 0.0
+            candidate_runs: list[list[tuple[datetime, datetime, bool]]] = []
         for start, stop in zip(starts_array, stops_array):
             interval_mask = (vis_times >= start) & (vis_times <= stop)
             if stop > start and interval_mask.sum() > 0:
                 has_nonzero_interval_samples = True
+            if only_pass1:
+                runs = _runs_from_interval_mask(
+                    vis_times,
+                    visibility,
+                    interval_mask,
+                    float(start),
+                    float(stop),
+                )
+                candidate_runs.append(runs)
+                visible_duration += sum(
+                    max((run_stop - run_start).total_seconds() / 86400.0, 0.0)
+                    for run_start, run_stop, is_visible in runs
+                    if is_visible
+                )
             acceptable, _nonvisible = _interval_acceptable(
                 v_name, visibility, interval_mask,
             )
             if not acceptable:
                 all_visible = False
-                break
+                if not only_pass1:
+                    break
 
         # Guard against false positives when a candidate has no data at all
         # across the substantive (non-zero duration) intervals.
         has_nonzero_interval = bool(np.any(stops_array > starts_array))
         if has_nonzero_interval and not has_nonzero_interval_samples:
             all_visible = False
+
+        if only_pass1 and total_interval_duration > 0.0:
+            visible_fraction = visible_duration / total_interval_duration
+            if visible_fraction > best_pass1_only_fraction + 1e-12:
+                best_pass1_only_fraction = visible_fraction
+                best_pass1_only_name = str(v_name)
+                best_pass1_only_runs = candidate_runs
+                match = o_list.loc[o_list["Star Name"] == v_name]
+                best_pass1_only_match = match.iloc[0] if not match.empty else None
 
         if not all_visible:
             continue
@@ -431,6 +526,26 @@ def schedule_occultation_targets(
         assigned_after_p1,
         total_intervals,
     )
+    if only_pass1:
+        if (
+            best_pass1_only_name is not None
+            and best_pass1_only_fraction >= 0.0
+            and best_pass1_only_match is not None
+        ):
+            o_df.attrs["pass1_only_selection"] = {
+                "target": best_pass1_only_name,
+                "ra": float(best_pass1_only_match.get("RA", float("nan"))),
+                "dec": float(best_pass1_only_match.get("DEC", float("nan"))),
+                "visible_fraction": float(best_pass1_only_fraction),
+                "segment_runs": best_pass1_only_runs,
+            }
+        LOGGER.info(
+            "%sOccultation Pass 1 only mode: returning after Pass 1 with %d/%d intervals assigned",
+            visit_prefix,
+            assigned_after_p1,
+            total_intervals,
+        )
+        return o_df, assigned_after_p1 == total_intervals
 
     # PASS 2: Fill gaps with the best acceptable target per interval.
     remaining_indices_p2 = [

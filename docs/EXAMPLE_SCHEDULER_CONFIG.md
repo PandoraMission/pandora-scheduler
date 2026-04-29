@@ -75,6 +75,7 @@ Behavior flags
 - `prioritise_occultations_by_slew` (bool, default `false`): prioritise occultation targets based on slew cost.
 - `include_occultation_sequences_in_xml` / `generate_occultation_xml` / `enable_occultation_xml` (bool, default `true`): include occultation-target calculations when generating the science-calendar XML. Set to `false` to emit only visible-segment entries.
 - `generate_xml` / `skip_xml` (bool, default `true`): control science-calendar XML generation. Set `generate_xml` to `false` to skip XML generation entirely. `skip_xml` remains supported as the legacy inverse form.
+- `write_run_config_manifest` (bool, default `true`): write `output_*/run_config_manifest.json` for reproducibility. Set to `false`, or pass `--no-run-config-manifest`, to skip it.
 - `run_visualizer_after_pipeline` (bool, default `false`): if `true`, run `scripts/visualizer.py` automatically after XML generation and save a PNG in the output directory.
 - `visualizer_mode` (string, default `"priority"`): plot type for the automatic visualizer. Valid values are:
   - `priority`: main Gantt-style plot colored by sequence priority
@@ -83,6 +84,7 @@ Behavior flags
   - `simple`: lighter-weight priority timeline
   - `visibility`: priority plot with non-visible intervals overlaid from the run's visibility parquet files
 - `enable_occultation_pass1` (bool, default `true`): run Pass 1 of the occultation search (single target covers all intervals). Set to `false` to skip directly to the multi-target greedy search (Pass 2).
+- `only_occultation_pass1` (bool, default `false`): experimental mode that stops after Pass 1. If no single occultation target covers every interval in a visit, the XML builder picks one occultation target with the highest total visibility fraction across that visit's occultation time, uses it for the visible occultation subsegments, and emits explicit `Free Time` sequences for the uncovered remainder instead of using Passes 2-4.
 - `requested_occ_time_override` (bool, default `true`): when `true`, allow occultation scheduling to continue when requested-hours bookkeeping is incomplete or would otherwise block assignment.
 - `allow_occ_startracker_violation` (bool, default `false`): when `true`, allow occultation targets that fail only star-tracker keepout while still passing boresight keepouts.
 

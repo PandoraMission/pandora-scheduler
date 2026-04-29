@@ -325,6 +325,15 @@ class PandoraSchedulerConfig:
     enable_occultation_pass1: bool = True
     """Enable Pass 1 in occultation assignment (single target covers all intervals)."""
 
+    only_occultation_pass1: bool = False
+    """Use only Pass 1 for occultation assignment.
+
+    When True, the occultation scheduler attempts only the single-target
+    all-interval search (Pass 1). If no single target covers every interval,
+    the visit is left unassigned and the scheduler does not fall through to
+    Passes 2-4.
+    """
+
     requested_occ_time_override: bool = True
     """When true, allow scheduling occultation targets beyond requested-hour limits."""
 

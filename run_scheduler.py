@@ -399,6 +399,11 @@ def parse_args() -> argparse.Namespace:
         help="Skip Pass 1 in occultation assignment (single target must cover all intervals)",
     )
     parser.add_argument(
+        "--only-occultation-pass1",
+        action="store_true",
+        help="Use only Pass 1 for occultation assignment; do not fall through to Passes 2-4",
+    )
+    parser.add_argument(
         "--requested-occ-time-override",
         action="store_true",
         help="Allow occultation scheduling to continue when requested-hours has been met",
@@ -430,6 +435,11 @@ def parse_args() -> argparse.Namespace:
         "--skip-manifests",
         action="store_true",
         help="Skip regenerating target manifests from target definition files",
+    )
+    parser.add_argument(
+        "--no-run-config-manifest",
+        action="store_true",
+        help="Skip writing output/run_config_manifest.json for this run",
     )
     parser.add_argument(
         "--legacy-mode",
@@ -1162,6 +1172,14 @@ def main() -> int:
             ),
             True,
         )
+        only_occultation_pass1 = _as_bool(
+            _get_val(
+                "only_occultation_pass1",
+                True if args.only_occultation_pass1 else None,
+                False,
+            ),
+            False,
+        )
         raw_generate_xml = _get_val("generate_xml", None, None)
         if raw_generate_xml is not None:
             generate_xml = _as_bool(raw_generate_xml, True)
@@ -1182,6 +1200,14 @@ def main() -> int:
                 False,
             ),
             False,
+        )
+        write_run_config_manifest = _as_bool(
+            _get_val(
+                "write_run_config_manifest",
+                False if args.no_run_config_manifest else None,
+                True,
+            ),
+            True,
         )
         visualizer_mode = str(
             _get_val("visualizer_mode", None, "priority")
@@ -1232,6 +1258,13 @@ def main() -> int:
             target_filters = ()
 
         output_dir = args.output
+
+        if only_occultation_pass1 and not enable_occultation_pass1:
+            logger.warning(
+                "ONLY_OCCULTATION_PASS1 requested while OCCULTATION_PASS1 is disabled; "
+                "forcing OCCULTATION_PASS1=True"
+            )
+            enable_occultation_pass1 = True
 
         targets_manifest_dir = (
             xml_data_dir
@@ -1303,6 +1336,7 @@ def main() -> int:
             prioritise_occultations_by_slew=prioritise_occultations_by_slew,
             enable_occultation_xml=enable_occultation_xml,
             enable_occultation_pass1=enable_occultation_pass1,
+            only_occultation_pass1=only_occultation_pass1,
             requested_occ_time_override=requested_occ_time_override,
             allow_occ_startracker_violation=allow_occ_startracker_violation,
             try_catalog_fallback=try_catalog_fallback,
@@ -1339,7 +1373,7 @@ def main() -> int:
             else (output_dir / data_subdir)
         )
         config_manifest_path = None
-        if args.config is not None:
+        if write_run_config_manifest:
             try:
                 config_manifest_path = _write_json_config_manifest(
                     output_dir,
@@ -1362,6 +1396,7 @@ def main() -> int:
             str(enable_occultation_xml).upper(),
         )
         logger.info("OCCULTATION_PASS1=%s", str(enable_occultation_pass1).upper())
+        logger.info("ONLY_OCCULTATION_PASS1=%s", str(only_occultation_pass1).upper())
         logger.info("REQUESTED_OCC_TIME_OVERRIDE=%s", str(requested_occ_time_override).upper())
         logger.info(
             "RUN_VISUALIZER_AFTER_PIPELINE=%s",

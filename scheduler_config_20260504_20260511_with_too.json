@@ -26,6 +26,19 @@
   "science_soft_st2_earthlimb_min_deg": null,
   "science_soft_st_required": 1,
 
+  "show_progress": true,
+  "parallel_workers": 13,
+
+  "write_run_config_manifest": true,
+
+  "primary_only_mode": false,
+  "use_target_list_for_occultations": false,
+  "prioritise_occultations_by_slew": false,
+
+  "generate_xml": true,
+  "include_occultation_sequences_in_xml": true,
+  "allow_partial_occultation_sequences_in_xml": false,
+
   "obs_sequence_duration_min": 90,
   "occ_sequence_limit_min": 15,
   "min_sequence_minutes": 5,
@@ -34,23 +47,14 @@
   "occultation_nonvisible_tolerance_minutes": 3,
   "break_occultation_sequences": true,
 
-  "show_progress": true,
-  "parallel_workers": 13,
-
-  "primary_only_mode": false,
-  "use_target_list_for_occultations": false,
-  "prioritise_occultations_by_slew": false,
-
-  "generate_xml": false,
-  "include_occultation_sequences_in_xml": true,
-  "allow_partial_occultation_sequences_in_xml": false,
-
-  "run_visualizer_after_pipeline": false,
-  "visualizer_mode": "visibility",
   "enable_occultation_pass1": false,
+  "only_occultation_pass1": true,
   "requested_occ_time_override": true,
   "allow_occ_startracker_violation": true,
   "try_catalog_fallback": false,
+
+  "run_visualizer_after_pipeline": true,
+  "visualizer_mode": "visibility",
 
   "schedule_csv": null,
   "schedule_csv_row_limit": null,
@@ -68,10 +72,10 @@
     ],
 
     "skip_manifests": false,
-    "generate_visibility": true,
+    "generate_visibility": false,
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260428-VF20260428-EX20270528.txt",
     
     "write_all_targets_csv": true,
-    "too_list_csv": "/Users/vkostov/Documents/GitHub/pandora-scheduler/output_20260504_20260511/ToO_list.csv"
+    "too_list_csv": "/Users/vkostov/Documents/GitHub/pandora-scheduler/output_20260504_20260512/ToO_list.csv"
   }
 }
