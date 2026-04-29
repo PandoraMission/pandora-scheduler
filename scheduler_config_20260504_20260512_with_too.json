@@ -6,7 +6,7 @@
 
   "sun_avoidance_deg": 95.0,
   "moon_avoidance_deg": 30.0,
-  "earth_avoidance_day_deg": 140.0,
+  "earth_avoidance_day_deg": 111.0,
   "earth_avoidance_night_deg": 86.0,
   "daynight_mode": "subsatellite",
 
@@ -35,12 +35,12 @@
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
 
-  "generate_xml": true,
+  "generate_xml": false,
   "include_occultation_sequences_in_xml": true,
   "allow_partial_occultation_sequences_in_xml": false,
 
   "obs_sequence_duration_min": 90,
-  "occ_sequence_limit_min": 15,
+  "occ_sequence_limit_min": 30,
   "min_sequence_minutes": 5,
   "min_science_sequence_minutes": 8,
   "min_occultation_sequence_minutes": 8,
@@ -72,10 +72,10 @@
     ],
 
     "skip_manifests": false,
-    "generate_visibility": false,
+    "generate_visibility": true,
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260428-VF20260428-EX20270528.txt",
     
     "write_all_targets_csv": true,
-    "too_list_csv": "/Users/vkostov/Documents/GitHub/pandora-scheduler/output_20260504_20260512/ToO_list.csv"
+    "too_list_csv": "/Users/vkostov/Documents/GitHub/pandora-scheduler/output_20260504_20260512_EarthDay111/ToO_list.csv"
   }
 }

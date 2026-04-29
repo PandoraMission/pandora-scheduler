@@ -2503,15 +2503,19 @@ class ScheduleVisualizer:
         x_max = float("-inf")
         non_vis_total = 0
         total_mins = 0
+        free_time_total = 0.0
 
         for vid, seq, vis_arr in rows:
             y = seen[(vid, seq.target)]
             start_num = float(mdates.date2num(seq.start_time.datetime))
             stop_num = float(mdates.date2num(seq.stop_time.datetime))
             dur_days = stop_num - start_num
+            seq_minutes = seq.duration.sec / 60.0
 
             x_min = min(x_min, start_num)
             x_max = max(x_max, stop_num)
+            if seq.target == "Free Time":
+                free_time_total += seq_minutes
 
             # Background bar: priority color
             color = (
@@ -2577,8 +2581,8 @@ class ScheduleVisualizer:
         )
         ax.set_title(
             f"{title}\n"
-            f"({non_vis_total} non-visible min / "
-            f"{total_mins} total — {vis_pct:.1f}% visible)",
+            f"(total min: {total_mins}; non-visible min: {non_vis_total}; "
+            f"Free Time: {free_time_total:.1f} min)",
             fontsize=12, pad=10,
         )
         ax.set_xlabel("Time (UTC)")
@@ -2725,15 +2729,19 @@ class ScheduleVisualizer:
         x_max = float("-inf")
         non_vis_total = 0
         total_mins = 0
+        free_time_total = 0.0
 
         for vid, seq, vis_arr in rows:
             y = seen[(vid, seq.target)]
             start_num = float(mdates.date2num(seq.start_time.datetime))
             stop_num = float(mdates.date2num(seq.stop_time.datetime))
             dur_days = stop_num - start_num
+            seq_minutes = seq.duration.sec / 60.0
 
             x_min = min(x_min, start_num)
             x_max = max(x_max, stop_num)
+            if seq.target == "Free Time":
+                free_time_total += seq_minutes
 
             color = (
                 free_time_color
@@ -2803,7 +2811,8 @@ class ScheduleVisualizer:
             title_suffix = f"\n{len(missing_targets)} target(s) missing visibility parquet"
         ax.set_title(
             f"{title}\n"
-            f"({non_vis_total} non-visible min / {total_mins} total — {vis_pct:.1f}% visible)"
+            f"(total min: {total_mins}; non-visible min: {non_vis_total}; "
+            f"Free Time: {free_time_total:.1f} min)"
             f"{title_suffix}",
             fontsize=12,
             pad=10,
