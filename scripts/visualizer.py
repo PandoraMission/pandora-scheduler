@@ -2634,6 +2634,8 @@ class ScheduleVisualizer:
         visibility_cache: dict[str, Optional[pd.DataFrame]] = {}
 
         def _load_visibility(target_name: str) -> Optional[pd.DataFrame]:
+            if target_name == "Free Time":
+                return None
             if target_name in visibility_cache:
                 return visibility_cache[target_name]
 
@@ -2698,8 +2700,11 @@ class ScheduleVisualizer:
                     continue
                 visibility_df = _load_visibility(seq.target)
                 if visibility_df is None:
-                    missing_targets.add(seq.target)
-                    vis_arr = np.ones(n_mins, dtype=bool)
+                    if seq.target == "Free Time":
+                        vis_arr = np.ones(n_mins, dtype=bool)
+                    else:
+                        missing_targets.add(seq.target)
+                        vis_arr = np.ones(n_mins, dtype=bool)
                 else:
                     expected = pd.date_range(
                         seq.start_time.datetime,

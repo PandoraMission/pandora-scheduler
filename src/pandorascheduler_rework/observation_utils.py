@@ -380,6 +380,11 @@ def schedule_occultation_targets(
         start_mjd: float,
         stop_mjd: float,
     ) -> list[tuple[datetime, datetime, bool]]:
+        def _round_to_nearest_second(value: datetime) -> datetime:
+            return (value + timedelta(microseconds=500_000)).replace(
+                microsecond=0
+            )
+
         if stop_mjd <= start_mjd:
             return []
 
@@ -388,6 +393,10 @@ def schedule_occultation_targets(
             start_dt, stop_dt = Time(
                 [start_mjd, stop_mjd], format="mjd", scale="utc"
             ).to_value("datetime")
+            start_dt = _round_to_nearest_second(start_dt)
+            stop_dt = _round_to_nearest_second(stop_dt)
+            if stop_dt <= start_dt:
+                return []
             return [(start_dt, stop_dt, False)]
 
         masked_times = vis_times[interval_mask]
@@ -429,6 +438,22 @@ def schedule_occultation_targets(
             run_start_dt, run_stop_dt = Time(
                 [run_start_mjd, run_stop_mjd], format="mjd", scale="utc"
             ).to_value("datetime")
+            run_start_dt = _round_to_nearest_second(run_start_dt)
+            run_stop_dt = _round_to_nearest_second(run_stop_dt)
+            if run_stop_dt <= run_start_dt:
+                continue
+            if (
+                converted
+                and converted[-1][2] == is_visible
+                and run_start_dt <= converted[-1][1]
+            ):
+                prev_start, prev_stop, prev_flag = converted[-1]
+                converted[-1] = (
+                    prev_start,
+                    max(prev_stop, run_stop_dt),
+                    prev_flag,
+                )
+                continue
             converted.append((run_start_dt, run_stop_dt, is_visible))
         return converted
 

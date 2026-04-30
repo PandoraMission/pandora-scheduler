@@ -349,6 +349,10 @@ class TestUsePass1:
         assert isinstance(selection, dict)
         assert selection["target"] == "StarA"
         assert len(selection["segment_runs"]) == 3
+        for segment_runs in selection["segment_runs"]:
+            for run_start, run_stop, _is_visible in segment_runs:
+                assert run_stop > run_start
+                assert (run_stop - run_start).total_seconds() >= 1.0
 
     def test_pass1_does_not_assign_when_interval_has_no_samples(self, tmp_path):
         """An empty interval must not be treated as fully visible by Pass 1."""
