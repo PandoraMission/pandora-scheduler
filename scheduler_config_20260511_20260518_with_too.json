@@ -35,7 +35,7 @@
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
 
-  "generate_xml": false,
+  "generate_xml": true,
   "include_occultation_sequences_in_xml": true,
   "allow_partial_occultation_sequences_in_xml": false,
 
@@ -72,7 +72,7 @@
     ],
 
     "skip_manifests": false,
-    "generate_visibility": true,
+    "generate_visibility": false,
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260428-VF20260428-EX20270528.txt",
     
     "write_all_targets_csv": true,
