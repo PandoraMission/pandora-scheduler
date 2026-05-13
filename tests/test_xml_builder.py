@@ -398,6 +398,90 @@ def test_generate_calendar_empty_schedule(tmp_path, monkeypatch):
         )
 
 
+def test_generate_calendar_includes_exoplanet_too_without_transit_metrics(tmp_path):
+    data_dir = tmp_path / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    start = datetime(2026, 1, 1, 0, 0, 0)
+    stop = start + timedelta(hours=1)
+    times = [start + timedelta(minutes=value) for value in range(0, 61)]
+
+    _write_visibility(data_dir / "targets" / "TooStar", "TooStar", times, [1] * len(times))
+
+    pd.DataFrame(
+        [
+            {
+                "Planet Name": "TooStar b",
+                "Star Name": "TooStar",
+                "RA": 10.0,
+                "DEC": -20.0,
+            }
+        ]
+    ).to_csv(data_dir / "exoplanet_targets.csv", index=False)
+    pd.DataFrame(columns=["Star Name", "RA", "DEC"]).to_csv(
+        data_dir / "all_targets.csv", index=False
+    )
+    pd.DataFrame(columns=["Star Name", "RA", "DEC"]).to_csv(
+        data_dir / "occultation-standard_targets.csv", index=False
+    )
+
+    schedule_df = pd.DataFrame(
+        [
+            {
+                "Target": "TooStar b",
+                "Observation Start": start.strftime("%Y-%m-%d %H:%M:%S"),
+                "Observation Stop": stop.strftime("%Y-%m-%d %H:%M:%S"),
+                "Transit Coverage": None,
+                "SAA Overlap": None,
+                "Schedule Factor": None,
+                "Quality Factor": None,
+                "Comments": "ToO",
+            }
+        ]
+    )
+    schedule_path = tmp_path / "schedule_too.csv"
+    schedule_df.to_csv(schedule_path, index=False)
+
+    inputs = science_calendar.ScienceCalendarInputs(
+        schedule_csv=schedule_path,
+        data_dir=data_dir,
+    )
+    config = PandoraSchedulerConfig(
+        window_start=start,
+        window_end=start + timedelta(days=1),
+        visit_limit=1,
+    )
+    output_path = tmp_path / "calendar_too.xml"
+
+    result = science_calendar.generate_science_calendar(
+        inputs,
+        output_path=output_path,
+        config=config,
+    )
+
+    root = ET.fromstring(result.read_text(encoding="utf-8"))
+    ns = ""
+    if root.tag.startswith("{"):
+        ns = root.tag.split("}", 1)[0].strip("{")
+
+    def q(tag: str) -> str:
+        return f"{{{ns}}}{tag}" if ns else tag
+
+    visit = root.find(f".//{q('Visit')}")
+    assert visit is not None
+    seqs = visit.findall(f"{q('Observation_Sequence')}")
+    assert seqs, "Expected a non-empty visit for an exoplanet ToO with target visibility"
+
+    targets = [
+        t.text
+        for t in root.findall(
+            f'.//{q("Observation_Sequence")}/{q("Observational_Parameters")}/{q("Target")}'
+        )
+        if t is not None
+    ]
+    assert "TooStar b" in targets
+
+
 def test_calendar_missing_planet_visibility(tmp_path, monkeypatch):
     """Test handling when planet visibility file doesn't exist."""
     data_dir = tmp_path / "data"

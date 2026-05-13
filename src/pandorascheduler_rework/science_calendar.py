@@ -2110,19 +2110,22 @@ class _ScienceCalendarBuilder:
         planet_row = _lookup_planet_row(self.target_catalog, target_name)
         has_transit = _is_transit_entry(row)
 
-        if planet_row is not None and has_transit:
+        if planet_row is not None:
             visibility_df = _read_visibility(
                 self.data_dir / "targets" / star_name, star_name
             )
-            transit_df = _read_planet_visibility(
-                self.data_dir / "targets" / star_name / target_name, target_name
-            )
             target_info = planet_row
-            transit_windows = _transit_windows(transit_df)
-            transit_start, transit_stop = (
-                transit_windows if transit_windows else ([], [])
-            )
-            priority_flag = True
+            if has_transit:
+                transit_df = _read_planet_visibility(
+                    self.data_dir / "targets" / star_name / target_name, target_name
+                )
+                transit_windows = _transit_windows(transit_df)
+                transit_start, transit_stop = (
+                    transit_windows if transit_windows else ([], [])
+                )
+            else:
+                transit_start, transit_stop = ([], [])
+            priority_flag = has_transit
         else:
             visibility_df = _read_visibility(
                 self.data_dir / "aux_targets" / star_name, target_name
