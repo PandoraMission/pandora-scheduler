@@ -755,6 +755,19 @@ def _write_json_config_manifest(
     return manifest_path
 
 
+def _require_manifest_exists(manifest_path: Optional[Path], output_dir: Path) -> Path:
+    """Require the run config manifest to exist when manifest writing is enabled."""
+    if manifest_path is None:
+        raise RuntimeError(
+            f"run_config_manifest.json was requested for {output_dir} but no manifest path was returned"
+        )
+    if not manifest_path.exists():
+        raise FileNotFoundError(
+            f"run_config_manifest.json was expected at {manifest_path} but is missing"
+        )
+    return manifest_path
+
+
 def main() -> int:
     """Main execution function."""
     args = parse_args()
@@ -1380,13 +1393,12 @@ def main() -> int:
                     json_config,
                     args.config,
                 )
+                _require_manifest_exists(config_manifest_path, output_dir)
                 logger.info("Wrote run config manifest: %s", config_manifest_path)
             except Exception as exc:
-                logger.warning(
-                    "Unable to write run config manifest to %s: %s",
-                    output_dir,
-                    exc,
-                )
+                raise RuntimeError(
+                    f"Unable to write required run config manifest to {output_dir}: {exc}"
+                ) from exc
 
         # 4. Run scheduler or reuse an existing schedule CSV
         logger.info("Run data directory: %s", run_data_dir)
@@ -1507,6 +1519,8 @@ def main() -> int:
             )
 
         # 6. Print Summary
+        if write_run_config_manifest:
+            _require_manifest_exists(config_manifest_path, output_dir)
         print_summary(result, xml_path)
 
         return 0

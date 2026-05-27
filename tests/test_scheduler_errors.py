@@ -13,12 +13,36 @@ from pandorascheduler_rework.config import PandoraSchedulerConfig
 from pandorascheduler_rework.scheduler import (
     SchedulerInputs,
     SchedulerPaths,
+    _load_too_table,
     run_scheduler,
 )
 
 
 class TestSchedulerErrorHandling:
     """Test scheduler error handling and edge cases."""
+
+    def test_load_too_table_prefers_output_dir_over_data_dir(self, tmp_path):
+        output_too = tmp_path / "ToO_list.csv"
+        output_too.write_text(
+            "Target,Obs Window Start,Obs Window Stop\n"
+            "RootTarget,2026-06-02 00:00:00,2026-06-02 02:00:00\n",
+            encoding="utf-8",
+        )
+
+        data_dir = tmp_path / "data_91_20_111"
+        data_dir.mkdir()
+        data_too = data_dir / "ToO_list.csv"
+        data_too.write_text(
+            "Target,Obs Window Start,Obs Window Stop\n"
+            "StaleTarget,2026-06-01 00:00:00,2026-06-01 02:00:00\n",
+            encoding="utf-8",
+        )
+
+        targets, starts, stops = _load_too_table(data_dir, tmp_path)
+
+        assert targets == ["RootTarget"]
+        assert starts == [datetime(2026, 6, 2, 0, 0, 0)]
+        assert stops == [datetime(2026, 6, 2, 2, 0, 0)]
     
     def test_scheduler_handles_missing_visibility_file(self, tmp_path):
         """Verify graceful error when visibility file is missing."""

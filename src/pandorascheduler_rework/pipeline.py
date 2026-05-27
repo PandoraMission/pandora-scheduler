@@ -180,7 +180,7 @@ def build_schedule(config: PandoraSchedulerConfig) -> SchedulerResult:
             _target_definition_from_csv(occultation_target_csv),
         ]
 
-    too_list_csv = _stage_too_list(extra_inputs, out_data)
+    too_list_csv = _stage_too_list(extra_inputs, output_dir, out_data)
 
     if config.targets_manifest and not config.targets_manifest.exists():
         raise FileNotFoundError(
@@ -336,24 +336,35 @@ def _validate_primary_visit_windows(
         )
 
 
-def _stage_too_list(extra_inputs: dict[str, object], out_data: Path) -> Path | None:
-    """Copy an explicit ToO list into the run data directory, if provided."""
+def _stage_too_list(
+    extra_inputs: dict[str, object],
+    output_dir: Path,
+    out_data: Path,
+) -> Path | None:
+    """Resolve an explicit ToO list for the run, preferring the run root."""
 
     raw_too_list = extra_inputs.get("too_list_csv")
-    destination = out_data / "ToO_list.csv"
+    root_destination = output_dir / "ToO_list.csv"
+    legacy_destination = out_data / "ToO_list.csv"
 
     if raw_too_list is None:
-        return destination if destination.exists() else None
+        if root_destination.exists():
+            LOGGER.info("Using ToO list: %s", root_destination)
+            return root_destination
+        if legacy_destination.exists():
+            LOGGER.info("Using ToO list: %s", legacy_destination)
+            return legacy_destination
+        return None
 
     source = Path(str(raw_too_list)).expanduser().resolve()
     if not source.exists():
         raise FileNotFoundError(f"Configured ToO list not found: {source}")
 
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    if source != destination.resolve():
-        shutil.copyfile(source, destination)
-    LOGGER.info("Using ToO list: %s", destination)
-    return destination
+    root_destination.parent.mkdir(parents=True, exist_ok=True)
+    if source != root_destination.resolve():
+        shutil.copyfile(source, root_destination)
+    LOGGER.info("Using ToO list: %s", root_destination)
+    return root_destination
 
 
 def _validate_too_list(too_list_csv: Path, target_list: pd.DataFrame) -> None:

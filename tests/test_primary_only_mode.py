@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from pandorascheduler_rework.config import PandoraSchedulerConfig
 from pandorascheduler_rework.pipeline import SchedulerResult
@@ -26,6 +27,13 @@ def _load_run_scheduler_module():
 
 
 scheduler_driver = _load_run_scheduler_module()
+
+
+def test_require_manifest_exists_raises_when_manifest_missing(tmp_path):
+    missing = tmp_path / "run_config_manifest.json"
+
+    with pytest.raises(FileNotFoundError):
+        scheduler_driver._require_manifest_exists(missing, tmp_path)
 
 
 def test_run_scheduler_uses_free_time_when_primary_only_and_no_primary_targets(tmp_path):

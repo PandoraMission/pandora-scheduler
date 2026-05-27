@@ -243,7 +243,10 @@ def run_scheduler(
             progress_bar.update(min(delta_minutes, remaining))
         previous_start = new_start
 
-    too_targets, too_starts, too_stops = _load_too_table(inputs.paths.data_dir)
+    too_targets, too_starts, too_stops = _load_too_table(
+        inputs.paths.data_dir,
+        inputs.output_dir,
+    )
 
     # Pre-load all transit windows once
     all_planet_names = state.tracker["Planet Name"].dropna().unique()
@@ -638,9 +641,17 @@ def _persist_outputs(
     return schedule_path, tracker_csv_path, tracker_pickle_path
 
 
-def _load_too_table(data_dir: Path) -> tuple[list[str], list[datetime], list[datetime]]:
-    too_path = data_dir / "ToO_list.csv"
-    if not too_path.exists():
+def _load_too_table(
+    data_dir: Path,
+    output_dir: Path | None = None,
+) -> tuple[list[str], list[datetime], list[datetime]]:
+    candidate_paths: list[Path] = []
+    if output_dir is not None:
+        candidate_paths.append(output_dir / "ToO_list.csv")
+    candidate_paths.append(data_dir / "ToO_list.csv")
+
+    too_path = next((path for path in candidate_paths if path.exists()), None)
+    if too_path is None:
         return [], [], []
 
     table = pd.read_csv(too_path)

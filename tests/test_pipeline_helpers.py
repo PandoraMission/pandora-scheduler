@@ -9,6 +9,7 @@ from pandorascheduler_rework.pipeline import (
     _coerce_optional_path,
     _coerce_path,
     _resolve_target_definition_files,
+    _stage_too_list,
     _target_definition_from_csv,
 )
 
@@ -106,3 +107,48 @@ class TestAsBool:
 
     def test_other_type_returns_default(self):
         assert _as_bool([], True) is True
+
+
+class TestStageTooList:
+    def test_copies_configured_too_list_to_output_root(self, tmp_path):
+        source = tmp_path / "source_too.csv"
+        source.write_text(
+            "Target,Obs Window Start,Obs Window Stop\n"
+            "TOI-674b,2026-06-04 08:25:29,2026-06-04 09:32:07\n",
+            encoding="utf-8",
+        )
+
+        output_dir = tmp_path / "output"
+        out_data = output_dir / "data_91_20_111"
+        out_data.mkdir(parents=True)
+
+        resolved = _stage_too_list(
+            {"too_list_csv": str(source)},
+            output_dir,
+            out_data,
+        )
+
+        assert resolved == output_dir / "ToO_list.csv"
+        assert resolved.read_text(encoding="utf-8") == source.read_text(encoding="utf-8")
+        assert not (out_data / "ToO_list.csv").exists()
+
+    def test_prefers_existing_output_root_too_list_when_unconfigured(self, tmp_path):
+        output_dir = tmp_path / "output"
+        out_data = output_dir / "data_91_20_111"
+        out_data.mkdir(parents=True)
+
+        root_too = output_dir / "ToO_list.csv"
+        root_too.write_text(
+            "Target,Obs Window Start,Obs Window Stop\n"
+            "HATS-72b,2026-06-03 03:11:15,2026-06-03 06:16:20\n",
+            encoding="utf-8",
+        )
+        (out_data / "ToO_list.csv").write_text(
+            "Target,Obs Window Start,Obs Window Stop\n"
+            "StaleTarget,2026-06-01 00:00:00,2026-06-01 01:00:00\n",
+            encoding="utf-8",
+        )
+
+        resolved = _stage_too_list({}, output_dir, out_data)
+
+        assert resolved == root_too
