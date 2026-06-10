@@ -77,11 +77,51 @@ then point the JSON at it:
 }
 ```
 
-The pipeline copies that file into the run data directory as `ToO_list.csv`,
-validates that every ToO target exists in the active exoplanet manifest, and the
-scheduler inserts those fixed windows into the calendar. If the target rows are
-not already in the manifest, use the standalone `10_HJs + ToOs` experiment
-wrapper, which builds that experimental manifest for you.
+The pipeline copies that file into the run output root as
+`output_*/ToO_list.csv`, validates that every ToO target exists in the active
+exoplanet manifest, and the scheduler inserts those fixed windows into the
+calendar. If the target rows are not already in the manifest, use the
+standalone `10_HJs + ToOs` experiment wrapper, which builds that experimental
+manifest for you.
+
+Notes:
+- ToO target names must match the exoplanet manifest `Planet Name` exactly.
+  Example: `DS_Tuc_Ab` is valid, while `DS_TucAb` will fail validation.
+- If you rerun the same output directory, the configured `extra_inputs.too_list_csv`
+  source will overwrite `output_*/ToO_list.csv`.
+
+## Visit Visibility Diagnostics
+
+To inspect minute-by-minute visibility for a scheduled visit, use:
+
+`scripts/export_visit_visibility_diagnostics.py`
+
+It writes one CSV row per minute and includes:
+
+- overall visibility flags
+- Sun / Moon / Earth boresight separations and pass flags
+- day/night Earth threshold applied that minute
+- roll angle, star-tracker pass counts, and per-tracker constraint flags
+- a compact `blocking_reasons` summary column
+
+For scheduled visits, the most reliable way to resolve coordinates is to pass
+the schedule CSV as well as the visit start/stop and target name:
+
+```bash
+cd /Users/vkostov/Documents/GitHub/pandora-scheduler
+
+.venv/bin/python3 scripts/export_visit_visibility_diagnostics.py \
+  --start "2026-06-04 15:30:00" \
+  --stop "2026-06-07 15:30:00" \
+  --target-name DS_Tuc_Ab \
+  --schedule-csv output_20260601_20260608_EarthDay111/Pandora_Schedule_0.8_0.0_0.2_2026-06-01_to_2026-06-08.csv \
+  --config scheduler_config_20260601_20260608_with_too.json \
+  --output output_20260601_20260608_EarthDay111/DS_Tuc_Ab_2026-06-04_1530_2026-06-07_1530_visibility_diagnostics.csv
+```
+
+Use `--schedule-csv` when the scheduled target name may not map cleanly back to
+the target-definition filename. The output CSV can then be summarized for total
+visible time, visible intervals, and dominant keepout violations.
 
 ## Experimental 10 HJs Plus ToOs
 
