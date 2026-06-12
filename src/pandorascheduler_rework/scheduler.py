@@ -288,6 +288,7 @@ def run_scheduler(
             short_visit_threshold_hours=config.short_visit_threshold_hours,
             short_visit_edge_buffer_hours=config.short_visit_edge_buffer_hours,
             long_visit_edge_buffer_hours=config.long_visit_edge_buffer_hours,
+            primary_visit_start_policy=config.primary_visit_start_policy,
         )
 
         too_result = _handle_targets_of_opportunity(
@@ -857,7 +858,10 @@ def _handle_targets_of_opportunity(
             continue
 
         forced_observation = True
-        forced_start = overlap_times[0].to_pydatetime()
+        forced_start = observation_utils.choose_visit_start(
+            overlap_times,
+            policy=config.primary_visit_start_policy,
+        ).to_pydatetime()
 
         if obs_range[0].to_pydatetime() < forced_start:
             schedule_parts.append(

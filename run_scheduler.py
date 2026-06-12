@@ -1086,6 +1086,13 @@ def main() -> int:
         long_visit_edge_buffer_hours = float(
             _get_val("long_visit_edge_buffer_hours", None, 4.0)
         )
+        primary_visit_start_policy = str(
+            _get_val("primary_visit_start_policy", None, "earliest")
+        ).strip().lower()
+        if primary_visit_start_policy not in {"earliest", "centered", "latest"}:
+            raise ValueError(
+                "primary_visit_start_policy must be 'earliest', 'centered', or 'latest'"
+            )
 
         obs_sequence_duration_min = int(_get_val("obs_sequence_duration_min", None, 90))
         occ_sequence_limit_min = int(_get_val("occ_sequence_limit_min", None, 50))
@@ -1300,6 +1307,7 @@ def main() -> int:
             short_visit_threshold_hours=short_visit_threshold_hours,
             short_visit_edge_buffer_hours=short_visit_edge_buffer_hours,
             long_visit_edge_buffer_hours=long_visit_edge_buffer_hours,
+            primary_visit_start_policy=primary_visit_start_policy,
             # Weights
             transit_scheduling_weights=transit_weights_tuple,
             # Keepout angles

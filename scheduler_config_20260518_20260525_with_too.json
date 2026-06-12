@@ -2,21 +2,22 @@
   "schedule_step_hours": 6.0,
   "transit_coverage_min": 0.4,
   "min_visibility": 0.4,
-  "transit_scheduling_weights": [0.8, 0.0, 0.2],
-
+  "transit_scheduling_weights": [
+    0.8,
+    0.0,
+    0.2
+  ],
   "sun_avoidance_deg": 91.0,
   "moon_avoidance_deg": 20.0,
   "earth_avoidance_day_deg": 111.0,
   "earth_avoidance_night_deg": 86.0,
   "daynight_mode": "subsatellite",
-
   "st_sun_min_deg": 50.0,
   "st_moon_min_deg": 30.0,
   "st_earthlimb_min_deg": 30.0,
   "st_required": 1,
   "roll_step_deg": 5.0,
   "min_power_frac": 0.7,
-
   "allow_science_soft_startracker_tail": false,
   "science_soft_startracker_tail_minutes": 10,
   "science_soft_st_sun_min_deg": 34,
@@ -25,20 +26,15 @@
   "science_soft_st1_earthlimb_min_deg": null,
   "science_soft_st2_earthlimb_min_deg": null,
   "science_soft_st_required": 1,
-
   "show_progress": true,
   "parallel_workers": 13,
-
   "write_run_config_manifest": true,
-
   "primary_only_mode": false,
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
-
   "generate_xml": true,
   "include_occultation_sequences_in_xml": true,
   "allow_partial_occultation_sequences_in_xml": false,
-
   "obs_sequence_duration_min": 90,
   "occ_sequence_limit_min": 30,
   "min_sequence_minutes": 5,
@@ -46,22 +42,18 @@
   "min_occultation_sequence_minutes": 8,
   "occultation_nonvisible_tolerance_minutes": 3,
   "break_occultation_sequences": true,
-
   "enable_occultation_pass1": false,
   "only_occultation_pass1": true,
   "requested_occ_time_override": true,
   "allow_occ_startracker_violation": true,
   "try_catalog_fallback": false,
-
   "run_visualizer_after_pipeline": true,
   "visualizer_mode": "visibility",
-
   "schedule_csv": null,
   "schedule_csv_row_limit": null,
   "schedule_csv_row_start": null,
   "schedule_csv_row_end": null,
   "xml_data_dir": null,
-
   "extra_inputs": {
     "target_definition_base": "/Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files",
     "target_definition_files": [
@@ -70,12 +62,14 @@
       "monitoring-standard",
       "occultation-standard"
     ],
-
     "skip_manifests": false,
     "generate_visibility": false,
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260507-VF20260507-EX20270607.txt",
-    
     "write_all_targets_csv": true,
     "too_list_csv": "/Users/vkostov/Documents/GitHub/pandora-scheduler/output_20260518_20260525_EarthDay111/ToO_list.csv"
+  },
+  "primary_visit_start_policy": "earliest",
+  "notes": {
+    "primary_visit_start_policy": "earliest = old behavior; centered = midpoint of feasible visit-start window; latest = last feasible minute"
   }
 }

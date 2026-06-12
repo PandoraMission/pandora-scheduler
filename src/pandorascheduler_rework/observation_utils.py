@@ -165,6 +165,37 @@ def validate_transit_schedulable(
         )
 
 
+def choose_visit_start(
+    overlap_times: pd.DatetimeIndex,
+    policy: str = "earliest",
+) -> pd.Timestamp:
+    """Choose a visit start time from the feasible overlap window.
+
+    Parameters
+    ----------
+    overlap_times
+        Feasible visit-start times at minute cadence.
+    policy
+        ``"earliest"`` keeps the existing behaviour. ``"centered"`` chooses
+        the midpoint of the feasible window. ``"latest"`` chooses the last
+        feasible minute.
+    """
+    if overlap_times.empty:
+        raise ValueError('overlap_times must not be empty')
+
+    normalized = str(policy).strip().lower()
+    if normalized == "earliest":
+        return overlap_times[0]
+    if normalized == "centered":
+        return overlap_times[len(overlap_times) // 2]
+    if normalized == "latest":
+        return overlap_times[-1]
+
+    raise ValueError(
+        f"Unsupported primary_visit_start_policy '{policy}'. Expected 'earliest', 'centered', or 'latest'."
+    )
+
+
 def compute_transit_start_bounds(
     transit_start: datetime,
     transit_stop: datetime,
@@ -1072,6 +1103,7 @@ def check_if_transits_in_obs_window(
     short_visit_threshold_hours: float = 12.0,
     short_visit_edge_buffer_hours: float = 1.5,
     long_visit_edge_buffer_hours: float = 4.0,
+    primary_visit_start_policy: str = "earliest",
 ):
 
     result_df = temp_df.copy()
@@ -1235,7 +1267,10 @@ def check_if_transits_in_obs_window(
             if overlap_times.empty:
                 continue
 
-            obs_start = overlap_times[0]
+            obs_start = choose_visit_start(
+                overlap_times,
+                policy=primary_visit_start_policy,
+            )
             gap_time = obs_start - obs_rng[0]
             # Use per-target visit duration for schedule factor normalization
             schedule_factor = 1 - (gap_time / visit_duration)

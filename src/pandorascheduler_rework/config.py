@@ -83,6 +83,15 @@ class PandoraSchedulerConfig:
     long_visit_edge_buffer_hours: float = 4.0
     """Edge buffer (pre/post transit) for visits >= short_visit_threshold_hours."""
 
+    primary_visit_start_policy: str = "earliest"
+    """How to choose the visit start within the valid transit-start window.
+
+    Supported values:
+    - ``"earliest"``: current behaviour; start at the earliest feasible minute
+    - ``"centered"``: choose the midpoint of the feasible start window
+    - ``"latest"``: start at the latest feasible minute
+    """
+
     # ============================================================================
     # WEIGHTING FACTORS (must sum to 1.0)
     # ============================================================================
