@@ -2117,13 +2117,17 @@ class _ScienceCalendarBuilder:
         has_transit = _is_transit_entry(row)
 
         if planet_row is not None:
+            catalog_star_name = str(planet_row.iloc[0].get("Star Name", "")).strip()
+            star_visibility_name = catalog_star_name or star_name
             visibility_df = _read_visibility(
-                self.data_dir / "targets" / star_name, star_name
+                self.data_dir / "targets" / star_visibility_name,
+                star_visibility_name,
             )
             target_info = planet_row
             if has_transit:
                 transit_df = _read_planet_visibility(
-                    self.data_dir / "targets" / star_name / target_name, target_name
+                    self.data_dir / "targets" / star_visibility_name / target_name,
+                    target_name,
                 )
                 transit_windows = _transit_windows(transit_df)
                 transit_start, transit_stop = (
