@@ -791,13 +791,11 @@ def _handle_targets_of_opportunity(
     if not targets:
         return None
 
-    overlap = obs_range.intersection(pd.DatetimeIndex(starts))
-    if len(overlap) == 0:
+    idx = _find_overlapping_too_index(start, stop, starts, stops)
+    if idx is None:
         return None
 
-    first_overlap = overlap[0].to_pydatetime()
-    idx = starts.index(first_overlap)
-    obs_start = starts[idx]
+    obs_start = max(starts[idx], start)
     obs_stop = stops[idx]
     target_name = targets[idx]
     too_fields = _lookup_too_schedule_fields(
@@ -1014,6 +1012,24 @@ def _handle_targets_of_opportunity(
 
     combined = pd.concat(schedule_parts, ignore_index=True)
     return combined, obs_stop
+
+
+def _find_overlapping_too_index(
+    start: datetime,
+    stop: datetime,
+    starts: list[datetime],
+    stops: list[datetime],
+) -> int | None:
+    """Return the first ToO whose window overlaps the scheduler step.
+
+    The previous implementation required the ToO start timestamp to match a
+    1-minute cadence sample exactly, which silently missed valid ToOs whose
+    requested start time included non-zero seconds (for example ``:30``).
+    """
+    for idx, (too_start, too_stop) in enumerate(zip(starts, stops)):
+        if too_stop > start and too_start < stop:
+            return idx
+    return None
 
 
 def _schedule_pre_too_gap(

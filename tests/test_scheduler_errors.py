@@ -5,6 +5,7 @@ and provides helpful error messages when things go wrong.
 """
 
 from datetime import datetime
+from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -13,6 +14,8 @@ from pandorascheduler_rework.config import PandoraSchedulerConfig
 from pandorascheduler_rework.scheduler import (
     SchedulerInputs,
     SchedulerPaths,
+    SchedulerState,
+    _handle_targets_of_opportunity,
     _load_too_table,
     run_scheduler,
 )
@@ -43,6 +46,78 @@ class TestSchedulerErrorHandling:
         assert targets == ["RootTarget"]
         assert starts == [datetime(2026, 6, 2, 0, 0, 0)]
         assert stops == [datetime(2026, 6, 2, 2, 0, 0)]
+
+    def test_too_with_non_minute_start_is_detected(self, tmp_path):
+        config = PandoraSchedulerConfig(
+            window_start=datetime(2026, 7, 1),
+            window_end=datetime(2026, 7, 2),
+            output_dir=tmp_path,
+        )
+        obs_start = datetime(2026, 7, 1, 7, 30, 30)
+        obs_stop = datetime(2026, 7, 1, 19, 30, 30)
+        state = SchedulerState(
+            tracker=pd.DataFrame(
+                {
+                    "Planet Name": [],
+                    "Transits Needed": [],
+                    "Transits Left in Lifetime": [],
+                }
+            ),
+            all_target_obs_time={},
+        )
+        inputs = SchedulerInputs(
+            pandora_start=config.window_start,
+            pandora_stop=config.window_end,
+            sched_start=config.window_start,
+            sched_stop=config.window_end,
+            target_list=pd.DataFrame(),
+            paths=SchedulerPaths.from_package_root(tmp_path),
+            target_definition_files=[],
+            primary_target_csv=tmp_path / "primary.csv",
+            auxiliary_target_csv=tmp_path / "aux.csv",
+            occultation_target_csv=tmp_path / "occ.csv",
+            output_dir=tmp_path,
+        )
+        obs_range = pd.date_range(
+            datetime(2026, 7, 1, 7, 0, 0),
+            datetime(2026, 7, 1, 13, 0, 0),
+            freq="min",
+        )
+
+        with patch(
+            "pandorascheduler_rework.scheduler._schedule_pre_too_gap",
+            return_value=pd.DataFrame(),
+        ), patch(
+            "pandorascheduler_rework.scheduler._lookup_too_schedule_fields",
+            return_value={
+                "RA": 1.0,
+                "DEC": 2.0,
+                "Transit Coverage": 0.5,
+                "SAA Overlap": 0.1,
+                "Schedule Factor": 1.0,
+                "Quality Factor": 0.6,
+            },
+        ):
+            result = _handle_targets_of_opportunity(
+                start=datetime(2026, 7, 1, 7, 0, 0),
+                stop=datetime(2026, 7, 1, 13, 0, 0),
+                obs_range=obs_range,
+                targets=["WASP-18b"],
+                starts=[obs_start],
+                stops=[obs_stop],
+                state=state,
+                inputs=inputs,
+                config=config,
+                transit_windows={},
+            )
+
+        assert result is not None
+        too_df, new_start = result
+        assert too_df.iloc[-1]["Target"] == "WASP-18b"
+        assert too_df.iloc[-1]["Observation Start"] == obs_start
+        assert too_df.iloc[-1]["Observation Stop"] == obs_stop
+        assert too_df.iloc[-1]["Comments"] == "ToO"
+        assert new_start == obs_stop
     
     def test_scheduler_handles_missing_visibility_file(self, tmp_path):
         """Verify graceful error when visibility file is missing."""
