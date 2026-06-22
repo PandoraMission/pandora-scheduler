@@ -105,7 +105,18 @@ class TestPandoraSchedulerConfig:
         assert config.roll_step_deg == 2.0
         assert config.min_power_frac == 0.7
         assert config.obs_sequence_duration_min == 90
+        assert config.priority_buffer is False
+        assert config.priority_buffer_minutes == 80
         assert config.show_progress is False
+
+    def test_priority_buffer_minutes_validation_fail_negative(self):
+        """Test that negative priority_buffer_minutes raises error."""
+        with pytest.raises(ValueError, match="priority_buffer_minutes must be >= 0"):
+            PandoraSchedulerConfig(
+                window_start=datetime(2026, 2, 5),
+                window_end=datetime(2027, 2, 5),
+                priority_buffer_minutes=-1,
+            )
         
     def test_frozen_immutable(self):
         """Test that config is immutable (frozen dataclass)."""

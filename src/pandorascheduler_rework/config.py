@@ -264,6 +264,12 @@ class PandoraSchedulerConfig:
     science_soft_startracker_tail_minutes: int = 10
     """Maximum tail length, in minutes, for soft-ST science extension."""
 
+    priority_buffer: bool = False
+    """Expand transit-priority XML tagging beyond the nominal transit window."""
+
+    priority_buffer_minutes: int = 80
+    """Symmetric buffer, in minutes, around transit windows for priority-2 XML tagging."""
+
     science_soft_st_sun_min_deg: Optional[float] = None
     """Soft-tail override for star-tracker Sun keepout. None = use nominal."""
 
@@ -487,6 +493,10 @@ class PandoraSchedulerConfig:
             (
                 "science_soft_startracker_tail_minutes",
                 self.science_soft_startracker_tail_minutes,
+            ),
+            (
+                "priority_buffer_minutes",
+                self.priority_buffer_minutes,
             ),
         ):
             if value is not None and value < 0:

@@ -19,6 +19,7 @@ from pandorascheduler_rework.science_calendar import (
     _normalise_target_name,
     _parse_datetime,
     _read_catalog,
+    _target_priority,
     _read_visibility_extended,
     _visibility_change_indices,
     generate_science_calendar,
@@ -207,6 +208,32 @@ class TestHelperFunctions:
     def test_is_transit_entry_numeric_1(self):
         row = pd.Series({"Transit Coverage": 1.0})
         assert _is_transit_entry(row) == True
+
+    def test_target_priority_without_buffer_does_not_promote_adjacent_sequence(self):
+        transit_start = [datetime(2026, 3, 1, 12, 0)]
+        transit_stop = [datetime(2026, 3, 1, 13, 0)]
+        priority = _target_priority(
+            True,
+            transit_start,
+            transit_stop,
+            datetime(2026, 3, 1, 10, 45),
+            datetime(2026, 3, 1, 11, 30),
+        )
+        assert priority == "1"
+
+    def test_target_priority_with_buffer_promotes_adjacent_sequence(self):
+        transit_start = [datetime(2026, 3, 1, 12, 0)]
+        transit_stop = [datetime(2026, 3, 1, 13, 0)]
+        priority = _target_priority(
+            True,
+            transit_start,
+            transit_stop,
+            datetime(2026, 3, 1, 10, 45),
+            datetime(2026, 3, 1, 11, 30),
+            buffer_enabled=True,
+            buffer_minutes=80,
+        )
+        assert priority == "2"
 
     def test_lookup_planet_row_found(self):
         cat = pd.DataFrame({"Planet Name": ["TOI-700 b"], "RA": [120.0]})

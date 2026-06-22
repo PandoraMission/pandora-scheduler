@@ -1127,6 +1127,13 @@ def main() -> int:
         science_soft_startracker_tail_minutes = int(
             _get_val("science_soft_startracker_tail_minutes", None, 10)
         )
+        priority_buffer = _as_bool(
+            _get_any(["priority_buffer", "buffer"], None, False),
+            False,
+        )
+        priority_buffer_minutes = int(
+            _get_any(["priority_buffer_minutes", "buffer_minutes"], None, 80)
+        )
         _raw_soft_st_sun = _get_val("science_soft_st_sun_min_deg", None, None)
         science_soft_st_sun_min_deg = (
             float(_raw_soft_st_sun) if _raw_soft_st_sun is not None else None
@@ -1337,6 +1344,8 @@ def main() -> int:
             occultation_nonvisible_tolerance_minutes=occultation_nonvisible_tolerance_minutes,
             allow_science_soft_startracker_tail=allow_science_soft_startracker_tail,
             science_soft_startracker_tail_minutes=science_soft_startracker_tail_minutes,
+            priority_buffer=priority_buffer,
+            priority_buffer_minutes=priority_buffer_minutes,
             science_soft_st_sun_min_deg=science_soft_st_sun_min_deg,
             science_soft_st_moon_min_deg=science_soft_st_moon_min_deg,
             science_soft_st_earthlimb_min_deg=science_soft_st_earthlimb_min_deg,

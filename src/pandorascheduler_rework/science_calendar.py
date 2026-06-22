@@ -1238,7 +1238,13 @@ class _ScienceCalendarBuilder:
                 current, self.sequence_duration, segment_stop
             )
             priority = _target_priority(
-                priority_flag, transit_start, transit_stop, current, next_value,
+                priority_flag,
+                transit_start,
+                transit_stop,
+                current,
+                next_value,
+                buffer_enabled=self.config.priority_buffer,
+                buffer_minutes=self.config.priority_buffer_minutes,
             )
             sequence_id = f"{seq_counter:03d}"
             observation_sequence(
@@ -2492,6 +2498,8 @@ class _ScienceCalendarBuilder:
                 transit_stop,
                 seg_start,
                 seg_stop,
+                buffer_enabled=self.config.priority_buffer,
+                buffer_minutes=self.config.priority_buffer_minutes,
             )
             observation_sequence(
                 visit_element,
@@ -3420,12 +3428,20 @@ def _target_priority(
     transit_stop: Sequence[datetime],
     sequence_start: datetime,
     sequence_stop: datetime,
+    *,
+    buffer_enabled: bool = False,
+    buffer_minutes: int = 0,
 ) -> str:
     if not priority_flag or not transit_start or not transit_stop:
         return "0"
 
+    buffer_td = (
+        timedelta(minutes=int(buffer_minutes))
+        if buffer_enabled and buffer_minutes > 0
+        else timedelta(0)
+    )
     for start, stop in zip(transit_start, transit_stop):
-        if start <= sequence_stop and stop >= sequence_start:
+        if (start - buffer_td) <= sequence_stop and (stop + buffer_td) >= sequence_start:
             return "2"
     return "1"
 

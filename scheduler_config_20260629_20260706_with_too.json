@@ -78,7 +78,7 @@
       "occultation-standard"
     ],
     "skip_manifests": false,
-    "generate_visibility": false,
+    "generate_visibility": true,
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260610-VF20260610-EX20270710.txt",
     "write_all_targets_csv": true,
     "too_list_csv": "/Users/vkostov/Documents/GitHub/pandora-scheduler/output_20260622_20260629_EarthDay111/ToO_list.csv"

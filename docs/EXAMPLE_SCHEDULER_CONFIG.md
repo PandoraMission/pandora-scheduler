@@ -60,6 +60,8 @@ XML generation parameters
 - `min_science_sequence_minutes` (int, optional): minimum standalone science-visible fragment. Shorter science fragments are merged into a contiguous preceding science chunk when possible; otherwise they are converted into occultation-fill intervals.
 - `min_occultation_sequence_minutes` (int, optional): minimum standalone occultation chunk after chunking. Scheduled occultation rows are chunked and merged upstream by the visit-level occultation planner; XML-time fallback chunks can still be merged locally when a neighboring target can absorb them cleanly.
 - `occultation_nonvisible_tolerance_minutes` (int, default `3`): allowed non-visible minutes inside an occultation interval before it is treated as needing a later occultation pass. This applies only to occultation scheduling/validation, not science sequences.
+- `priority_buffer` / `buffer` (bool, default `false`): when enabled, XML priority tagging expands the transit window before assigning sequence priority. This does not change scheduling, only whether a science XML sequence is marked priority `2` instead of `1`.
+- `priority_buffer_minutes` / `buffer_minutes` (int, default `80`): symmetric number of minutes added before transit start and after transit end when `priority_buffer` is enabled.
 - `break_occultation_sequences` (bool, default `true`): whether to break long occultation sequences into chunks.
 
 Standard star observations
