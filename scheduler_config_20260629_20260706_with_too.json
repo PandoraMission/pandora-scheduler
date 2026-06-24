@@ -45,6 +45,7 @@
   "generate_xml": true,
   "include_occultation_sequences_in_xml": true,
   "allow_partial_occultation_sequences_in_xml": false,
+  
   "obs_sequence_duration_min": 90,
   "occ_sequence_limit_min": 45,
   "min_sequence_minutes": 5,
