@@ -24,15 +24,15 @@
   "allow_science_soft_startracker_tail": false,
   "science_soft_startracker_tail_minutes": 10,
 
-  "priority_buffer": false,
-  "priority_buffer_minutes": 80,
-
   "science_soft_st_sun_min_deg": 34,
   "science_soft_st_moon_min_deg": 10,
   "science_soft_st_earthlimb_min_deg": 20,
   "science_soft_st1_earthlimb_min_deg": null,
   "science_soft_st2_earthlimb_min_deg": null,
   "science_soft_st_required": 1,
+
+  "priority_buffer": false,
+  "priority_buffer_minutes": 90,
 
   "show_progress": true,
   "parallel_workers": 13,
