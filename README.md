@@ -61,10 +61,10 @@ cd /Users/vkostov/Documents/GitHub/pandora-scheduler
 ```
 If the above doesn't work, try with: 
 python3 run_scheduler.py \
-  --start "2026-06-22 00:00:00" \
-  --end "2026-06-29 00:00:00" \
-  --output output_20260622_20260629_EarthDay111 \
-  --config scheduler_config_20260622_20260629_with_too.json
+  --start "2026-07-06 00:00:00" \
+  --end "2026-07-13 00:00:00" \
+  --output output_20260706_20260713_EarthDay111 \
+  --config scheduler_config_20260706_20260713_with_too.json
 
 Use this mode whenever the output directory does not already contain the
 schedule CSV and visibility products you need.
