@@ -1,0 +1,23 @@
+name: pandora-scheduler
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pip
+  - numpy>=2.1,<3
+  - pandas>=2.2,<3
+  - astropy>=6
+  - tqdm>=4.66,<5
+  - pyarrow>=21,<22
+  - requests>=2.32,<3
+  - matplotlib
+  - lxml
+  - pytest>=8.2,<9
+  - black>=24.1,<25
+  - flake8>=7,<8
+  - ruff>=0.14,<0.15
+  - pip:
+      - -e .
+
+# Optional add-on from pyproject.toml crossval group:
+#   pip install git+https://github.com/PandoraMission/pandora-visibility.git
