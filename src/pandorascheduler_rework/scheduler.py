@@ -624,6 +624,11 @@ def _persist_outputs(
             schedule_export[column] = pd.to_numeric(
                 schedule_export[column], errors="coerce"
             ).round(2)
+    for column in ["Observation Start", "Observation Stop"]:
+        if column in schedule_export.columns:
+            values = pd.to_datetime(schedule_export[column], errors="coerce")
+            schedule_export[column] = values.dt.strftime("%Y-%m-%d %H:%M:%S")
+            schedule_export.loc[values.isna(), column] = pd.NA
     schedule_export.to_csv(schedule_path, index=False)
 
     tracker_csv_path = apply_output_suffix(inputs.output_dir / "tracker.csv", suffix)

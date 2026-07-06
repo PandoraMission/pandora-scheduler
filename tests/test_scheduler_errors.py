@@ -17,6 +17,7 @@ from pandorascheduler_rework.scheduler import (
     SchedulerState,
     _handle_targets_of_opportunity,
     _load_too_table,
+    _persist_outputs,
     run_scheduler,
 )
 
@@ -118,6 +119,56 @@ class TestSchedulerErrorHandling:
         assert too_df.iloc[-1]["Observation Stop"] == obs_stop
         assert too_df.iloc[-1]["Comments"] == "ToO"
         assert new_start == obs_stop
+
+    def test_persist_outputs_keeps_full_midnight_timestamps(self, tmp_path):
+        config = PandoraSchedulerConfig(
+            window_start=datetime(2026, 7, 13),
+            window_end=datetime(2026, 7, 20),
+            output_dir=tmp_path,
+        )
+        inputs = SchedulerInputs(
+            pandora_start=config.window_start,
+            pandora_stop=config.window_end,
+            sched_start=config.window_start,
+            sched_stop=config.window_end,
+            target_list=pd.DataFrame(),
+            paths=SchedulerPaths.from_package_root(tmp_path),
+            target_definition_files=[],
+            primary_target_csv=tmp_path / "primary.csv",
+            auxiliary_target_csv=tmp_path / "aux.csv",
+            occultation_target_csv=tmp_path / "occ.csv",
+            output_dir=tmp_path,
+        )
+        schedule = pd.DataFrame(
+            [
+                {
+                    "Target": "WASP-18b",
+                    "Observation Start": datetime(2026, 7, 13, 0, 0, 0),
+                    "Observation Stop": datetime(2026, 7, 14, 0, 0, 0),
+                    "RA": 24.35,
+                    "DEC": -45.67,
+                    "Transit Coverage": 0.47,
+                    "SAA Overlap": 0.08,
+                    "Schedule Factor": 1.0,
+                    "Quality Factor": 0.58,
+                    "Comments": "ToO",
+                }
+            ]
+        )
+        tracker = pd.DataFrame()
+
+        schedule_path, _, _ = _persist_outputs(
+            schedule,
+            tracker,
+            inputs,
+            config,
+            config.window_start,
+            config.window_end,
+        )
+
+        text = schedule_path.read_text(encoding="utf-8")
+        assert "2026-07-13 00:00:00" in text
+        assert "2026-07-14 00:00:00" in text
     
     def test_scheduler_handles_missing_visibility_file(self, tmp_path):
         """Verify graceful error when visibility file is missing."""
