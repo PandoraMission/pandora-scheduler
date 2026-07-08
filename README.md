@@ -43,6 +43,126 @@ Common output layout:
 - `output_*/run_config_manifest.json`
 - `output_*/data_<sun>_<moon>_<earth>/`
 
+## How The Pipeline Works
+
+`run_scheduler.py` is the main entry point. It resolves the config, decides
+whether to run the full pipeline or just regenerate XML from an existing
+schedule CSV, and then dispatches into `pandorascheduler_rework.pipeline`.
+
+In a normal full run, the pipeline proceeds in this order:
+
+1. Resolve config and output layout
+
+- The JSON config, CLI flags, and built-in defaults are merged.
+- The run creates an output root such as
+  `output_20260713_20260720_EarthDay111/`.
+- The visibility products live under a derived `data_*` directory.
+  - `earth_keepouts: "same"` keeps the legacy short form, e.g.
+    `data_91_20_111`
+  - `earth_keepouts: "different"` uses an explicit signature, e.g.
+    `data_91_20_sc111_86_occ121_96`
+
+2. Build or refresh target manifests
+
+- Target definition JSON files are converted into the active CSV manifests used
+  by the scheduler.
+- The main manifests are:
+  - `exoplanet_targets.csv`
+  - `auxiliary-standard_targets.csv`
+  - `monitoring-standard_targets.csv`
+  - `occultation-standard_targets.csv`
+- If `extra_inputs.skip_manifests` is true, the pipeline reuses the existing
+  manifest CSVs instead of regenerating them.
+
+3. Stage the ToO list
+
+- If `extra_inputs.too_list_csv` is set, that file is copied into the output
+  root as `output_*/ToO_list.csv`.
+- If no source file is configured, the pipeline will use an already-present
+  `output_*/ToO_list.csv` if it exists.
+- ToO target names must match `Planet Name` in the active
+  `exoplanet_targets.csv`.
+
+4. Generate visibility catalogs
+
+- This step runs only when visibility generation is enabled and a GMAT
+  ephemeris is available.
+- Visibility is built separately for:
+  - exoplanets
+  - auxiliary-standard targets
+  - monitoring-standard targets
+  - occultation-standard targets
+- Each star gets a minute-cadence parquet visibility file containing at least:
+  - `Time(MJD_UTC)`
+  - `Time_UTC`
+  - `Visible`
+  - geometry columns such as `Sun_Sep`, `Moon_Sep`, `Earth_Sep`
+- Exoplanets also get planet-level transit visibility parquet products under
+  their parent star directory.
+
+The visibility decision itself is two-stage:
+
+- Stage A: boresight keepouts
+  - Sun separation
+  - Moon separation
+  - Earth keepout used for target visibility
+- Stage B: star-tracker / roll feasibility
+  - star-tracker Sun, Moon, and Earth-limb checks
+  - roll sweep
+  - `st_required` logic
+
+When `earth_keepouts` is split:
+
+- `exoplanet` targets use:
+  - `earth_avoidance_day_deg_science`
+  - `earth_avoidance_night_deg_science`
+- `auxiliary-standard`, `monitoring-standard`, and
+  `occultation-standard` targets use:
+  - `earth_avoidance_day_deg_occultation`
+  - `earth_avoidance_night_deg_occultation`
+
+5. Build the schedule CSV
+
+- The scheduler rolls through the requested window in steps of
+  `schedule_step_hours`.
+- Primary science visits are admitted from the exoplanet manifest using:
+  - transit coverage
+  - visibility fraction
+  - scheduling weights
+  - visit-duration / edge-buffer rules
+- If a ToO window overlaps the current scheduling interval, the ToO can preempt
+  the normal target selection.
+- If `primary_only_mode` is false, the scheduler can fill unused gaps with
+  non-primary targets.
+- The main output is `Pandora_Schedule_*.csv`.
+
+6. Build the science calendar XML
+
+- If `generate_xml` is true, the schedule CSV is converted into
+  `Pandora_science_calendar.xml`.
+- The XML builder reads the corresponding manifest CSVs and visibility parquet
+  files from the selected `data_*` directory.
+- Each visit is converted into science, occultation, and free-time sequences
+  based on minute-level visibility.
+- Options such as:
+  - `min_sequence_minutes`
+  - `min_science_sequence_minutes`
+  - `min_occultation_sequence_minutes`
+  - `occ_sequence_limit_min`
+  - `priority_buffer`
+  affect how those sequences are segmented and tagged.
+
+7. Optional post-processing
+
+- `run_config_manifest.json` records the resolved run configuration.
+- `tracker.csv` and optional reports summarize what was scheduled.
+- If `run_visualizer_after_pipeline` is true, the visualizer runs
+  automatically after XML generation.
+
+If you already have a schedule CSV and matching visibility products, you can
+skip stages 2-5 and run only the XML generation path with `--schedule-csv` and
+`--xml-data-dir`.
+
 ## Run Modes
 
 ### 1. Full Pipeline From A Config
@@ -59,12 +179,6 @@ cd /Users/vkostov/Documents/GitHub/pandora-scheduler
   --output output_20260622_20260629_EarthDay111 \
   --config scheduler_config_20260622_20260629_with_too.json
 ```
-If the above doesn't work, try with: 
-python3 run_scheduler.py \
-  --start "2026-07-06 00:00:00" \
-  --end "2026-07-13 00:00:00" \
-  --output output_20260706_20260713_EarthDay111 \
-  --config scheduler_config_20260706_20260713_with_too.json
 
 Use this mode whenever the output directory does not already contain the
 schedule CSV and visibility products you need.
