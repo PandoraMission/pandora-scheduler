@@ -74,6 +74,10 @@ def build_schedule(config: PandoraSchedulerConfig) -> SchedulerResult:
         moon_avoidance_deg=config.moon_avoidance_deg,
         earth_avoidance_deg=config.earth_avoidance_deg,
         earth_avoidance_day_deg=config.earth_avoidance_day_deg,
+        earth_keepouts=config.earth_keepouts,
+        earth_avoidance_night_deg=config.earth_avoidance_night_deg,
+        earth_avoidance_day_deg_occultation=config.earth_avoidance_day_deg_occultation,
+        earth_avoidance_night_deg_occultation=config.earth_avoidance_night_deg_occultation,
     )
     paths = SchedulerPaths.from_package_root(output_dir, data_dir_name=data_subdir)
     out_data = output_dir / data_subdir
@@ -571,6 +575,10 @@ def _generate_xml_if_requested(
         moon_avoidance_deg=config.moon_avoidance_deg,
         earth_avoidance_deg=config.earth_avoidance_deg,
         earth_avoidance_day_deg=config.earth_avoidance_day_deg,
+        earth_keepouts=config.earth_keepouts,
+        earth_avoidance_night_deg=config.earth_avoidance_night_deg,
+        earth_avoidance_day_deg_occultation=config.earth_avoidance_day_deg_occultation,
+        earth_avoidance_night_deg_occultation=config.earth_avoidance_night_deg_occultation,
     )
     return generate_science_calendar(
         inputs=ScienceCalendarInputs(
@@ -618,6 +626,10 @@ def _run_visualizer_if_requested(
             moon_avoidance_deg=config.moon_avoidance_deg,
             earth_avoidance_deg=config.earth_avoidance_deg,
             earth_avoidance_day_deg=config.earth_avoidance_day_deg,
+            earth_keepouts=config.earth_keepouts,
+            earth_avoidance_night_deg=config.earth_avoidance_night_deg,
+            earth_avoidance_day_deg_occultation=config.earth_avoidance_day_deg_occultation,
+            earth_avoidance_night_deg_occultation=config.earth_avoidance_night_deg_occultation,
         )
         visualizer_cmd.extend(["--data-dir", str(data_dir)])
 

@@ -600,6 +600,11 @@ def build_default_data_subdir(
     moon_avoidance_deg: float,
     earth_avoidance_deg: float,
     earth_avoidance_day_deg: Optional[float] = None,
+    *,
+    earth_keepouts: str = "same",
+    earth_avoidance_night_deg: Optional[float] = None,
+    earth_avoidance_day_deg_occultation: Optional[float] = None,
+    earth_avoidance_night_deg_occultation: Optional[float] = None,
 ) -> str:
     """Build the default run data directory name from keepout angles."""
 
@@ -608,6 +613,29 @@ def build_default_data_subdir(
         if earth_avoidance_day_deg is not None
         else earth_avoidance_deg
     )
+    if str(earth_keepouts).strip().lower() == "different":
+        science_day = earth_label
+        science_night = (
+            earth_avoidance_night_deg
+            if earth_avoidance_night_deg is not None
+            else earth_avoidance_deg
+        )
+        occult_day = (
+            earth_avoidance_day_deg_occultation
+            if earth_avoidance_day_deg_occultation is not None
+            else science_day
+        )
+        occult_night = (
+            earth_avoidance_night_deg_occultation
+            if earth_avoidance_night_deg_occultation is not None
+            else science_night
+        )
+        return (
+            f"data_{int(float(sun_avoidance_deg))}_"
+            f"{int(float(moon_avoidance_deg))}_"
+            f"sc{int(float(science_day))}_{int(float(science_night))}_"
+            f"occ{int(float(occult_day))}_{int(float(occult_night))}"
+        )
     return (
         f"data_{int(float(sun_avoidance_deg))}_"
         f"{int(float(moon_avoidance_deg))}_"
@@ -622,6 +650,10 @@ def resolve_data_subdir(
     moon_avoidance_deg: float,
     earth_avoidance_deg: float,
     earth_avoidance_day_deg: Optional[float] = None,
+    earth_keepouts: str = "same",
+    earth_avoidance_night_deg: Optional[float] = None,
+    earth_avoidance_day_deg_occultation: Optional[float] = None,
+    earth_avoidance_night_deg_occultation: Optional[float] = None,
 ) -> str:
     """Resolve the run data directory name.
 
@@ -636,6 +668,10 @@ def resolve_data_subdir(
             moon_avoidance_deg,
             earth_avoidance_deg,
             earth_avoidance_day_deg,
+            earth_keepouts=earth_keepouts,
+            earth_avoidance_night_deg=earth_avoidance_night_deg,
+            earth_avoidance_day_deg_occultation=earth_avoidance_day_deg_occultation,
+            earth_avoidance_night_deg_occultation=earth_avoidance_night_deg_occultation,
         )
 
     candidate = str(raw_value).strip()

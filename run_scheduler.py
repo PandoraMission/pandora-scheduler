@@ -1073,6 +1073,10 @@ def main() -> int:
             moon_avoidance_deg=moon_avoid,
             earth_avoidance_deg=earth_avoid,
             earth_avoidance_day_deg=earth_avoid_day,
+            earth_keepouts=earth_keepouts,
+            earth_avoidance_night_deg=earth_avoid_night,
+            earth_avoidance_day_deg_occultation=earth_avoid_day_occultation,
+            earth_avoidance_night_deg_occultation=earth_avoid_night_occultation,
         )
         extra_inputs["data_subdir"] = data_subdir
 

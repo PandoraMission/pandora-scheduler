@@ -99,6 +99,10 @@ def build_schedule(config: PandoraSchedulerConfig) -> SchedulerResult:
         moon_avoidance_deg=config.moon_avoidance_deg,
         earth_avoidance_deg=config.earth_avoidance_deg,
         earth_avoidance_day_deg=config.earth_avoidance_day_deg,
+        earth_keepouts=config.earth_keepouts,
+        earth_avoidance_night_deg=config.earth_avoidance_night_deg,
+        earth_avoidance_day_deg_occultation=config.earth_avoidance_day_deg_occultation,
+        earth_avoidance_night_deg_occultation=config.earth_avoidance_night_deg_occultation,
     )
 
     # Filesystem layout for this run. Use the run's `output_dir` as the

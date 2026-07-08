@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from pandorascheduler_rework.config import PandoraSchedulerConfig
+from pandorascheduler_rework.config import build_default_data_subdir, resolve_data_subdir
 from pandorascheduler_rework.pipeline import (
     _as_bool,
     _coerce_optional_path,
@@ -221,3 +222,46 @@ class TestVisibilityConfigForTargetDefinition:
         assert result is not config
         assert result.earth_avoidance_day_deg == 121.0
         assert result.earth_avoidance_night_deg == 96.0
+
+
+class TestResolveDataSubdir:
+    def test_same_mode_keeps_legacy_short_name(self):
+        result = build_default_data_subdir(
+            91.0,
+            20.0,
+            110.0,
+            111.0,
+            earth_keepouts="same",
+            earth_avoidance_night_deg=86.0,
+        )
+
+        assert result == "data_91_20_111"
+
+    def test_different_mode_encodes_science_and_occultation_keepouts(self):
+        result = build_default_data_subdir(
+            91.0,
+            20.0,
+            110.0,
+            111.0,
+            earth_keepouts="different",
+            earth_avoidance_night_deg=86.0,
+            earth_avoidance_day_deg_occultation=121.0,
+            earth_avoidance_night_deg_occultation=96.0,
+        )
+
+        assert result == "data_91_20_sc111_86_occ121_96"
+
+    def test_resolve_data_subdir_uses_new_different_mode_signature(self):
+        result = resolve_data_subdir(
+            {},
+            sun_avoidance_deg=91.0,
+            moon_avoidance_deg=20.0,
+            earth_avoidance_deg=110.0,
+            earth_avoidance_day_deg=111.0,
+            earth_keepouts="different",
+            earth_avoidance_night_deg=86.0,
+            earth_avoidance_day_deg_occultation=121.0,
+            earth_avoidance_night_deg_occultation=96.0,
+        )
+
+        assert result == "data_91_20_sc111_86_occ121_96"
