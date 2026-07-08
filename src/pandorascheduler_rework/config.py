@@ -160,6 +160,49 @@ class PandoraSchedulerConfig:
     Recommended value when enabled: 80.0.
     """
 
+    earth_keepouts: str = "same"
+    """How to apply Earth boresight keepouts across target classes.
+
+    Supported values:
+    - ``"same"``: current behaviour; every target class uses the same
+      ``earth_avoidance_*`` settings.
+    - ``"different"``: exoplanets use the ``*_science`` values below, while
+      auxiliary-standard, monitoring-standard, and occultation-standard targets
+      use the ``*_occultation`` values.
+    """
+
+    earth_avoidance_day_deg_science: Optional[float] = None
+    """Sunlit Earth boresight keepout for exoplanet targets when ``earth_keepouts`` is ``"different"``.
+
+    None = fall back to ``earth_avoidance_day_deg`` (or ``earth_avoidance_deg``
+    if the day/night split is disabled).
+    """
+
+    earth_avoidance_night_deg_science: Optional[float] = None
+    """Night-side Earth boresight keepout for exoplanet targets when ``earth_keepouts`` is ``"different"``.
+
+    None = fall back to ``earth_avoidance_night_deg`` (or ``earth_avoidance_deg``
+    if the day/night split is disabled).
+    """
+
+    earth_avoidance_day_deg_occultation: Optional[float] = None
+    """Sunlit Earth boresight keepout for non-exoplanet target classes when ``earth_keepouts`` is ``"different"``.
+
+    Applies to auxiliary-standard, monitoring-standard, and
+    occultation-standard targets. None = fall back to
+    ``earth_avoidance_day_deg`` (or ``earth_avoidance_deg`` if the day/night
+    split is disabled).
+    """
+
+    earth_avoidance_night_deg_occultation: Optional[float] = None
+    """Night-side Earth boresight keepout for non-exoplanet target classes when ``earth_keepouts`` is ``"different"``.
+
+    Applies to auxiliary-standard, monitoring-standard, and
+    occultation-standard targets. None = fall back to
+    ``earth_avoidance_night_deg`` (or ``earth_avoidance_deg`` if the day/night
+    split is disabled).
+    """
+
     twilight_margin_deg: float = 0.0
     """Degrees past the geometric terminator to classify as sunlit (degrees).
 
@@ -519,6 +562,31 @@ class PandoraSchedulerConfig:
                 "daynight_mode must be 'limb' or 'subsatellite', got %r"
                 % (self.daynight_mode,)
             )
+
+        if self.earth_keepouts not in ("same", "different"):
+            raise ValueError(
+                "earth_keepouts must be 'same' or 'different', got %r"
+                % (self.earth_keepouts,)
+            )
+
+        # Treat the science day/night keepouts as the canonical baseline for
+        # exoplanet visibility. The legacy earth_avoidance_day/night fields are
+        # kept for backward compatibility, but they are no longer required in
+        # JSON configs when the science-specific fields are provided.
+        resolved_science_day = (
+            self.earth_avoidance_day_deg_science
+            if self.earth_avoidance_day_deg_science is not None
+            else self.earth_avoidance_day_deg
+        )
+        resolved_science_night = (
+            self.earth_avoidance_night_deg_science
+            if self.earth_avoidance_night_deg_science is not None
+            else self.earth_avoidance_night_deg
+        )
+        object.__setattr__(self, "earth_avoidance_day_deg", resolved_science_day)
+        object.__setattr__(
+            self, "earth_avoidance_night_deg", resolved_science_night
+        )
 
         # Validate parallel worker count
         if self.parallel_workers < 0:

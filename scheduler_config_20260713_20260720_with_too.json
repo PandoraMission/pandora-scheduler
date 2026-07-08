@@ -10,8 +10,11 @@
 
   "sun_avoidance_deg": 91.0,
   "moon_avoidance_deg": 20.0,
-  "earth_avoidance_day_deg": 111.0,
-  "earth_avoidance_night_deg": 86.0,
+  "earth_keepouts": "different",
+  "earth_avoidance_day_deg_science": 111.0,
+  "earth_avoidance_night_deg_science": 86.0,
+  "earth_avoidance_day_deg_occultation": 121.0,
+  "earth_avoidance_night_deg_occultation": 86.0,
   "daynight_mode": "subsatellite",
 
   "st_sun_min_deg": 50.0,
@@ -38,7 +41,7 @@
   "parallel_workers": 13,
   "write_run_config_manifest": true,
 
-  "primary_only_mode": false,
+  "primary_only_mode": true,
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
 
@@ -84,7 +87,7 @@
 
     "write_all_targets_csv": false,
     
-    "too_list_csv": "/Users/vkostov/Documents/GitHub/pandora-scheduler/output_20260713_20260720_EarthDay111/ToO_list.csv"
+    "too_list_csv": "/Users/vkostov/Documents/GitHub/pandora-scheduler/output_20260713_20260720_EarthDay111_test/ToO_list.csv"
   },
   "primary_visit_start_policy": "latest",
   "notes": {

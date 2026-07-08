@@ -1022,10 +1022,51 @@ def main() -> int:
             )
         )
         # Day/night Earth avoidance (None = use uniform earth_avoid)
+        earth_keepouts = str(
+            _get_val("earth_keepouts", None, "same")
+        ).strip().lower()
+        if earth_keepouts not in {"same", "different"}:
+            raise ValueError(
+                "earth_keepouts must be 'same' or 'different'"
+            )
         _raw_day = _get_val("earth_avoidance_day_deg", args.earth_avoidance_day, None)
-        earth_avoid_day = float(_raw_day) if _raw_day is not None else None
+        legacy_earth_avoid_day = float(_raw_day) if _raw_day is not None else None
         _raw_night = _get_val("earth_avoidance_night_deg", args.earth_avoidance_night, None)
-        earth_avoid_night = float(_raw_night) if _raw_night is not None else None
+        legacy_earth_avoid_night = (
+            float(_raw_night) if _raw_night is not None else None
+        )
+        _raw_day_science = _get_val("earth_avoidance_day_deg_science", None, None)
+        earth_avoid_day_science = (
+            float(_raw_day_science)
+            if _raw_day_science is not None
+            else legacy_earth_avoid_day
+        )
+        _raw_night_science = _get_val(
+            "earth_avoidance_night_deg_science", None, None
+        )
+        earth_avoid_night_science = (
+            float(_raw_night_science)
+            if _raw_night_science is not None
+            else legacy_earth_avoid_night
+        )
+        _raw_day_occultation = _get_val(
+            "earth_avoidance_day_deg_occultation", None, None
+        )
+        earth_avoid_day_occultation = (
+            float(_raw_day_occultation)
+            if _raw_day_occultation is not None
+            else None
+        )
+        _raw_night_occultation = _get_val(
+            "earth_avoidance_night_deg_occultation", None, None
+        )
+        earth_avoid_night_occultation = (
+            float(_raw_night_occultation)
+            if _raw_night_occultation is not None
+            else None
+        )
+        earth_avoid_day = earth_avoid_day_science
+        earth_avoid_night = earth_avoid_night_science
         data_subdir = resolve_data_subdir(
             extra_inputs,
             sun_avoidance_deg=sun_avoid,
@@ -1323,6 +1364,11 @@ def main() -> int:
             earth_avoidance_deg=earth_avoid,
             earth_avoidance_day_deg=earth_avoid_day,
             earth_avoidance_night_deg=earth_avoid_night,
+            earth_keepouts=earth_keepouts,
+            earth_avoidance_day_deg_science=earth_avoid_day_science,
+            earth_avoidance_night_deg_science=earth_avoid_night_science,
+            earth_avoidance_day_deg_occultation=earth_avoid_day_occultation,
+            earth_avoidance_night_deg_occultation=earth_avoid_night_occultation,
             twilight_margin_deg=twilight_margin,
             daynight_mode=daynight_mode,
             # Star tracker keepouts

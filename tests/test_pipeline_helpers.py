@@ -1,9 +1,11 @@
 """Tests for pipeline.py helper functions (coverage gap)."""
 
+from datetime import datetime
 from pathlib import Path
 
 import pytest
 
+from pandorascheduler_rework.config import PandoraSchedulerConfig
 from pandorascheduler_rework.pipeline import (
     _as_bool,
     _coerce_optional_path,
@@ -11,6 +13,7 @@ from pandorascheduler_rework.pipeline import (
     _resolve_target_definition_files,
     _stage_too_list,
     _target_definition_from_csv,
+    _visibility_config_for_target_definition,
 )
 
 
@@ -152,3 +155,69 @@ class TestStageTooList:
         resolved = _stage_too_list({}, output_dir, out_data)
 
         assert resolved == root_too
+
+
+class TestVisibilityConfigForTargetDefinition:
+    def test_same_mode_returns_original_config(self):
+        config = PandoraSchedulerConfig(
+            window_start=datetime(2026, 1, 1),
+            window_end=datetime(2026, 1, 2),
+            earth_keepouts="same",
+            earth_avoidance_day_deg=111.0,
+            earth_avoidance_night_deg=86.0,
+        )
+
+        result = _visibility_config_for_target_definition(config, "exoplanet")
+
+        assert result is config
+
+    def test_same_mode_uses_science_keepouts_without_legacy_fields(self):
+        config = PandoraSchedulerConfig(
+            window_start=datetime(2026, 1, 1),
+            window_end=datetime(2026, 1, 2),
+            earth_keepouts="same",
+            earth_avoidance_day_deg_science=111.0,
+            earth_avoidance_night_deg_science=86.0,
+        )
+
+        result = _visibility_config_for_target_definition(config, "exoplanet")
+
+        assert result is config
+        assert result.earth_avoidance_day_deg == 111.0
+        assert result.earth_avoidance_night_deg == 86.0
+
+    def test_different_mode_uses_science_keepouts_for_exoplanets(self):
+        config = PandoraSchedulerConfig(
+            window_start=datetime(2026, 1, 1),
+            window_end=datetime(2026, 1, 2),
+            earth_keepouts="different",
+            earth_avoidance_day_deg_science=112.0,
+            earth_avoidance_night_deg_science=87.0,
+            earth_avoidance_day_deg_occultation=121.0,
+            earth_avoidance_night_deg_occultation=96.0,
+        )
+
+        result = _visibility_config_for_target_definition(config, "exoplanet")
+
+        assert result is config
+        assert result.earth_avoidance_day_deg == 112.0
+        assert result.earth_avoidance_night_deg == 87.0
+
+    def test_different_mode_uses_occultation_keepouts_for_non_exoplanets(self):
+        config = PandoraSchedulerConfig(
+            window_start=datetime(2026, 1, 1),
+            window_end=datetime(2026, 1, 2),
+            earth_keepouts="different",
+            earth_avoidance_day_deg_science=111.0,
+            earth_avoidance_night_deg_science=86.0,
+            earth_avoidance_day_deg_occultation=121.0,
+            earth_avoidance_night_deg_occultation=96.0,
+        )
+
+        result = _visibility_config_for_target_definition(
+            config, "occultation-standard"
+        )
+
+        assert result is not config
+        assert result.earth_avoidance_day_deg == 121.0
+        assert result.earth_avoidance_night_deg == 96.0

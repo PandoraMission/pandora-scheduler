@@ -447,7 +447,7 @@ def _maybe_generate_visibility(
         paths.targets_dir if config.output_dir else Path("output") / "data" / "targets",
     )
     build_visibility_catalog(
-        config,
+        _visibility_config_for_target_definition(config, "exoplanet"),
         target_list=primary_visibility_csv or primary_target_csv,
         partner_list=auxiliary_target_csv,
         output_subpath="targets",
@@ -459,7 +459,7 @@ def _maybe_generate_visibility(
         paths.aux_targets_dir if config.output_dir else Path("output") / "data" / "aux_targets",
     )
     build_visibility_catalog(
-        config,
+        _visibility_config_for_target_definition(config, "auxiliary-standard"),
         target_list=auxiliary_target_csv,
         partner_list=None,
         output_subpath="aux_targets",
@@ -471,7 +471,7 @@ def _maybe_generate_visibility(
         paths.aux_targets_dir if config.output_dir else Path("output") / "data" / "aux_targets",
     )
     build_visibility_catalog(
-        config,
+        _visibility_config_for_target_definition(config, "monitoring-standard"),
         target_list=monitoring_target_csv,
         partner_list=None,
         output_subpath="aux_targets",
@@ -483,7 +483,7 @@ def _maybe_generate_visibility(
         paths.aux_targets_dir if config.output_dir else Path("output") / "data" / "aux_targets",
     )
     build_visibility_catalog(
-        config,
+        _visibility_config_for_target_definition(config, "occultation-standard"),
         target_list=occultation_target_csv,
         partner_list=None,
         output_subpath="aux_targets",
@@ -574,3 +574,44 @@ def _as_bool(value: object, default: bool) -> bool:
     if isinstance(value, (int, float)):
         return bool(value)
     return default
+
+
+def _visibility_config_for_target_definition(
+    config: PandoraSchedulerConfig,
+    target_definition_name: str,
+) -> PandoraSchedulerConfig:
+    mode = str(getattr(config, "earth_keepouts", "same") or "same").strip().lower()
+    if mode != "different":
+        return config
+
+    category = str(target_definition_name).strip().lower()
+    if category == "exoplanet":
+        return config
+
+    if category in {
+        "auxiliary-standard",
+        "monitoring-standard",
+        "occultation-standard",
+    }:
+        updated = replace(config)
+        object.__setattr__(
+            updated,
+            "earth_avoidance_day_deg",
+            (
+                config.earth_avoidance_day_deg_occultation
+                if config.earth_avoidance_day_deg_occultation is not None
+                else config.earth_avoidance_day_deg
+            ),
+        )
+        object.__setattr__(
+            updated,
+            "earth_avoidance_night_deg",
+            (
+                config.earth_avoidance_night_deg_occultation
+                if config.earth_avoidance_night_deg_occultation is not None
+                else config.earth_avoidance_night_deg
+            ),
+        )
+        return updated
+
+    return config

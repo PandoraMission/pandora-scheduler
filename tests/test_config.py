@@ -117,6 +117,26 @@ class TestPandoraSchedulerConfig:
                 window_end=datetime(2027, 2, 5),
                 priority_buffer_minutes=-1,
             )
+
+    def test_science_keepouts_populate_legacy_day_night_fields(self):
+        config = PandoraSchedulerConfig(
+            window_start=datetime(2026, 2, 5),
+            window_end=datetime(2027, 2, 5),
+            earth_keepouts="same",
+            earth_avoidance_day_deg_science=111.0,
+            earth_avoidance_night_deg_science=86.0,
+        )
+
+        assert config.earth_avoidance_day_deg == 111.0
+        assert config.earth_avoidance_night_deg == 86.0
+
+    def test_earth_keepouts_validation(self):
+        with pytest.raises(ValueError, match="earth_keepouts must be 'same' or 'different'"):
+            PandoraSchedulerConfig(
+                window_start=datetime(2026, 2, 5),
+                window_end=datetime(2027, 2, 5),
+                earth_keepouts="bad",
+            )
         
     def test_frozen_immutable(self):
         """Test that config is immutable (frozen dataclass)."""
