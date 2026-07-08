@@ -5,6 +5,8 @@ import importlib.util
 from datetime import datetime
 from pathlib import Path
 
+import numpy as np
+
 
 def _load_script_module():
     script_path = (
@@ -194,3 +196,27 @@ def test_build_config_for_target_uses_occultation_keepouts_for_non_exoplanets(tm
 
     assert result.earth_avoidance_day_deg == 121.0
     assert result.earth_avoidance_night_deg == 96.0
+
+
+def test_earth_threshold_branch_labels_for_exoplanet_different_mode():
+    module = _load_script_module()
+
+    result = module._earth_threshold_branch_labels(
+        target_category="exoplanet",
+        earth_keepouts="different",
+        sunlit_subsatellite=np.array([True, False]),
+    )
+
+    assert result.tolist() == ["science_day", "science_night"]
+
+
+def test_earth_threshold_branch_labels_for_occultation_different_mode():
+    module = _load_script_module()
+
+    result = module._earth_threshold_branch_labels(
+        target_category="occultation-standard",
+        earth_keepouts="different",
+        sunlit_subsatellite=np.array([True, False]),
+    )
+
+    assert result.tolist() == ["occultation_day", "occultation_night"]
