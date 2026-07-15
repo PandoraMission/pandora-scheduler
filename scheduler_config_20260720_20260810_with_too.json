@@ -41,7 +41,7 @@
   "parallel_workers": 13,
   "write_run_config_manifest": true,
 
-  "primary_only_mode": true,
+  "primary_only_mode": false,
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
 
