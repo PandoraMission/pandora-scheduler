@@ -374,6 +374,11 @@ def parse_args() -> argparse.Namespace:
         help="Only schedule primary science targets; skip non-primary gap filling",
     )
     parser.add_argument(
+        "--exoplanet-only",
+        action="store_true",
+        help="Run only exoplanet targets; skip non-exoplanet manifests and visibility catalogs",
+    )
+    parser.add_argument(
         "--use-target-list-for-occultations",
         action="store_true",
         help="Use the target list for occultation scheduling instead of a separate list",
@@ -980,6 +985,11 @@ def main() -> int:
                 "transit_scheduling_weights must contain exactly 3 values"
             )
 
+        exoplanet_only_mode = _as_bool(
+            _get_val("exoplanet_only_mode", args.exoplanet_only, False),
+            False,
+        )
+
         if target_def_base:
             extra_inputs["target_definition_base"] = Path(str(target_def_base))
             # If the JSON doesn't provide an explicit list, use the standard set.
@@ -992,6 +1002,9 @@ def main() -> int:
                     "occultation-standard",
                 ],
             )
+
+        if exoplanet_only_mode:
+            extra_inputs["target_definition_files"] = ["exoplanet"]
 
         if args.skip_manifests:
             extra_inputs["skip_manifests"] = True
@@ -1211,6 +1224,10 @@ def main() -> int:
         primary_only_mode = bool(
             _get_val("primary_only_mode", args.primary_only, False)
         )
+        exoplanet_only_mode = _as_bool(
+            _get_val("exoplanet_only_mode", args.exoplanet_only, exoplanet_only_mode),
+            exoplanet_only_mode,
+        )
         use_target_list_for_occultations = _as_bool(
             _get_val("use_target_list_for_occultations", args.use_target_list_for_occultations, False),
             False,
@@ -1412,6 +1429,7 @@ def main() -> int:
             show_progress=show_progress,
             force_regenerate=force_regenerate,
             primary_only_mode=primary_only_mode,
+            exoplanet_only_mode=exoplanet_only_mode,
             use_target_list_for_occultations=use_target_list_for_occultations,
             prioritise_occultations_by_slew=prioritise_occultations_by_slew,
             enable_occultation_xml=enable_occultation_xml,
@@ -1470,6 +1488,7 @@ def main() -> int:
         # 4. Run scheduler or reuse an existing schedule CSV
         logger.info("Run data directory: %s", run_data_dir)
         logger.info("PRIMARY_ONLY_MODE=%s", str(primary_only_mode).upper())
+        logger.info("EXOPLANET_ONLY_MODE=%s", str(exoplanet_only_mode).upper())
         logger.info(
             "INCLUDE_OCCULTATION_SEQUENCES_IN_XML=%s",
             str(enable_occultation_xml).upper(),

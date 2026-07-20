@@ -134,6 +134,8 @@ When `earth_keepouts` is split:
   the normal target selection.
 - If `primary_only_mode` is false, the scheduler can fill unused gaps with
   non-primary targets.
+- If `exoplanet_only_mode` is true, the run is restricted to `exoplanet`
+  targets only; non-exoplanet manifests and visibility catalogs are skipped.
 - The main output is `Pandora_Schedule_*.csv`.
 
 6. Build the science calendar XML

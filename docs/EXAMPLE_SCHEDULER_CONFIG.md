@@ -73,6 +73,7 @@ Behavior flags
 - `show_progress` (bool, default `false`): show progress bars during processing.
 - `force_regenerate` (bool, default `false`): force regeneration of intermediate files even if they already exist.
 - `primary_only_mode` (bool, default `false`): only schedule primary science targets; convert non-primary gap-fill windows into `Free Time`.
+- `exoplanet_only_mode` (bool, default `false`): run only the `exoplanet` category end-to-end; non-exoplanet manifests, visibility catalogs, and XML catalog requirements are skipped.
 - `use_target_list_for_occultations` (bool, default `false`): use the target list for occultation scheduling instead of a separate list.
 - `prioritise_occultations_by_slew` (bool, default `false`): prioritise occultation targets based on slew cost.
 - `include_occultation_sequences_in_xml` / `generate_occultation_xml` / `enable_occultation_xml` (bool, default `true`): include occultation-target calculations when generating the science-calendar XML. Set to `false` to emit only visible-segment entries.

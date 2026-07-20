@@ -140,10 +140,14 @@ class _ScienceCalendarBuilder:
 
         self.data_dir = inputs.data_dir
         self.target_catalog = _read_catalog(self.data_dir / "exoplanet_targets.csv")
-        self.aux_catalog = _read_or_synthesise_all_targets(self.data_dir)
-        self.occ_catalog = _read_catalog(
-            self.data_dir / "occultation-standard_targets.csv"
-        )
+        if self.config.exoplanet_only_mode:
+            self.aux_catalog = pd.DataFrame()
+            self.occ_catalog = pd.DataFrame()
+        else:
+            self.aux_catalog = _read_or_synthesise_all_targets(self.data_dir)
+            self.occ_catalog = _read_catalog(
+                self.data_dir / "occultation-standard_targets.csv"
+            )
 
         obs_minutes, occ_minutes = observation_utils.general_parameters(
             config.obs_sequence_duration_min,

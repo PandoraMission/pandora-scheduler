@@ -141,7 +141,9 @@ def build_schedule(config: PandoraSchedulerConfig) -> SchedulerResult:
     ).resolve()
 
     # Handle target definition files if provided
-    target_definition_files_raw = extra_inputs.get("target_definition_files")
+    target_definition_files_raw = (
+        ["exoplanet"] if config.exoplanet_only_mode else extra_inputs.get("target_definition_files")
+    )
     if target_definition_files_raw:
         target_definition_files = _resolve_target_definition_files(
             target_definition_files_raw,
@@ -445,53 +447,60 @@ def _maybe_generate_visibility(
     if not generate_visibility:
         return
 
+    enabled_categories = set(_enabled_target_definition_files(config))
+    aux_enabled = "auxiliary-standard" in enabled_categories
+
     # 1. Primary Targets -> <data_subdir>/targets
-    LOGGER.info(
-        "Generating visibility for Primary Targets in %s",
-        paths.targets_dir if config.output_dir else Path("output") / "data" / "targets",
-    )
-    build_visibility_catalog(
-        _visibility_config_for_target_definition(config, "exoplanet"),
-        target_list=primary_visibility_csv or primary_target_csv,
-        partner_list=auxiliary_target_csv,
-        output_subpath="targets",
-    )
+    if "exoplanet" in enabled_categories:
+        LOGGER.info(
+            "Generating visibility for Primary Targets in %s",
+            paths.targets_dir if config.output_dir else Path("output") / "data" / "targets",
+        )
+        build_visibility_catalog(
+            _visibility_config_for_target_definition(config, "exoplanet"),
+            target_list=primary_visibility_csv or primary_target_csv,
+            partner_list=auxiliary_target_csv if aux_enabled else None,
+            output_subpath="targets",
+        )
 
     # 2. Auxiliary Targets -> <data_subdir>/aux_targets
-    LOGGER.info(
-        "Generating visibility for Auxiliary Targets in %s",
-        paths.aux_targets_dir if config.output_dir else Path("output") / "data" / "aux_targets",
-    )
-    build_visibility_catalog(
-        _visibility_config_for_target_definition(config, "auxiliary-standard"),
-        target_list=auxiliary_target_csv,
-        partner_list=None,
-        output_subpath="aux_targets",
-    )
+    if "auxiliary-standard" in enabled_categories:
+        LOGGER.info(
+            "Generating visibility for Auxiliary Targets in %s",
+            paths.aux_targets_dir if config.output_dir else Path("output") / "data" / "aux_targets",
+        )
+        build_visibility_catalog(
+            _visibility_config_for_target_definition(config, "auxiliary-standard"),
+            target_list=auxiliary_target_csv,
+            partner_list=None,
+            output_subpath="aux_targets",
+        )
 
     # 3. Monitoring Targets -> <data_subdir>/aux_targets
-    LOGGER.info(
-        "Generating visibility for Monitoring Targets in %s",
-        paths.aux_targets_dir if config.output_dir else Path("output") / "data" / "aux_targets",
-    )
-    build_visibility_catalog(
-        _visibility_config_for_target_definition(config, "monitoring-standard"),
-        target_list=monitoring_target_csv,
-        partner_list=None,
-        output_subpath="aux_targets",
-    )
+    if "monitoring-standard" in enabled_categories:
+        LOGGER.info(
+            "Generating visibility for Monitoring Targets in %s",
+            paths.aux_targets_dir if config.output_dir else Path("output") / "data" / "aux_targets",
+        )
+        build_visibility_catalog(
+            _visibility_config_for_target_definition(config, "monitoring-standard"),
+            target_list=monitoring_target_csv,
+            partner_list=None,
+            output_subpath="aux_targets",
+        )
 
     # 4. Occultation Targets -> <data_subdir>/aux_targets
-    LOGGER.info(
-        "Generating visibility for Occultation Targets in %s",
-        paths.aux_targets_dir if config.output_dir else Path("output") / "data" / "aux_targets",
-    )
-    build_visibility_catalog(
-        _visibility_config_for_target_definition(config, "occultation-standard"),
-        target_list=occultation_target_csv,
-        partner_list=None,
-        output_subpath="aux_targets",
-    )
+    if "occultation-standard" in enabled_categories:
+        LOGGER.info(
+            "Generating visibility for Occultation Targets in %s",
+            paths.aux_targets_dir if config.output_dir else Path("output") / "data" / "aux_targets",
+        )
+        build_visibility_catalog(
+            _visibility_config_for_target_definition(config, "occultation-standard"),
+            target_list=occultation_target_csv,
+            partner_list=None,
+            output_subpath="aux_targets",
+        )
 
 
 def _generate_target_manifests(
@@ -578,6 +587,20 @@ def _as_bool(value: object, default: bool) -> bool:
     if isinstance(value, (int, float)):
         return bool(value)
     return default
+
+
+def _enabled_target_definition_files(config: PandoraSchedulerConfig) -> list[str]:
+    if getattr(config, "exoplanet_only_mode", False):
+        return ["exoplanet"]
+    return _resolve_target_definition_files(
+        config.extra_inputs.get("target_definition_files"),
+        [
+            "exoplanet",
+            "auxiliary-standard",
+            "monitoring-standard",
+            "occultation-standard",
+        ],
+    )
 
 
 def _visibility_config_for_target_definition(

@@ -371,6 +371,14 @@ class PandoraSchedulerConfig:
     primary_only_mode: bool = False
     """Disable non-primary gap-filling observations."""
 
+    exoplanet_only_mode: bool = False
+    """Restrict the pipeline to exoplanet targets only.
+
+    When True, target-manifest generation is limited to the ``exoplanet``
+    category, non-exoplanet visibility catalogs are skipped, and XML building
+    tolerates missing auxiliary / monitoring / occultation catalogs.
+    """
+
     use_target_list_for_occultations: bool = False
     """Use target list for occultation scheduling (vs. separate list)."""
 
