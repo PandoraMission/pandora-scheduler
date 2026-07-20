@@ -140,14 +140,28 @@ class _ScienceCalendarBuilder:
 
         self.data_dir = inputs.data_dir
         self.target_catalog = _read_catalog(self.data_dir / "exoplanet_targets.csv")
-        if self.config.exoplanet_only_mode:
-            self.aux_catalog = pd.DataFrame()
-            self.occ_catalog = pd.DataFrame()
+
+        enabled_target_definition_files = _configured_target_definition_files(
+            self.config
+        )
+        enabled_partner_catalogs = [
+            name for name in enabled_target_definition_files if name != "exoplanet"
+        ]
+
+        if enabled_partner_catalogs:
+            self.aux_catalog = _read_or_synthesise_all_targets(
+                self.data_dir,
+                enabled_partner_catalogs,
+            )
         else:
-            self.aux_catalog = _read_or_synthesise_all_targets(self.data_dir)
+            self.aux_catalog = pd.DataFrame()
+
+        if "occultation-standard" in enabled_target_definition_files:
             self.occ_catalog = _read_catalog(
                 self.data_dir / "occultation-standard_targets.csv"
             )
+        else:
+            self.occ_catalog = pd.DataFrame()
 
         obs_minutes, occ_minutes = observation_utils.general_parameters(
             config.obs_sequence_duration_min,
@@ -2837,18 +2851,38 @@ def _read_catalog(path: Path) -> pd.DataFrame:
     return df
 
 
-def _read_or_synthesise_all_targets(data_dir: Path) -> pd.DataFrame:
+def _configured_target_definition_files(
+    config: PandoraSchedulerConfig,
+) -> list[str]:
+    if getattr(config, "exoplanet_only_mode", False):
+        return ["exoplanet"]
+
+    raw_value = config.extra_inputs.get("target_definition_files")
+    default = [
+        "exoplanet",
+        "auxiliary-standard",
+        "monitoring-standard",
+        "occultation-standard",
+    ]
+    if raw_value is None:
+        return list(default)
+    if isinstance(raw_value, str):
+        return [item.strip() for item in raw_value.split(",") if item.strip()]
+    if isinstance(raw_value, Sequence):
+        return [str(item) for item in raw_value]
+    return list(default)
+
+
+def _read_or_synthesise_all_targets(
+    data_dir: Path,
+    target_definition_files: Sequence[str],
+) -> pd.DataFrame:
     all_targets_path = data_dir / "all_targets.csv"
     if all_targets_path.exists():
         return _read_catalog(all_targets_path)
 
     return observation_utils.combine_target_manifests(
-        [
-            "exoplanet",
-            "auxiliary-standard",
-            "monitoring-standard",
-            "occultation-standard",
-        ],
+        list(target_definition_files),
         data_dir,
     )
 
