@@ -89,7 +89,7 @@
 
     "visibility_gmat": "/Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260710-VF20260710-EX20270809.txt",
     "write_all_targets_csv": false,
-    "too_list_csv": "/Users/vkostov/Documents/GitHub/pandora-scheduler/output_20260810_20261110_EarthDay111/ToO_list.csv"
+    "too_list_csv": "/Users/vkostov/Documents/GitHub/pandora-scheduler/output_20260810_20270210_EarthDay111/ToO_list.csv"
   },
   "primary_visit_start_policy": "latest",
   "notes": {
