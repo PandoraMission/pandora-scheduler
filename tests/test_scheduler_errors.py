@@ -25,6 +25,16 @@ from pandorascheduler_rework.scheduler import (
 class TestSchedulerErrorHandling:
     """Test scheduler error handling and edge cases."""
 
+    def test_load_too_table_accepts_spaces_after_delimiters(self, tmp_path):
+        data_dir = tmp_path / "data"
+        data_dir.mkdir()
+        (data_dir / "ToO_list.csv").write_text(
+            "Target, Obs Window Start, Obs Window Stop\n",
+            encoding="utf-8",
+        )
+
+        assert _load_too_table(data_dir) == ([], [], [])
+
     def test_load_too_table_prefers_output_dir_over_data_dir(self, tmp_path):
         output_too = tmp_path / "ToO_list.csv"
         output_too.write_text(

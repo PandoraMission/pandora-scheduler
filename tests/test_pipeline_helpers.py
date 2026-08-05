@@ -3,6 +3,7 @@
 from datetime import datetime
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from pandorascheduler_rework.config import PandoraSchedulerConfig
@@ -14,6 +15,7 @@ from pandorascheduler_rework.pipeline import (
     _resolve_target_definition_files,
     _stage_too_list,
     _target_definition_from_csv,
+    _validate_too_list,
     _visibility_config_for_target_definition,
 )
 
@@ -156,6 +158,17 @@ class TestStageTooList:
         resolved = _stage_too_list({}, output_dir, out_data)
 
         assert resolved == root_too
+
+
+def test_validate_too_list_accepts_spaces_after_delimiters(tmp_path):
+    too_list = tmp_path / "ToO_list.csv"
+    too_list.write_text(
+        "Target, Obs Window Start, Obs Window Stop\n",
+        encoding="utf-8",
+    )
+    target_list = pd.DataFrame({"Planet Name": ["TOI-674b"]})
+
+    _validate_too_list(too_list, target_list)
 
 
 class TestVisibilityConfigForTargetDefinition:

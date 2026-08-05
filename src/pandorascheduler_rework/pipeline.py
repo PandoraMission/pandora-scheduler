@@ -376,7 +376,9 @@ def _stage_too_list(
 def _validate_too_list(too_list_csv: Path, target_list: pd.DataFrame) -> None:
     """Validate a scheduler ToO list against the active target manifest."""
 
-    too_table = pd.read_csv(too_list_csv)
+    # Accept conventional CSV formatting with spaces after delimiters, e.g.
+    # ``Target, Obs Window Start, Obs Window Stop``.
+    too_table = pd.read_csv(too_list_csv, skipinitialspace=True)
     required = {"Target", "Obs Window Start", "Obs Window Stop"}
     missing = required.difference(too_table.columns)
     if missing:

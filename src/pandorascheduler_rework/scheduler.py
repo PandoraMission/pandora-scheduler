@@ -660,7 +660,8 @@ def _load_too_table(
     if too_path is None:
         return [], [], []
 
-    table = pd.read_csv(too_path)
+    # Accept conventional CSV formatting with spaces after delimiters.
+    table = pd.read_csv(too_path, skipinitialspace=True)
     return (
         table["Target"].tolist(),
         [

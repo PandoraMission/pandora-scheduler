@@ -181,3 +181,8 @@ src/pandorascheduler/data/GMAT_pandora_600_20250708_withdrag.txt
 src/pandorascheduler/data/Observation_Time_Report_2026-02-05 00:00:00.csv
 src/pandorascheduler/data/Pandora_Schedule_0.8_0.0_0.2_2026-02-05_to_2027-02-05.csv
 src/pandorascheduler/data/tracker.csv
+scheduler_config_20260810_20270210_new.json
+src/pandorascheduler_rework/pipeline.py
+src/pandorascheduler_rework/scheduler.py
+tests/test_pipeline_helpers.py
+tests/test_scheduler_errors.py
