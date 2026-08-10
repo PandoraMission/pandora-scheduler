@@ -35,7 +35,8 @@
   "science_soft_st_required": 1,
 
   "priority_buffer": false,
-  "priority_buffer_minutes": 90,
+  "priority_buffer_mode": "adjacent_sequences",
+  "priority_buffer_minutes": 30,
 
   "show_progress": true,
   "parallel_workers": 13,
@@ -43,12 +44,12 @@
 
   "exoplanet_only_mode": false,
 
-  "primary_only_mode": false,
+  "primary_only_mode": true,
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
 
   "generate_xml": true,
-  "include_occultation_sequences_in_xml": true,
+  "include_occultation_sequences_in_xml": false,
   "allow_partial_occultation_sequences_in_xml": false,
 
   "obs_sequence_duration_min": 90,

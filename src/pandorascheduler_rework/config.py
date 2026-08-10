@@ -310,6 +310,9 @@ class PandoraSchedulerConfig:
     priority_buffer: bool = False
     """Expand transit-priority XML tagging beyond the nominal transit window."""
 
+    priority_buffer_mode: str = "absolute_minutes"
+    """Priority expansion mode: ``absolute_minutes`` or ``adjacent_sequences``."""
+
     priority_buffer_minutes: int = 80
     """Symmetric buffer, in minutes, around transit windows for priority-2 XML tagging."""
 
@@ -554,6 +557,15 @@ class PandoraSchedulerConfig:
                 raise ValueError(
                     f"{field_name} must be >= 0, got {value}"
                 )
+
+        if self.priority_buffer_mode not in (
+            "absolute_minutes",
+            "adjacent_sequences",
+        ):
+            raise ValueError(
+                "priority_buffer_mode must be 'absolute_minutes' or "
+                f"'adjacent_sequences', got {self.priority_buffer_mode!r}"
+            )
 
         if (
             self.science_soft_st_required is not None

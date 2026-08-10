@@ -106,6 +106,7 @@ class TestPandoraSchedulerConfig:
         assert config.min_power_frac == 0.7
         assert config.obs_sequence_duration_min == 90
         assert config.priority_buffer is False
+        assert config.priority_buffer_mode == "absolute_minutes"
         assert config.priority_buffer_minutes == 80
         assert config.show_progress is False
 
@@ -116,6 +117,14 @@ class TestPandoraSchedulerConfig:
                 window_start=datetime(2026, 2, 5),
                 window_end=datetime(2027, 2, 5),
                 priority_buffer_minutes=-1,
+            )
+
+    def test_priority_buffer_mode_validation(self):
+        with pytest.raises(ValueError, match="priority_buffer_mode"):
+            PandoraSchedulerConfig(
+                window_start=datetime(2026, 2, 5),
+                window_end=datetime(2027, 2, 5),
+                priority_buffer_mode="unknown",
             )
 
     def test_science_keepouts_populate_legacy_day_night_fields(self):

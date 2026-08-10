@@ -19,6 +19,7 @@ from pandorascheduler_rework.science_calendar import (
     _normalise_target_name,
     _parse_datetime,
     _read_catalog,
+    _split_at_priority_buffer_boundaries,
     _target_priority,
     _read_visibility_extended,
     _visibility_change_indices,
@@ -235,6 +236,102 @@ class TestHelperFunctions:
         )
         assert priority == "2"
 
+    def test_priority_buffer_boundaries_produce_exact_priority_regions(self):
+        transit_start = [datetime(2026, 3, 1, 12, 0)]
+        transit_stop = [datetime(2026, 3, 1, 13, 0)]
+        regions = _split_at_priority_buffer_boundaries(
+            datetime(2026, 3, 1, 10, 30),
+            datetime(2026, 3, 1, 15, 0),
+            True,
+            transit_start,
+            transit_stop,
+            buffer_enabled=True,
+            buffer_minutes=30,
+        )
+        assert regions == [
+            (datetime(2026, 3, 1, 10, 30), datetime(2026, 3, 1, 11, 30)),
+            (datetime(2026, 3, 1, 11, 30), datetime(2026, 3, 1, 13, 30)),
+            (datetime(2026, 3, 1, 13, 30), datetime(2026, 3, 1, 15, 0)),
+        ]
+
+    def test_priority_buffer_disabled_preserves_original_segment(self):
+        start = datetime(2026, 3, 1, 10, 30)
+        stop = datetime(2026, 3, 1, 15, 0)
+        regions = _split_at_priority_buffer_boundaries(
+            start,
+            stop,
+            True,
+            [datetime(2026, 3, 1, 12, 0)],
+            [datetime(2026, 3, 1, 13, 0)],
+            buffer_enabled=False,
+            buffer_minutes=30,
+        )
+        assert regions == [(start, stop)]
+
+    def test_target_priority_does_not_promote_touching_buffer_boundary(self):
+        priority = _target_priority(
+            True,
+            [datetime(2026, 3, 1, 12, 0)],
+            [datetime(2026, 3, 1, 13, 0)],
+            datetime(2026, 3, 1, 10, 30),
+            datetime(2026, 3, 1, 11, 30),
+            buffer_enabled=True,
+            buffer_minutes=30,
+        )
+        assert priority == "1"
+
+    def test_adjacent_mode_selects_closest_sequence_on_each_side(self):
+        builder = object.__new__(_ScienceCalendarBuilder)
+        builder.config = PandoraSchedulerConfig(
+            window_start=datetime(2026, 3, 1),
+            window_end=datetime(2026, 3, 2),
+            obs_sequence_duration_min=90,
+            priority_buffer=True,
+            priority_buffer_mode="adjacent_sequences",
+        )
+        builder.sequence_duration = timedelta(minutes=90)
+        segments = [
+            (datetime(2026, 3, 1, 10, 0), datetime(2026, 3, 1, 11, 0), True),
+            (datetime(2026, 3, 1, 11, 0), datetime(2026, 3, 1, 12, 0), False),
+            (datetime(2026, 3, 1, 12, 0), datetime(2026, 3, 1, 13, 0), True),
+            (datetime(2026, 3, 1, 13, 0), datetime(2026, 3, 1, 14, 0), False),
+            (datetime(2026, 3, 1, 14, 0), datetime(2026, 3, 1, 15, 0), True),
+        ]
+
+        selected = builder._adjacent_priority_sequences(
+            segments,
+            True,
+            [datetime(2026, 3, 1, 12, 15)],
+            [datetime(2026, 3, 1, 12, 45)],
+        )
+
+        assert selected == {
+            (datetime(2026, 3, 1, 10, 0), datetime(2026, 3, 1, 11, 0)),
+            (datetime(2026, 3, 1, 14, 0), datetime(2026, 3, 1, 15, 0)),
+        }
+
+    def test_adjacent_mode_ignores_transits_outside_visit(self):
+        builder = object.__new__(_ScienceCalendarBuilder)
+        builder.config = PandoraSchedulerConfig(
+            window_start=datetime(2026, 3, 1),
+            window_end=datetime(2026, 3, 2),
+            priority_buffer=True,
+            priority_buffer_mode="adjacent_sequences",
+        )
+        builder.sequence_duration = timedelta(minutes=90)
+        segments = [
+            (datetime(2026, 3, 1, 10, 0), datetime(2026, 3, 1, 11, 0), True),
+        ]
+
+        selected = builder._adjacent_priority_sequences(
+            segments,
+            True,
+            [datetime(2026, 3, 2, 12, 0)],
+            [datetime(2026, 3, 2, 13, 0)],
+        )
+
+        assert selected == set()
+
     def test_lookup_planet_row_found(self):
         cat = pd.DataFrame({"Planet Name": ["TOI-700 b"], "RA": [120.0]})
         result = _lookup_planet_row(cat, "TOI-700 b")
@@ -309,6 +406,42 @@ class TestVisibilityChangeIndices:
         indices = _visibility_change_indices(np.array([1, 0, 1, 0]))
         # Should detect each transition
         assert len(indices) >= 2
+
+
+class TestVisibilityStats:
+    """Tests for overlap-weighted provenance visibility statistics."""
+
+    def test_second_aligned_fully_visible_sequence(self):
+        index = pd.date_range("2026-08-12 05:29:00", periods=23, freq="min")
+        prepared = pd.Series(True, index=index)
+
+        fraction, visible, non_visible = (
+            _ScienceCalendarBuilder._visibility_stats_in_series(
+                prepared,
+                datetime(2026, 8, 12, 5, 29, 43),
+                datetime(2026, 8, 12, 5, 52, 0),
+            )
+        )
+
+        assert fraction == pytest.approx(1.0)
+        assert visible == pytest.approx(22 + 17 / 60)
+        assert non_visible == pytest.approx(0.0)
+
+    def test_second_aligned_sequence_weights_partial_minutes(self):
+        index = pd.date_range("2026-08-12 05:29:00", periods=2, freq="min")
+        prepared = pd.Series([False, True], index=index)
+
+        fraction, visible, non_visible = (
+            _ScienceCalendarBuilder._visibility_stats_in_series(
+                prepared,
+                datetime(2026, 8, 12, 5, 29, 30),
+                datetime(2026, 8, 12, 5, 30, 30),
+            )
+        )
+
+        assert fraction == pytest.approx(0.5)
+        assert visible == pytest.approx(0.5)
+        assert non_visible == pytest.approx(0.5)
 
 
 # ---------------------------------------------------------------------------

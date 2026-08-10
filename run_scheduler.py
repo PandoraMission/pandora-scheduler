@@ -1189,6 +1189,9 @@ def main() -> int:
             _get_any(["priority_buffer", "buffer"], None, False),
             False,
         )
+        priority_buffer_mode = str(
+            _get_val("priority_buffer_mode", None, "absolute_minutes")
+        ).strip().lower()
         priority_buffer_minutes = int(
             _get_any(["priority_buffer_minutes", "buffer_minutes"], None, 80)
         )
@@ -1412,6 +1415,7 @@ def main() -> int:
             allow_science_soft_startracker_tail=allow_science_soft_startracker_tail,
             science_soft_startracker_tail_minutes=science_soft_startracker_tail_minutes,
             priority_buffer=priority_buffer,
+            priority_buffer_mode=priority_buffer_mode,
             priority_buffer_minutes=priority_buffer_minutes,
             science_soft_st_sun_min_deg=science_soft_st_sun_min_deg,
             science_soft_st_moon_min_deg=science_soft_st_moon_min_deg,

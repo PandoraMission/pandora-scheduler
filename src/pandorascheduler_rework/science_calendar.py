@@ -273,14 +273,42 @@ class _ScienceCalendarBuilder:
         if prepared is None or prepared.empty:
             return float("nan"), float("nan"), float("nan")
 
-        n_minutes = int(round((seg_stop - seg_start).total_seconds() / 60.0))
-        if n_minutes <= 0:
+        start = pd.Timestamp(seg_start)
+        stop = pd.Timestamp(seg_stop)
+        if start.tzinfo is not None:
+            start = start.tz_localize(None)
+        if stop.tzinfo is not None:
+            stop = stop.tz_localize(None)
+
+        duration_seconds = (stop - start).total_seconds()
+        if duration_seconds <= 0:
             return float("nan"), float("nan"), float("nan")
-        minute_index = pd.date_range(seg_start, periods=n_minutes, freq="min")
+
+        # Visibility samples describe minute intervals beginning at their
+        # minute-aligned timestamps.  Sequence boundaries can include seconds
+        # (for example an exact transit buffer boundary at 05:29:43), so an
+        # exact reindex starting at the sequence boundary would miss every
+        # sample.  Weight each intersecting visibility minute by its actual
+        # overlap with the sequence instead.
+        first_minute = start.floor("min")
+        stop_minute = stop.ceil("min")
+        minute_index = pd.date_range(
+            first_minute, stop_minute, freq="min", inclusive="left"
+        )
         aligned = prepared.reindex(minute_index, fill_value=False)
-        visible_minutes = float(aligned.sum())
-        non_visible_minutes = float((~aligned).sum())
-        return float(aligned.mean()), visible_minutes, non_visible_minutes
+        visible_seconds = 0.0
+        for minute_start, is_visible in aligned.items():
+            if not is_visible:
+                continue
+            overlap_start = max(start, minute_start)
+            overlap_stop = min(stop, minute_start + pd.Timedelta(minutes=1))
+            if overlap_stop > overlap_start:
+                visible_seconds += (overlap_stop - overlap_start).total_seconds()
+
+        visible_minutes = visible_seconds / 60.0
+        total_minutes = duration_seconds / 60.0
+        non_visible_minutes = total_minutes - visible_minutes
+        return visible_seconds / duration_seconds, visible_minutes, non_visible_minutes
 
     def _visibility_fraction_in_df(
         self, vis_df: Optional[pd.DataFrame], seg_start: datetime, seg_stop: datetime
@@ -1238,6 +1266,9 @@ class _ScienceCalendarBuilder:
         transit_start: Sequence[datetime],
         transit_stop: Sequence[datetime],
         soft_tail_window: Optional[tuple[datetime, datetime]] = None,
+        adjacent_priority_sequences: Optional[
+            set[tuple[datetime, datetime]]
+        ] = None,
     ) -> int:
         """Emit chunked science observation sequences.  Returns updated
         *seq_counter*."""
@@ -1250,83 +1281,144 @@ class _ScienceCalendarBuilder:
                 self.config.effective_min_science_sequence_minutes,
             )
             return seq_counter
-        current = segment_start
-        while current < segment_stop:
-            next_value = self._next_chunk_end(
-                current, self.sequence_duration, segment_stop
-            )
-            priority = _target_priority(
-                priority_flag,
-                transit_start,
-                transit_stop,
-                current,
-                next_value,
-                buffer_enabled=self.config.priority_buffer,
-                buffer_minutes=self.config.priority_buffer_minutes,
-            )
-            sequence_id = f"{seq_counter:03d}"
-            observation_sequence(
-                visit_element,
-                sequence_id,
-                target_name,
-                priority,
-                current.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                next_value.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                ra_value,
-                dec_value,
-                target_info if target_info is not None else pd.DataFrame(),
-            )
-            science_visibility_fraction, science_visible_minutes, science_non_visible_minutes = (
-                self._visibility_stats_in_df(science_visibility_df, current, next_value)
-            )
-            science_soft_tail_used = False
-            science_soft_tail_minutes = 0.0
-            if soft_tail_window is not None:
-                tail_start, tail_stop = soft_tail_window
-                overlap_start = max(current, tail_start)
-                overlap_stop = min(next_value, tail_stop)
-                if overlap_stop > overlap_start:
-                    tail_window_minutes = max(
-                        0,
-                        int(
-                            round(
-                                (tail_stop - tail_start).total_seconds() / 60.0
-                            )
-                        ),
-                    )
-                    overlap_minutes = max(
-                        0,
-                        int(
-                            round(
-                                (overlap_stop - overlap_start).total_seconds() / 60.0
-                            )
-                        ),
-                    )
-                    capped_minutes = min(
-                        overlap_minutes,
-                        tail_window_minutes,
-                        self.config.science_soft_startracker_tail_minutes,
-                    )
-                    science_soft_tail_used = True
-                    science_soft_tail_minutes = float(capped_minutes)
-            self._record_sequence_provenance(
-                visit_id,
-                sequence_id,
-                target_name,
-                priority,
-                current,
-                next_value,
-                "science",
-                "science_schedule",
-                visibility_fraction=science_visibility_fraction,
-                visible_minutes=science_visible_minutes,
-                non_visible_minutes=science_non_visible_minutes,
-                science_soft_tail_used=science_soft_tail_used,
-                science_soft_tail_minutes=science_soft_tail_minutes,
-            )
-            seq_counter += 1
-            current = next_value
+        absolute_buffer_enabled = (
+            self.config.priority_buffer
+            and self.config.priority_buffer_mode == "absolute_minutes"
+        )
+        priority_regions = _split_at_priority_buffer_boundaries(
+            segment_start,
+            segment_stop,
+            priority_flag,
+            transit_start,
+            transit_stop,
+            buffer_enabled=absolute_buffer_enabled,
+            buffer_minutes=self.config.priority_buffer_minutes,
+        )
+        for region_start, region_stop in priority_regions:
+            current = region_start
+            while current < region_stop:
+                next_value = self._next_chunk_end(
+                    current, self.sequence_duration, region_stop
+                )
+                priority = _target_priority(
+                    priority_flag,
+                    transit_start,
+                    transit_stop,
+                    current,
+                    next_value,
+                    buffer_enabled=absolute_buffer_enabled,
+                    buffer_minutes=self.config.priority_buffer_minutes,
+                )
+                if (
+                    self.config.priority_buffer
+                    and self.config.priority_buffer_mode == "adjacent_sequences"
+                    and adjacent_priority_sequences is not None
+                    and (current, next_value) in adjacent_priority_sequences
+                ):
+                    priority = "2"
+                sequence_id = f"{seq_counter:03d}"
+                observation_sequence(
+                    visit_element,
+                    sequence_id,
+                    target_name,
+                    priority,
+                    current.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    next_value.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                    ra_value,
+                    dec_value,
+                    target_info if target_info is not None else pd.DataFrame(),
+                )
+                science_visibility_fraction, science_visible_minutes, science_non_visible_minutes = (
+                    self._visibility_stats_in_df(science_visibility_df, current, next_value)
+                )
+                science_soft_tail_used = False
+                science_soft_tail_minutes = 0.0
+                if soft_tail_window is not None:
+                    tail_start, tail_stop = soft_tail_window
+                    overlap_start = max(current, tail_start)
+                    overlap_stop = min(next_value, tail_stop)
+                    if overlap_stop > overlap_start:
+                        tail_window_minutes = max(
+                            0,
+                            int(
+                                round(
+                                    (tail_stop - tail_start).total_seconds() / 60.0
+                                )
+                            ),
+                        )
+                        overlap_minutes = max(
+                            0,
+                            int(
+                                round(
+                                    (overlap_stop - overlap_start).total_seconds() / 60.0
+                                )
+                            ),
+                        )
+                        capped_minutes = min(
+                            overlap_minutes,
+                            tail_window_minutes,
+                            self.config.science_soft_startracker_tail_minutes,
+                        )
+                        science_soft_tail_used = True
+                        science_soft_tail_minutes = float(capped_minutes)
+                self._record_sequence_provenance(
+                    visit_id,
+                    sequence_id,
+                    target_name,
+                    priority,
+                    current,
+                    next_value,
+                    "science",
+                    "science_schedule",
+                    visibility_fraction=science_visibility_fraction,
+                    visible_minutes=science_visible_minutes,
+                    non_visible_minutes=science_non_visible_minutes,
+                    science_soft_tail_used=science_soft_tail_used,
+                    science_soft_tail_minutes=science_soft_tail_minutes,
+                )
+                seq_counter += 1
+                current = next_value
         return seq_counter
+
+    def _adjacent_priority_sequences(
+        self,
+        segments: Sequence[Tuple[datetime, datetime, bool]],
+        priority_flag: bool,
+        transit_start: Sequence[datetime],
+        transit_stop: Sequence[datetime],
+    ) -> set[tuple[datetime, datetime]]:
+        """Return the nearest complete science sequence on each transit side."""
+        if (
+            not self.config.priority_buffer
+            or self.config.priority_buffer_mode != "adjacent_sequences"
+            or not priority_flag
+        ):
+            return set()
+
+        sequences: list[tuple[datetime, datetime]] = []
+        min_td = self._science_min_duration()
+        for segment_start, segment_stop, is_visible in segments:
+            if not is_visible or (min_td and segment_stop - segment_start < min_td):
+                continue
+            current = segment_start
+            while current < segment_stop:
+                next_value = self._next_chunk_end(
+                    current, self.sequence_duration, segment_stop
+                )
+                sequences.append((current, next_value))
+                current = next_value
+
+        selected: set[tuple[datetime, datetime]] = set()
+        for start, stop in zip(transit_start, transit_stop):
+            if not sequences or stop <= sequences[0][0] or start >= sequences[-1][1]:
+                continue
+            before = [sequence for sequence in sequences if sequence[1] <= start]
+            after = [sequence for sequence in sequences if sequence[0] >= stop]
+            if before:
+                selected.add(max(before, key=lambda sequence: sequence[1]))
+            if after:
+                selected.add(min(after, key=lambda sequence: sequence[0]))
+        return selected
 
     def _plan_occultation_sequences(
         self,
@@ -2252,6 +2344,9 @@ class _ScienceCalendarBuilder:
 
         # --- Path 1: occultation XML disabled — science-only ---------------
         if not self.config.enable_occultation_xml:
+            adjacent_priority_sequences = self._adjacent_priority_sequences(
+                raw_segments, priority_flag, transit_start, transit_stop
+            )
             for seg_start, seg_stop, is_visible in raw_segments:
                 if is_visible:
                     seq_counter = self._emit_science_sequences(
@@ -2259,6 +2354,7 @@ class _ScienceCalendarBuilder:
                         seg_start, seg_stop, ra_value, dec_value,
                         target_info, visibility_df, priority_flag, transit_start, transit_stop,
                         soft_tail_window=science_soft_tail_windows.get(seg_start),
+                        adjacent_priority_sequences=adjacent_priority_sequences,
                     )
             return
 
@@ -2267,6 +2363,9 @@ class _ScienceCalendarBuilder:
             visit_segments
         )
         total_occultation_segments = sum(1 for _seg in visit_segments if not _seg[2])
+        adjacent_priority_sequences = self._adjacent_priority_sequences(
+            visit_segments, priority_flag, transit_start, transit_stop
+        )
         if not oc_starts:
             for seg_start, seg_stop, is_visible in visit_segments:
                 if is_visible:
@@ -2275,6 +2374,7 @@ class _ScienceCalendarBuilder:
                         seg_start, seg_stop, ra_value, dec_value,
                         target_info, visibility_df, priority_flag, transit_start, transit_stop,
                         soft_tail_window=science_soft_tail_windows.get(seg_start),
+                        adjacent_priority_sequences=adjacent_priority_sequences,
                     )
             return
 
@@ -2370,6 +2470,7 @@ class _ScienceCalendarBuilder:
                         seg_start, seg_stop, ra_value, dec_value,
                         target_info, visibility_df, priority_flag, transit_start, transit_stop,
                         soft_tail_window=science_soft_tail_windows.get(seg_start),
+                        adjacent_priority_sequences=adjacent_priority_sequences,
                     )
                 else:
                     if self.config.only_occultation_pass1:
@@ -2466,6 +2567,7 @@ class _ScienceCalendarBuilder:
                     seg_start, seg_stop, ra_value, dec_value,
                     target_info, visibility_df, priority_flag, transit_start, transit_stop,
                     soft_tail_window=science_soft_tail_windows.get(seg_start),
+                    adjacent_priority_sequences=adjacent_priority_sequences,
                 )
                 continue
 
@@ -2508,10 +2610,52 @@ class _ScienceCalendarBuilder:
         transit_start: Sequence[datetime],
         transit_stop: Sequence[datetime],
     ) -> None:
-        segments = break_long_sequences(
-            start, stop, self.sequence_duration,
-            min_chunk=self._science_min_duration(),
+        absolute_buffer_enabled = (
+            self.config.priority_buffer
+            and self.config.priority_buffer_mode == "absolute_minutes"
         )
+        priority_regions = _split_at_priority_buffer_boundaries(
+            start,
+            stop,
+            priority_flag,
+            transit_start,
+            transit_stop,
+            buffer_enabled=absolute_buffer_enabled,
+            buffer_minutes=self.config.priority_buffer_minutes,
+        )
+        segments = [
+            segment
+            for region_start, region_stop in priority_regions
+            for segment in break_long_sequences(
+                region_start,
+                region_stop,
+                self.sequence_duration,
+                min_chunk=self._science_min_duration(),
+            )
+        ]
+        adjacent_priority_sequences: set[tuple[datetime, datetime]] = set()
+        if (
+            self.config.priority_buffer
+            and self.config.priority_buffer_mode == "adjacent_sequences"
+            and priority_flag
+        ):
+            for transit_begin, transit_end in zip(transit_start, transit_stop):
+                if (
+                    not segments
+                    or transit_end <= segments[0][0]
+                    or transit_begin >= segments[-1][1]
+                ):
+                    continue
+                before = [segment for segment in segments if segment[1] <= transit_begin]
+                after = [segment for segment in segments if segment[0] >= transit_end]
+                if before:
+                    adjacent_priority_sequences.add(
+                        max(before, key=lambda segment: segment[1])
+                    )
+                if after:
+                    adjacent_priority_sequences.add(
+                        min(after, key=lambda segment: segment[0])
+                    )
         seq_counter = 1
         for seg_start, seg_stop in segments:
             priority = _target_priority(
@@ -2520,9 +2664,11 @@ class _ScienceCalendarBuilder:
                 transit_stop,
                 seg_start,
                 seg_stop,
-                buffer_enabled=self.config.priority_buffer,
+                buffer_enabled=absolute_buffer_enabled,
                 buffer_minutes=self.config.priority_buffer_minutes,
             )
+            if (seg_start, seg_stop) in adjacent_priority_sequences:
+                priority = "2"
             observation_sequence(
                 visit_element,
                 f"{seq_counter:03d}",
@@ -3483,9 +3629,48 @@ def _target_priority(
         else timedelta(0)
     )
     for start, stop in zip(transit_start, transit_stop):
-        if (start - buffer_td) <= sequence_stop and (stop + buffer_td) >= sequence_start:
+        # Treat intervals as half-open: merely touching a transit/buffer
+        # boundary does not promote the neighbouring sequence.
+        if (start - buffer_td) < sequence_stop and (stop + buffer_td) > sequence_start:
             return "2"
     return "1"
+
+
+def _split_at_priority_buffer_boundaries(
+    segment_start: datetime,
+    segment_stop: datetime,
+    priority_flag: bool,
+    transit_start: Sequence[datetime],
+    transit_stop: Sequence[datetime],
+    *,
+    buffer_enabled: bool = False,
+    buffer_minutes: int = 0,
+) -> List[tuple[datetime, datetime]]:
+    """Split a science segment at exact buffered-transit boundaries.
+
+    With buffering disabled this deliberately returns the original segment,
+    preserving the legacy sequence layout.  Splitting is also unnecessary for
+    targets whose transit sequences are not eligible for priority 2.
+    """
+    if (
+        segment_stop <= segment_start
+        or not priority_flag
+        or not buffer_enabled
+        or buffer_minutes <= 0
+        or not transit_start
+        or not transit_stop
+    ):
+        return [(segment_start, segment_stop)] if segment_stop > segment_start else []
+
+    buffer_td = timedelta(minutes=int(buffer_minutes))
+    cut_points = {segment_start, segment_stop}
+    for start, stop in zip(transit_start, transit_stop):
+        for boundary in (start - buffer_td, stop + buffer_td):
+            if segment_start < boundary < segment_stop:
+                cut_points.add(boundary)
+
+    ordered = sorted(cut_points)
+    return list(zip(ordered, ordered[1:]))
 
 
 def _fallback_float(value: object, info: Optional[pd.DataFrame], column: str) -> float:
