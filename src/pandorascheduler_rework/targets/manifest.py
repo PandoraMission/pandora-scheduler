@@ -37,7 +37,7 @@ _STANDARD_CATEGORIES = {
     "occultation-standard",
 }
 _OCCULTATION_CATEGORY = "occultation-standard"
-_DEFAULT_OBSERVATION_EPOCH = Time("2026-01-05")
+_DEFAULT_OBSERVATION_EPOCH = Time("2026-06-01")
 
 
 class TargetDefinitionError(RuntimeError):
