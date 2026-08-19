@@ -111,6 +111,19 @@ The visibility decision itself is two-stage:
   - roll sweep
   - `st_required` logic
 
+The JSON key `"visibility_backend": "local"` preserves this repository's
+implementation. To use the optional SGP4 implementation from
+`pandora-visibility`, set `"visibility_backend": "pandoravisibility"` and
+provide `visibility_tle_file`. The adapter converts the configured science or
+occultation Earth-center keepouts into altitude-dependent apparent-limb
+clearances on the package-propagated orbit. The GMAT input is still used for
+SAA annotations.
+
+The optional dependency is an editable path dependency on the sibling checkout
+`../pandora-visibility`. After pulling changes in that repository, newly started
+scheduler processes import the updated local source directly. Re-run the
+visibility tests after upstream API or constraint changes.
+
 When `earth_keepouts` is split:
 
 - `exoplanet` targets use:

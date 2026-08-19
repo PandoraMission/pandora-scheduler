@@ -36,8 +36,22 @@ from .geometry import (
     compute_saa_crossings,
     interpolate_gmat_ephemeris,
 )
+from .pandoravisibility_backend import PandoraVisibilityBackend
 
 LOGGER = logging.getLogger(__name__)
+
+
+def _visibility_file_matches_backend(path: Path, backend: str) -> bool:
+    """Return whether an existing artifact was produced by *backend*.
+
+    Artifacts written before backend metadata existed are local artifacts.
+    """
+    try:
+        metadata = pq.read_metadata(path).metadata or {}
+    except (OSError, pa.ArrowException):
+        return False
+    recorded = metadata.get(b"pandora.visibility_backend", b"local")
+    return recorded.decode(errors="replace") == backend
 
 
 def _write_visibility_parquet(
@@ -53,6 +67,7 @@ def _write_visibility_parquet(
             b"pandora.visibility_sun_deg": str(config.sun_avoidance_deg).encode(),
             b"pandora.visibility_moon_deg": str(config.moon_avoidance_deg).encode(),
             b"pandora.visibility_earth_deg": str(config.earth_avoidance_deg).encode(),
+            b"pandora.visibility_backend": config.visibility_backend.encode(),
         }
     )
     table = table.replace_schema_metadata(existing)
@@ -70,6 +85,15 @@ def _write_visibility_parquet(
 # ---------------------------------------------------------------------------
 _worker_payload: dict | None = None
 _worker_config: PandoraSchedulerConfig | None = None
+_worker_external_backend: PandoraVisibilityBackend | None = None
+
+
+def _make_external_backend(
+    config: PandoraSchedulerConfig, payload: dict
+) -> PandoraVisibilityBackend | None:
+    if config.visibility_backend == "pandoravisibility":
+        return PandoraVisibilityBackend(config, payload)
+    return None
 
 
 def _init_worker(
@@ -77,9 +101,10 @@ def _init_worker(
     config: PandoraSchedulerConfig,
 ) -> None:
     """Initialise per-worker shared state (called once when worker starts)."""
-    global _worker_payload, _worker_config  # noqa: PLW0603
+    global _worker_payload, _worker_config, _worker_external_backend  # noqa: PLW0603
     _worker_payload = payload
     _worker_config = config
+    _worker_external_backend = _make_external_backend(config, payload)
 
 
 def _worker_build_star(
@@ -93,7 +118,12 @@ def _worker_build_star(
     *_worker_config* set by :func:`_init_worker`.
     """
     assert _worker_payload is not None and _worker_config is not None
-    df = _build_star_visibility(_worker_payload, star_coord, _worker_config)
+    df = _build_star_visibility(
+        _worker_payload,
+        star_coord,
+        _worker_config,
+        external_backend=_worker_external_backend,
+    )
     if not is_exoplanet:
         df["Time(MJD_UTC)"] = np.round(df["Time(MJD_UTC)"], 6)
     buf = io.BytesIO()
@@ -108,6 +138,8 @@ def build_visibility_catalog(
     output_subpath: str = "targets",
 ) -> None:
     """Generate visibility outputs for the requested targets."""
+
+    LOGGER.info("Visibility backend: %s", config.visibility_backend)
 
     if not config.output_dir:
         raise ValueError("config.output_dir is required for visibility generation")
@@ -143,7 +175,13 @@ def build_visibility_catalog(
     for _, row in target_manifest.iterrows():
         star_name = str(row.get("Star Name", ""))
         output_path = output_root / star_name / f"Visibility for {star_name}.parquet"
-        if not output_path.exists() or config.force_regenerate:
+        if (
+            not output_path.exists()
+            or config.force_regenerate
+            or not _visibility_file_matches_backend(
+                output_path, config.visibility_backend
+            )
+        ):
             stars_to_generate.append((star_name, row))
 
     # Only compute expensive ephemeris/payload if we need to generate files
@@ -209,6 +247,7 @@ def build_visibility_catalog(
             LOGGER.info(
                 "Generating visibility for %d star(s) (serial)", n_stars
             )
+            external_backend = _make_external_backend(config, base_payload)
             for star_name, star_coord in tqdm(
                 work_items,
                 desc="Visibility",
@@ -222,7 +261,10 @@ def build_visibility_catalog(
                 )
 
                 visibility_df = _build_star_visibility(
-                    base_payload, star_coord, config
+                    base_payload,
+                    star_coord,
+                    config,
+                    external_backend=external_backend,
                 )
 
                 if not is_exoplanet:
@@ -348,7 +390,12 @@ def _build_star_visibility(
     payload: dict[str, np.ndarray],
     star_coord: SkyCoord,
     config: PandoraSchedulerConfig,
+    external_backend: PandoraVisibilityBackend | None = None,
 ) -> pd.DataFrame:
+    if config.visibility_backend == "pandoravisibility":
+        backend = external_backend or PandoraVisibilityBackend(config, payload)
+        return backend.build_star(payload, star_coord, config)
+
     # --- Target unit vector (direction from observer to star) ---
     # Use the SkyCoord Earth-centre separation as the baseline Earth check.
     earth_center_sep_deg = payload["earth_pc"].separation(star_coord).deg

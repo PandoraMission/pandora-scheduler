@@ -127,6 +127,30 @@ class TestPandoraSchedulerConfig:
                 priority_buffer_mode="unknown",
             )
 
+    def test_visibility_backend_defaults_to_local(self):
+        config = PandoraSchedulerConfig(
+            window_start=datetime(2026, 2, 5),
+            window_end=datetime(2027, 2, 5),
+        )
+        assert config.visibility_backend == "local"
+
+    def test_pandoravisibility_backend_requires_tle(self):
+        with pytest.raises(ValueError, match="requires either visibility_tle_file"):
+            PandoraSchedulerConfig(
+                window_start=datetime(2026, 2, 5),
+                window_end=datetime(2027, 2, 5),
+                visibility_backend="pandoravisibility",
+            )
+
+    def test_pandoravisibility_backend_config(self):
+        config = PandoraSchedulerConfig(
+            window_start=datetime(2026, 2, 5),
+            window_end=datetime(2027, 2, 5),
+            visibility_backend="PANDORAVISIBILITY",
+            visibility_tle_file=Path("pandora.tle"),
+        )
+        assert config.visibility_backend == "pandoravisibility"
+
     def test_science_keepouts_populate_legacy_day_night_fields(self):
         config = PandoraSchedulerConfig(
             window_start=datetime(2026, 2, 5),

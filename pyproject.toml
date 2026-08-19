@@ -28,7 +28,7 @@ ruff = "^0.14.7"
 optional = true
 
 [tool.poetry.group.crossval.dependencies]
-pandoravisibility = { git = "https://github.com/PandoraMission/pandora-visibility.git" }
+pandoravisibility = { path = "../pandora-visibility", develop = true }
 
 [tool.pytest.ini_options]
 log_cli = false

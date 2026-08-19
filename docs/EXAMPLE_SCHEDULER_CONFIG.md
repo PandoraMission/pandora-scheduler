@@ -22,6 +22,17 @@ Timing & window
 Paths & data sources
 - `extra_inputs.target_definition_base` (string): path to PandoraTargetList target definition files (example: `/path/to/PandoraTargetList/target_definition_files`).
 - `extra_inputs.visibility_gmat` (string): path to GMAT ephemeris file used to generate visibilities (can also be provided via CLI `--gmat-ephemeris`).
+- `visibility_backend` (string, default `"local"`): visibility engine. Use
+  `"pandoravisibility"` to propagate a configured TLE with the optional
+  `pandoravisibility` package. GMAT remains required for SAA annotations.
+- `visibility_tle_file` (string): TLE file for the `pandoravisibility` backend.
+  Inline `visibility_tle_line1` and `visibility_tle_line2` may be used instead.
+  The normal `earth_keepouts` and science/occultation Earth-center angles are
+  applied by converting them to altitude-dependent apparent-limb clearances on
+  the package-propagated orbit.
+  The package is loaded from the editable sibling checkout
+  `../pandora-visibility`; pulling that checkout updates subsequent scheduler
+  runs without rebuilding the scheduler package.
 - `extra_inputs.data_subdir` (string, optional): relative directory name under the run output root used for generated manifests and visibility files. If omitted, the runner derives a default like `data_<sun>_<moon>_<earth>` from the keepout angles. When `earth_avoidance_day_deg` is set, the default suffix uses the day keepout value.
 
 Scheduling thresholds

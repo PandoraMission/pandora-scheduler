@@ -53,6 +53,18 @@ class PandoraSchedulerConfig:
     gmat_ephemeris: Optional[Path] = None
     """Path to GMAT ephemeris file (for visibility generation)."""
 
+    visibility_backend: str = "local"
+    """Visibility engine: ``local`` or ``pandoravisibility``."""
+
+    visibility_tle_file: Optional[Path] = None
+    """TLE file used by the ``pandoravisibility`` backend."""
+
+    visibility_tle_line1: Optional[str] = None
+    """Optional inline TLE line 1 (used with ``visibility_tle_line2``)."""
+
+    visibility_tle_line2: Optional[str] = None
+    """Optional inline TLE line 2 (used with ``visibility_tle_line1``)."""
+
     output_dir: Optional[Path] = None
     """Output directory for generated files."""
 
@@ -483,6 +495,31 @@ class PandoraSchedulerConfig:
 
     def __post_init__(self) -> None:
         """Validate configuration consistency."""
+        backend = self.visibility_backend.strip().lower()
+        if backend not in ("local", "pandoravisibility"):
+            raise ValueError(
+                "visibility_backend must be 'local' or 'pandoravisibility', "
+                f"got {self.visibility_backend!r}"
+            )
+        object.__setattr__(self, "visibility_backend", backend)
+
+        inline_tle = (
+            self.visibility_tle_line1 is not None
+            or self.visibility_tle_line2 is not None
+        )
+        if inline_tle and not (
+            self.visibility_tle_line1 and self.visibility_tle_line2
+        ):
+            raise ValueError(
+                "visibility_tle_line1 and visibility_tle_line2 must be "
+                "provided together"
+            )
+        if backend == "pandoravisibility":
+            if self.visibility_tle_file is None and not inline_tle:
+                raise ValueError(
+                    "visibility_backend='pandoravisibility' requires either "
+                    "visibility_tle_file or both inline visibility_tle_line1/line2"
+                )
         # Validate transit_scheduling_weights sum to 1.0
         if not np.isclose(sum(self.transit_scheduling_weights), 1.0):
             raise ValueError(

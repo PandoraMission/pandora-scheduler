@@ -846,6 +846,18 @@ def main() -> int:
         # Resolve visibility GMAT file (CLI overrides JSON)
         visibility_gmat = args.gmat_ephemeris or extra_inputs.get("visibility_gmat")
 
+        visibility_backend = str(
+            _get_val("visibility_backend", None, "local")
+        ).strip().lower()
+        raw_visibility_tle_file = _get_val("visibility_tle_file", None, None)
+        visibility_tle_file = (
+            Path(str(raw_visibility_tle_file)).expanduser().resolve()
+            if raw_visibility_tle_file is not None
+            else None
+        )
+        visibility_tle_line1 = _get_val("visibility_tle_line1", None, None)
+        visibility_tle_line2 = _get_val("visibility_tle_line2", None, None)
+
         # Resolve XML-only schedule input. Explicit CLI --schedule-csv always wins.
         # A JSON schedule_csv only activates XML-only mode when the user did not
         # also provide an explicit full-pipeline window/output on the CLI.
@@ -1370,6 +1382,10 @@ def main() -> int:
             schedule_step=timedelta(hours=schedule_step_hours),
             targets_manifest=targets_manifest_dir,
             gmat_ephemeris=gmat_path,
+            visibility_backend=visibility_backend,
+            visibility_tle_file=visibility_tle_file,
+            visibility_tle_line1=visibility_tle_line1,
+            visibility_tle_line2=visibility_tle_line2,
             output_dir=output_dir,
             # Scheduling Thresholds
             transit_coverage_min=transit_cov,
