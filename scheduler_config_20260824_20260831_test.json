@@ -55,8 +55,8 @@
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
 
-  "generate_xml": false,
-  "include_occultation_sequences_in_xml": false,
+  "generate_xml": true,
+  "include_occultation_sequences_in_xml": true,
   "allow_partial_occultation_sequences_in_xml": false,
 
   "obs_sequence_duration_min": 90,

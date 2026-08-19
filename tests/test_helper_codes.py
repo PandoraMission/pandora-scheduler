@@ -161,9 +161,9 @@ def test_schedule_occultation_targets_selects_visible_target(tmp_path: Path):
 
     o_df = pd.DataFrame(
         {
-            "Target": [np.nan],
-            "RA": [np.nan],
-            "DEC": [np.nan],
+            "Target": [""],
+            "RA": [""],
+            "DEC": [""],
         }
     )
     o_list = pd.DataFrame(
@@ -189,6 +189,9 @@ def test_schedule_occultation_targets_selects_visible_target(tmp_path: Path):
     assert filled is True
     assert updated.loc[0, "Target"] == "Alpha"
     assert updated.loc[0, "RA"] == 123.4
+    assert updated.loc[0, "DEC"] == -56.7
+    assert pd.api.types.is_float_dtype(updated["RA"])
+    assert pd.api.types.is_float_dtype(updated["DEC"])
     assert updated.loc[0, "Visibility"] == 1
 
 

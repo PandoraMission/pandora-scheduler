@@ -292,6 +292,15 @@ def schedule_occultation_targets(
     if "Target" in o_df.columns:
         o_df["Target"] = o_df["Target"].astype(object)
 
+    # Pandas 3 no longer permits numeric coordinates to be assigned into a
+    # string-inferred column. Older callers may still initialise these fields
+    # with empty strings, so normalise them at this API boundary.
+    for coordinate_column in ("RA", "DEC"):
+        if coordinate_column in o_df.columns:
+            o_df[coordinate_column] = pd.to_numeric(
+                o_df[coordinate_column], errors="coerce"
+            ).astype(float)
+
     if "Visibility" not in o_df.columns:
         o_df["Visibility"] = np.nan
     if "Occultation Pass" not in o_df.columns:

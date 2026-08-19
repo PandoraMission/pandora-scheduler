@@ -3518,8 +3518,8 @@ def _build_occultation_schedule(
             "",
             start.strftime("%Y-%m-%dT%H:%M:%SZ"),
             stop.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "",
-            "",
+            np.nan,
+            np.nan,
         ]
         for start, stop in zip(starts, stops)
     ]
