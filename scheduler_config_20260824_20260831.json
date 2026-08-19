@@ -42,14 +42,14 @@
   "parallel_workers": 13,
   "write_run_config_manifest": true,
 
-  "exoplanet_only_mode": true,
+  "exoplanet_only_mode": false,
 
-  "primary_only_mode": true,
+  "primary_only_mode": false,
   "use_target_list_for_occultations": false,
   "prioritise_occultations_by_slew": false,
 
-  "generate_xml": false,
-  "include_occultation_sequences_in_xml": false,
+  "generate_xml": true,
+  "include_occultation_sequences_in_xml": true,
   "allow_partial_occultation_sequences_in_xml": false,
 
   "obs_sequence_duration_min": 90,
@@ -90,7 +90,7 @@
 
     "visibility_gmat": "/home/pluto/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-SCI-20260814-VF20260824-EX20270211.txt",
     "write_all_targets_csv": false,
-    "too_list_csv": "/home/pluto/Documents/GitHub/pandora-scheduler/output_20260824_20270411_EarthDay110/ToO_list.csv"
+    "too_list_csv": "/home/pluto/Documents/GitHub/pandora-scheduler/output_20260824_20260831_EarthDay110/ToO_list.csv"
   },
   "primary_visit_start_policy": "centered",
   "notes": {
