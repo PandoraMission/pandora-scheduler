@@ -1,17 +1,17 @@
-import xml.etree.ElementTree as ET
-import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
-from datetime import datetime
-from astropy.time import Time
 import os
-# import helper_codes_aux as hcc
+import xml.etree.ElementTree as ET
+from datetime import datetime
+
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import pandas as pd
 import tqdm as tqdm
+from astropy.time import Time
 
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 
 # Parse the XML file
-fname = f'{PACKAGEDIR}/data/Pandora_science_calendar.xml'#PAN-LONGCAL-TST-20251126-VF-20260205-EX-20270205-R001.xml'
+fname = f'{PACKAGEDIR}/data/Pandora_science_calendar.xml'
 tree = ET.parse(fname)
 root = tree.getroot()
 

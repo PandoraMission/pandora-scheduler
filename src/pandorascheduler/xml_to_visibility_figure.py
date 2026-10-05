@@ -1,9 +1,10 @@
-from lxml import etree
-import matplotlib.pyplot as plt
-from astropy.time import Time
-import pandas as pd
-import numpy as np
 import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from astropy.time import Time
+from lxml import etree
 
 # Use package-relative data path instead of a hardcoded user path
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
@@ -36,4 +37,4 @@ targs = np.unique(np.asarray(df.index))
 for idx, targ in enumerate(targs):
     z = np.asarray([df.loc[targ].start, df.loc[targ].stop]).T
     ax.plot(z.T, z.T**0 * idx, c='k')
-ax.set(xlabel='Time [JD]', yticks=np.arange(0, len(targs)), yticklabels=targs, title='Pandora Calendar');
+ax.set(xlabel='Time [JD]', yticks=np.arange(0, len(targs)), yticklabels=targs, title='Pandora Calendar')

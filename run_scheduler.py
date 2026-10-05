@@ -1,0 +1,1664 @@
+#!/usr/bin/env python3
+"""
+Pandora Scheduler Driver Script
+===============================
+
+Pandora Scheduler - Main Entry Point
+
+This script runs the complete Pandora observation scheduling pipeline from start
+to finish, generating all necessary output files including:
+  - Target manifests (from target definition files)
+  - Visibility catalogs (if requested)
+  - Observation schedule CSV
+  - Science calendar XML
+  - Observation time reports
+  - Tracker files (CSV and pickle)
+
+Usage:
+ # Basic run with default configuration
+    poetry run python run_scheduler.py \\
+        --start "2026-02-05" \\
+        --end "2026-02-12" \\
+        --output ./output
+
+    # Run with custom configuration
+    poetry run python run_scheduler.py \\
+        --start "2026-02-05" \\
+        --end "2026-02-12" \\
+        --output ./output \\
+        --config config.json
+
+    # Generate visibility data as part of the run
+    poetry run python run_scheduler.py \\
+        --start "2026-02-05" \\
+        --end "2026-02-12" \\
+        --output ./output \\
+        --generate-visibility
+
+    # Use custom target definition files
+    poetry run python run_scheduler.py \\
+        --start "2026-02-05" \\
+        --end "2026-02-12" \\
+        --output ./output \\
+        --target-definitions ./custom_targets
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import subprocess
+import sys
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+import pandas as pd
+
+from pandorascheduler_rework.config import (
+    PandoraSchedulerConfig,
+    resolve_data_subdir,
+)
+try:
+    from pandorascheduler_rework.config import (
+        apply_output_suffix,
+        output_filename_suffix,
+    )
+except ImportError:
+    def output_filename_suffix(config: PandoraSchedulerConfig) -> str:
+        logging.getLogger(__name__).warning(
+            "pandorascheduler_rework.config is missing output suffix helpers; "
+            "falling back to local compatibility shims. This usually means the "
+            "checkout is mixed across commits or branches."
+        )
+        suffixes = []
+        if getattr(config, "allow_science_soft_startracker_tail", False):
+            suffixes.append("soft_ST")
+        if getattr(config, "allow_science_startracker_gap_fill", False):
+            suffixes.append("ST_gap")
+        return "_" + "_".join(suffixes) if suffixes else ""
+
+    def apply_output_suffix(path: Path, suffix: str) -> Path:
+        if not suffix:
+            return path
+        if path.stem.endswith(suffix):
+            return path
+        return path.with_name(f"{path.stem}{suffix}{path.suffix}")
+
+from pandorascheduler_rework.pipeline import SchedulerResult, build_schedule
+from pandorascheduler_rework.science_calendar import (
+    ScienceCalendarInputs,
+    generate_science_calendar,
+)
+from pandorascheduler_rework.utils.io import read_csv_cached
+
+
+def setup_logging(verbose: bool = False) -> None:
+    """Configure logging for the application."""
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+
+def parse_args() -> argparse.Namespace:
+    """Parse command-line arguments."""
+    parser = argparse.ArgumentParser(
+        description="Run the Pandora observation scheduler pipeline",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=__doc__,
+    )
+
+    # Required arguments
+    parser.add_argument(
+        "--start",
+        type=str,
+        required=False,
+        help="Schedule window start date (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)",
+    )
+    parser.add_argument(
+        "--end",
+        type=str,
+        required=False,
+        help="Schedule window end date (YYYY-MM-DD or YYYY-MM-DD HH:MM:SS)",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        required=False,
+        help="Output directory for generated files",
+    )
+
+    # Optional configuration
+    parser.add_argument(
+        "--config",
+        type=Path,
+        help="Path to JSON configuration file (overrides defaults)",
+    )
+    parser.add_argument(
+        "--target-definitions",
+        type=Path,
+        help=(
+            "Base directory containing target definition files (e.g., PandoraTargetList/target_definition_files/). "
+            "When provided, generates *_targets.csv manifests from JSON definitions."
+        ),
+    )
+    parser.add_argument(
+        "--generate-visibility",
+        action="store_true",
+        help="Generate visibility catalogs before scheduling (requires target manifests)",
+    )
+
+    parser.add_argument(
+        "--schedule-csv",
+        type=Path,
+        help=(
+            "Use an existing schedule CSV and generate only the science calendar XML. "
+            "If --start/--end are omitted, the window is inferred from the CSV. "
+            "If --output is omitted, the CSV parent directory is used."
+        ),
+    )
+
+    parser.add_argument(
+        "--schedule-row-limit",
+        type=int,
+        help=(
+            "When generating XML from an existing schedule CSV, only use the first N rows. "
+            "Also accepted from JSON as schedule_csv_row_limit."
+        ),
+    )
+    parser.add_argument(
+        "--schedule-row-start",
+        type=int,
+        help=(
+            "When generating XML from an existing schedule CSV, start from this 1-based row. "
+            "Also accepted from JSON as schedule_csv_row_start."
+        ),
+    )
+    parser.add_argument(
+        "--schedule-row-end",
+        type=int,
+        help=(
+            "When generating XML from an existing schedule CSV, stop at this 1-based row "
+            "(inclusive). Also accepted from JSON as schedule_csv_row_end."
+        ),
+    )
+    parser.add_argument(
+        "--xml-data-dir",
+        type=Path,
+        help=(
+            "When generating XML from an existing schedule CSV, use this explicit data_* "
+            "directory for manifests and visibility files. Also accepted from JSON as "
+            "xml_data_dir."
+        ),
+    )
+
+    # Visibility configuration (if generating)
+    parser.add_argument(
+        "--gmat-ephemeris",
+        type=Path,
+        help="Path to GMAT ephemeris file (for visibility generation)",
+    )
+    parser.add_argument(
+        "--sun-avoidance",
+        type=float,
+        default=91.0,
+        help="Sun avoidance angle in degrees (default: 91.0)",
+    )
+    parser.add_argument(
+        "--moon-avoidance",
+        type=float,
+        default=25.0,
+        help="Moon avoidance angle in degrees (default: 25.0)",
+    )
+    parser.add_argument(
+        "--earth-avoidance",
+        type=float,
+        default=110.0,
+        help="Earth avoidance angle in degrees (default: 110.0)",
+    )
+    parser.add_argument(
+        "--earth-avoidance-day",
+        type=float,
+        default=None,
+        help="Earth avoidance when nearest limb is sunlit (degrees). None = use --earth-avoidance uniformly.",
+    )
+    parser.add_argument(
+        "--earth-avoidance-night",
+        type=float,
+        default=None,
+        help="Earth avoidance when nearest limb is in shadow (degrees). None = use --earth-avoidance uniformly.",
+    )
+    parser.add_argument(
+        "--twilight-margin",
+        type=float,
+        default=0.0,
+        help="Degrees past geometric terminator to classify as sunlit for day/night keepout (default: 0 = sharp terminator).",
+    )
+
+    parser.add_argument(
+        "--daynight-mode",
+        type=str,
+        default="subsatellite",
+        dest="daynight_mode",
+        help=(
+            "Day/night mode for visibility calculations: "
+            "'subsatellite' = classify by the subsatellite point, "
+            "'limb' = classify by the nearest Earth limb point in the target direction "
+            "(default: 'subsatellite')"
+        ),
+    )
+
+    # Star tracker keepout configuration
+    parser.add_argument(
+        "--st-sun-min",
+        type=float,
+        default=0.0,
+        help="Star tracker Sun keepout angle in degrees (default: 0 = disabled)",
+    )
+    parser.add_argument(
+        "--st-moon-min",
+        type=float,
+        default=0.0,
+        help="Star tracker Moon keepout angle in degrees (default: 0 = disabled)",
+    )
+    parser.add_argument(
+        "--st-earthlimb-min",
+        type=float,
+        default=0.0,
+        help="Star tracker Earth-limb keepout angle in degrees (default: 0 = disabled)",
+    )
+    parser.add_argument(
+        "--st1-earthlimb-min",
+        type=float,
+        default=None,
+        help="ST1 Earth-limb keepout override (degrees). None = use --st-earthlimb-min.",
+    )
+    parser.add_argument(
+        "--st2-earthlimb-min",
+        type=float,
+        default=None,
+        help="ST2 Earth-limb keepout override (degrees). None = use --st-earthlimb-min.",
+    )
+    parser.add_argument(
+        "--st-required",
+        type=int,
+        default=1,
+        help="Number of star trackers required: 0 (skip), 1 (OR), 2 (AND) (default: 1)",
+    )
+
+    # Roll sweep configuration
+    parser.add_argument(
+        "--roll-step",
+        type=float,
+        default=2.0,
+        help="Roll sweep step size in degrees (default: 2.0)",
+    )
+    parser.add_argument(
+        "--min-power-frac",
+        type=float,
+        default=0.7,
+        help="Minimum solar power fraction to accept a roll angle (default: 0.7)",
+    )
+    parser.add_argument(
+        "--min-sequence-minutes",
+        type=int,
+        default=None,
+        help="Minimum contiguous sequence duration in minutes (default: 8)",
+    )
+    parser.add_argument(
+        "--min-science-sequence-minutes",
+        type=int,
+        default=None,
+        help=(
+            "Minimum science-visible fragment length in minutes. "
+            "Defaults to --min-sequence-minutes when omitted."
+        ),
+    )
+    parser.add_argument(
+        "--min-occultation-sequence-minutes",
+        type=int,
+        default=None,
+        help=(
+            "Minimum occultation fragment length in minutes for tail handling. "
+            "Defaults to --min-sequence-minutes when omitted."
+        ),
+    )
+
+    # Scheduling configuration
+    parser.add_argument(
+        "--schedule-step-hours",
+        type=float,
+        default=24.0,
+        help=(
+            "Scheduler rolling window step size in hours (default: 24.0). "
+            "Per-target visit duration comes from target manifests (Obs Window (hrs))."
+        ),
+    )
+    parser.add_argument(
+        "--transit-coverage",
+        type=float,
+        default=0.4,
+        help="Minimum transit coverage fraction (default: 0.4)",
+    )
+    parser.add_argument(
+        "--weights",
+        type=str,
+        default=None,
+        help=(
+            "Schedule weights as comma-separated values: coverage,saa,schedule "
+            "(default from config, otherwise 0.8,0.0,0.2)"
+        ),
+    )
+    parser.add_argument(
+        "--min-visibility",
+        type=float,
+        default=0.5,
+        help="Minimum visibility fraction for non-transit observations (default: 0.5)",
+    )
+
+    # Flags
+    parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Enable verbose logging",
+    )
+    parser.add_argument(
+        "--skip-xml",
+        action="store_true",
+        help="Skip generation of the science calendar XML",
+    )
+    parser.add_argument(
+        "--primary-only",
+        action="store_true",
+        help="Only schedule primary science targets; skip non-primary gap filling",
+    )
+    parser.add_argument(
+        "--exoplanet-only",
+        action="store_true",
+        help="Run only exoplanet targets; skip non-exoplanet manifests and visibility catalogs",
+    )
+    parser.add_argument(
+        "--use-target-list-for-occultations",
+        action="store_true",
+        help="Use the target list for occultation scheduling instead of a separate list",
+    )
+    parser.add_argument(
+        "--prioritise-occultations-by-slew",
+        action="store_true",
+        help="Prioritise occultation targets based on slew cost",
+    )
+    parser.add_argument(
+        "--no-break-occultation-sequences",
+        action="store_true",
+        help="Disable splitting long occultation sequences into chunks",
+    )
+    parser.add_argument(
+        "--no-occultation-xml",
+        action="store_true",
+        help="Skip occultation-target calculations during XML generation",
+    )
+    parser.add_argument(
+        "--skip-occultation-pass1",
+        action="store_true",
+        help="Skip Pass 1 in occultation assignment (single target must cover all intervals)",
+    )
+    parser.add_argument(
+        "--only-occultation-pass1",
+        action="store_true",
+        help="Use only Pass 1 for occultation assignment; do not fall through to Passes 2-4",
+    )
+    parser.add_argument(
+        "--requested-occ-time-override",
+        action="store_true",
+        help="Allow occultation scheduling to continue when requested-hours has been met",
+    )
+    parser.add_argument(
+        "--allow-occ-st-violation",
+        action="store_true",
+        help="Allow occultation targets that violate only star-tracker keepout (prefer shortest loss)",
+    )
+
+    # Profiling configuration
+    parser.add_argument(
+        "--profile",
+        action="store_true",
+        help="Enable profiling",
+    )
+    parser.add_argument(
+        "--profile-output",
+        default="profile_output.prof",
+        help="Profile output file",
+    )
+
+    parser.add_argument(
+        "--show-progress",
+        action="store_true",
+        help="Show progress bars during execution",
+    )
+    parser.add_argument(
+        "--skip-manifests",
+        action="store_true",
+        help="Skip regenerating target manifests from target definition files",
+    )
+    parser.add_argument(
+        "--no-run-config-manifest",
+        action="store_true",
+        help="Skip writing output/run_config_manifest.json for this run",
+    )
+    parser.add_argument(
+        "--legacy-mode",
+        action="store_true",
+        help=(
+            "Use legacy scheduling algorithms for validation against historical outputs. "
+            "When enabled, uses MJD-based visibility filtering which matches the original "
+            "scheduler exactly. Default (disabled) uses improved datetime-based filtering."
+        ),
+    )
+    parser.add_argument(
+        "--parallel-workers",
+        type=int,
+        default=0,
+        help=(
+            "Number of parallel workers for visibility generation. "
+            "0 = auto (all CPUs), 1 = serial. (default: 0)"
+        ),
+    )
+
+    return parser.parse_args()
+
+
+def parse_datetime(date_str: str) -> datetime:
+    """Parse a date string into a datetime object."""
+    try:
+        # Try full datetime format first
+        return datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        try:
+            # Fallback to date only
+            return datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            raise ValueError(
+                f"Invalid date format: {date_str}. Expected YYYY-MM-DD or YYYY-MM-DD HH:MM:SS"
+            )
+
+
+def _derive_window_from_schedule(
+    schedule_csv: Path,
+    row_start: Optional[int] = None,
+    row_end: Optional[int] = None,
+) -> tuple[datetime, datetime]:
+    """Infer schedule window bounds from an existing schedule CSV."""
+    schedule_df = read_csv_cached(str(schedule_csv))
+    if schedule_df is None or schedule_df.empty:
+        raise ValueError(f"Schedule CSV is empty or unreadable: {schedule_csv}")
+
+    if row_start is not None or row_end is not None:
+        start_idx = max(int(row_start or 1) - 1, 0)
+        end_idx = None if row_end is None else max(int(row_end), 0)
+        if end_idx is not None and end_idx < start_idx:
+            raise ValueError(
+                "Invalid schedule row range: schedule_row_end must be >= schedule_row_start"
+            )
+        schedule_df = schedule_df.iloc[start_idx:end_idx].reset_index(drop=True)
+        if schedule_df.empty:
+            raise ValueError(
+                f"Selected schedule row range is empty for {schedule_csv}"
+            )
+
+    if not {"Observation Start", "Observation Stop"}.issubset(schedule_df.columns):
+        raise ValueError(
+            "Schedule CSV is missing required columns 'Observation Start'/'Observation Stop'"
+        )
+
+    starts = pd.to_datetime(schedule_df["Observation Start"], errors="coerce")
+    stops = pd.to_datetime(schedule_df["Observation Stop"], errors="coerce")
+    starts = starts.dropna()
+    stops = stops.dropna()
+    if starts.empty or stops.empty:
+        raise ValueError(f"Could not infer schedule bounds from {schedule_csv}")
+
+    return starts.min().to_pydatetime(), stops.max().to_pydatetime()
+
+
+def _calendar_config_for_schedule(
+    config: PandoraSchedulerConfig,
+    schedule_csv: Path,
+    row_start: Optional[int] = None,
+    row_end: Optional[int] = None,
+) -> PandoraSchedulerConfig:
+    """Extend XML-generation visibility support to the actual schedule stop."""
+    try:
+        _, schedule_stop = _derive_window_from_schedule(
+            schedule_csv, row_start=row_start, row_end=row_end
+        )
+    except Exception:
+        return config
+
+    if schedule_stop <= config.window_end:
+        return config
+    return replace(config, window_end=schedule_stop)
+
+
+def print_summary(result: SchedulerResult, xml_path: Optional[Path]) -> None:
+    """Print a summary of the scheduling run."""
+    try:
+
+        def _hours(td: pd.Timedelta) -> float:
+            return float(td.total_seconds() / 3600.0)
+
+        def _fmt_hours(value: float) -> str:
+            return f"{value:,.2f} h"
+
+        def _safe_to_datetime(series: pd.Series) -> pd.Series:
+            # Schedule CSV can contain strings or timestamps; normalize defensively.
+            return pd.to_datetime(series, errors="coerce")
+
+        import pandas as pd
+
+        print("\n" + "=" * 80)
+        print("SCHEDULING PIPELINE COMPLETED SUCCESSFULLY")
+        print("=" * 80)
+        print("\nGenerated Files:")
+        print("-" * 80)
+
+        if getattr(result, "schedule_csv", None):
+            print(f"  📄 Schedule CSV:      {result.schedule_csv}")
+        reports = getattr(result, "reports", {}) or {}
+        if reports.get("observation_time"):
+            print(f"  📊 Observation Time   {reports.get('observation_time')}")
+        if reports.get("tracker_csv"):
+            print(f"  📊 Tracker Csv        {reports.get('tracker_csv')}")
+        if reports.get("tracker_pickle"):
+            print(f"  📊 Tracker Pickle     {reports.get('tracker_pickle')}")
+        if xml_path:
+            print(f"  📑 Science Calendar:  {xml_path}")
+
+        print("-" * 80)
+        print("\nSchedule Statistics:")
+        schedule_df = None
+        diagnostics = getattr(result, "diagnostics", {}) or {}
+        schedule_df = diagnostics.get("schedule_dataframe")
+
+        if schedule_df is not None and len(schedule_df) > 0:
+            try:
+                df = schedule_df.copy()
+                if "Target" in df.columns:
+                    df["Target"] = df["Target"].astype(str).str.strip()
+
+                if "Observation Start" in df.columns:
+                    df["Observation Start"] = _safe_to_datetime(df["Observation Start"])
+                if "Observation Stop" in df.columns:
+                    df["Observation Stop"] = _safe_to_datetime(df["Observation Stop"])
+
+                total_obs = int(len(df))
+                unique_targets = (
+                    int(df["Target"].nunique()) if "Target" in df.columns else 0
+                )
+
+                # Categorize
+                if "Target" in df.columns:
+                    is_free = df["Target"].eq("Free Time")
+                    is_std = df["Target"].str.contains(r"\bSTD\b", na=False)
+                    is_primary = (~is_free) & (~is_std)
+                else:
+                    is_free = pd.Series([False] * len(df))
+                    is_std = pd.Series([False] * len(df))
+                    is_primary = pd.Series([True] * len(df))
+
+                primary_count = int(is_primary.sum())
+                std_count = int(is_std.sum())
+                free_count = int(is_free.sum())
+
+                # Durations
+                durations = None
+                if (
+                    "Observation Start" in df.columns
+                    and "Observation Stop" in df.columns
+                ):
+                    durations = df["Observation Stop"] - df["Observation Start"]
+                    durations = durations.where(durations.notna(), pd.Timedelta(0))
+                    # Guard against negative durations due to bad parsing
+                    durations = durations.clip(lower=pd.Timedelta(0))
+
+                # Schedule span
+                total_span_hours = None
+                if (
+                    "Observation Start" in df.columns
+                    and "Observation Stop" in df.columns
+                    and df["Observation Start"].notna().any()
+                    and df["Observation Stop"].notna().any()
+                ):
+                    sched_start = df["Observation Start"].min()
+                    sched_stop = df["Observation Stop"].max()
+                    if pd.notna(sched_start) and pd.notna(sched_stop):
+                        total_span_hours = _hours(sched_stop - sched_start)
+
+                # Time totals by category
+                primary_hours = std_hours = free_hours = None
+                if durations is not None:
+                    primary_hours = _hours(durations[is_primary].sum())
+                    std_hours = _hours(durations[is_std].sum())
+                    free_hours = _hours(durations[is_free].sum())
+
+                print(f"  Total observations:        {total_obs}")
+                print(f"  Unique targets:            {unique_targets}")
+                print(f"  Primary observations:      {primary_count}")
+                print(f"  Standard (STD) blocks:     {std_count}")
+                print(f"  Free Time blocks:          {free_count}")
+
+                if total_span_hours is not None:
+                    print(
+                        f"  Schedule span:             {_fmt_hours(total_span_hours)}"
+                    )
+
+                if (
+                    primary_hours is not None
+                    and std_hours is not None
+                    and free_hours is not None
+                ):
+                    used_hours = primary_hours + std_hours
+                    print(f"  Primary time:              {_fmt_hours(primary_hours)}")
+                    print(f"  STD time:                  {_fmt_hours(std_hours)}")
+                    print(f"  Free time:                 {_fmt_hours(free_hours)}")
+                    if total_span_hours is not None and total_span_hours > 0:
+                        util = 100.0 * (used_hours / total_span_hours)
+                        print(f"  Utilization (non-free):    {util:,.1f}%")
+
+                if (
+                    durations is not None
+                    and durations.astype("timedelta64[ns]").notna().any()
+                ):
+
+                    def _dur_stats(
+                        mask: pd.Series,
+                    ) -> tuple[float | None, float | None]:
+                        subset = durations[mask]
+                        if subset.empty:
+                            return None, None
+                        return _hours(subset.mean()), _hours(subset.median())
+
+                    p_mean, p_med = _dur_stats(is_primary)
+                    if p_mean is not None:
+                        print(f"  Primary duration (mean):   {_fmt_hours(p_mean)}")
+                        print(
+                            f"  Primary duration (median): {_fmt_hours(p_med or 0.0)}"
+                        )
+
+                # Transit-quality stats (only for rows that have Transit Coverage)
+                if "Transit Coverage" in df.columns and is_primary.any():
+                    cov = pd.to_numeric(
+                        df.loc[is_primary, "Transit Coverage"], errors="coerce"
+                    )
+                    cov = cov.dropna()
+                    if len(cov) > 0:
+                        cov_mean = float(cov.mean())
+                        cov_median = float(cov.median())
+                        cov_min = float(cov.min())
+                        cov_p10 = float(cov.quantile(0.10))
+                        cov_p90 = float(cov.quantile(0.90))
+                        full = int((cov >= 0.999999).sum())
+                        good = int((cov >= 0.90).sum())
+                        print("\n  Primary transit coverage:")
+                        print(
+                            f"    mean/median:             {cov_mean:.3f} / {cov_median:.3f}"
+                        )
+                        print(
+                            f"    min / p10 / p90:         {cov_min:.3f} / {cov_p10:.3f} / {cov_p90:.3f}"
+                        )
+                        print(
+                            f"    >= 0.90:                 {good} ({100.0 * good / len(cov):.1f}%)"
+                        )
+                        print(
+                            f"    ~100% (>= 0.999999):     {full} ({100.0 * full / len(cov):.1f}%)"
+                        )
+
+                # SAA overlap summary
+                if "SAA Overlap" in df.columns and is_primary.any():
+                    saa = pd.to_numeric(
+                        df.loc[is_primary, "SAA Overlap"], errors="coerce"
+                    )
+                    saa = saa.dropna()
+                    if len(saa) > 0:
+                        print("\n  Primary SAA overlap:")
+                        print(
+                            f"    mean/median:             {float(saa.mean()):.3f} / {float(saa.median()):.3f}"
+                        )
+            except Exception:
+                print("  (Unable to compute detailed schedule statistics)")
+        else:
+            print("  (No schedule dataframe available for statistics)")
+
+        print("\n" + "=" * 80)
+    except AttributeError as exc:
+        # Be defensive: if the SchedulerResult shape is unexpected, log and provide minimal info.
+        logger = logging.getLogger(__name__)
+        logger.error("Failed to generate summary: %s", exc)
+        try:
+            # Best-effort fallback: print whatever schedule CSV path exists.
+            if hasattr(result, "schedule_csv") and result.schedule_csv:
+                print(f"Schedule generated: {result.schedule_csv}")
+        except Exception:
+            # Give up cleanly; avoid raising further exceptions from summary printing.
+            pass
+
+
+def _write_json_config_manifest(
+    destination_dir: Path,
+    json_config: Dict[str, Any],
+    config_path: Optional[Path],
+) -> Optional[Path]:
+    """Write the source JSON config alongside run data for reproducibility."""
+    destination_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = destination_dir / "run_config_manifest.json"
+    payload = {
+        "generated_at_utc": datetime.now(UTC).isoformat(timespec="seconds"),
+        "source_config_path": str(config_path.resolve()) if config_path else None,
+        "json_config": json_config,
+    }
+    manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return manifest_path
+
+
+def _require_manifest_exists(manifest_path: Optional[Path], output_dir: Path) -> Path:
+    """Require the run config manifest to exist when manifest writing is enabled."""
+    if manifest_path is None:
+        raise RuntimeError(
+            f"run_config_manifest.json was requested for {output_dir} but no manifest path was returned"
+        )
+    if not manifest_path.exists():
+        raise FileNotFoundError(
+            f"run_config_manifest.json was expected at {manifest_path} but is missing"
+        )
+    return manifest_path
+
+
+def main() -> int:
+    """Main execution function."""
+    args = parse_args()
+    setup_logging(args.verbose)
+    logger = logging.getLogger(__name__)
+
+    # Initialize profiler if requested
+    profiler = None
+    if args.profile:
+        import cProfile
+        import pstats
+
+        profiler = cProfile.Profile()
+        profiler.enable()
+
+    try:
+        # 1. Load Configuration
+        json_config = {}
+        if args.config:
+            with open(args.config, "r") as f:
+                json_config = json.load(f)
+
+        def _get_val(key: str, cli_value: Any, default: Any) -> Any:
+            """Prioritize CLI-provided value > JSON config > default.
+
+            Because many CLI args have non-None defaults, we treat "CLI provided" as
+            "CLI value differs from the default".
+            """
+
+            if cli_value is not None and cli_value != default:
+                return cli_value
+            if key in json_config and json_config[key] is not None:
+                return json_config[key]
+            return default
+
+        def _get_any(keys: list[str], cli_value: Any, default: Any) -> Any:
+            if cli_value is not None and cli_value != default:
+                return cli_value
+            for key in keys:
+                if key in json_config and json_config[key] is not None:
+                    return json_config[key]
+            return default
+
+        def _as_bool(value: Any, default: bool = False) -> bool:
+            if value is None:
+                return default
+            if isinstance(value, bool):
+                return value
+            if isinstance(value, str):
+                normalized = value.strip().lower()
+                if normalized == "":
+                    return default
+                return normalized in {"1", "true", "yes", "y", "on"}
+            if isinstance(value, (int, float)):
+                return bool(value)
+            return default
+
+        # Default weights if not provided
+        transit_scheduling_weights = (0.8, 0.0, 0.2)
+
+        # Start with any pipeline extra inputs provided via JSON.
+        extra_inputs: Dict[str, Any] = {}
+        if isinstance(json_config.get("extra_inputs"), dict):
+            extra_inputs.update(json_config.get("extra_inputs") or {})
+
+        # Resolve target definition base (CLI overrides JSON)
+        target_def_base = args.target_definitions or extra_inputs.get(
+            "target_definition_base"
+        )
+
+        # Resolve visibility GMAT file (CLI overrides JSON)
+        visibility_gmat = args.gmat_ephemeris or extra_inputs.get("visibility_gmat")
+
+        visibility_backend = str(
+            _get_val("visibility_backend", None, "local")
+        ).strip().lower()
+        raw_visibility_tle_file = _get_val("visibility_tle_file", None, None)
+        visibility_tle_file = (
+            Path(str(raw_visibility_tle_file)).expanduser().resolve()
+            if raw_visibility_tle_file is not None
+            else None
+        )
+        visibility_tle_line1 = _get_val("visibility_tle_line1", None, None)
+        visibility_tle_line2 = _get_val("visibility_tle_line2", None, None)
+
+        # Resolve XML-only schedule input. Explicit CLI --schedule-csv always wins.
+        # A JSON schedule_csv only activates XML-only mode when the user did not
+        # also provide an explicit full-pipeline window/output on the CLI.
+        explicit_full_pipeline_cli = (
+            args.schedule_csv is None
+            and args.start is not None
+            and args.end is not None
+            and args.output is not None
+        )
+        raw_schedule_csv = None
+        if args.schedule_csv is not None:
+            raw_schedule_csv = args.schedule_csv
+        elif not explicit_full_pipeline_cli:
+            raw_schedule_csv = json_config.get("schedule_csv")
+
+        schedule_csv_input = (
+            Path(str(raw_schedule_csv)).expanduser().resolve()
+            if raw_schedule_csv is not None
+            else None
+        )
+        xml_only_from_schedule = schedule_csv_input is not None
+
+        schedule_row_start = _get_any(
+            ["schedule_csv_row_start"],
+            getattr(args, "schedule_row_start", None),
+            None,
+        )
+        schedule_row_end = _get_any(
+            ["schedule_csv_row_end"],
+            getattr(args, "schedule_row_end", None),
+            None,
+        )
+        raw_xml_data_dir = _get_any(
+            ["xml_data_dir"],
+            getattr(args, "xml_data_dir", None),
+            None,
+        )
+        xml_data_dir = (
+            Path(str(raw_xml_data_dir)).expanduser().resolve()
+            if raw_xml_data_dir is not None
+            else None
+        )
+        if schedule_row_start is not None:
+            schedule_row_start = int(schedule_row_start)
+        if schedule_row_end is not None:
+            schedule_row_end = int(schedule_row_end)
+        if schedule_row_start is not None and schedule_row_start < 1:
+            logger.error("--schedule-row-start must be >= 1")
+            return 1
+        if schedule_row_end is not None and schedule_row_end < 1:
+            logger.error("--schedule-row-end must be >= 1")
+            return 1
+        if (
+            schedule_row_start is not None
+            and schedule_row_end is not None
+            and schedule_row_end < schedule_row_start
+        ):
+            logger.error("--schedule-row-end must be >= --schedule-row-start")
+            return 1
+
+        if xml_only_from_schedule and not schedule_csv_input.exists():
+            logger.error("Schedule CSV not found: %s", schedule_csv_input)
+            return 1
+        if xml_data_dir is not None and not xml_data_dir.exists():
+            logger.error("XML data directory not found: %s", xml_data_dir)
+            return 1
+
+        if xml_only_from_schedule:
+            if args.output is None:
+                args.output = schedule_csv_input.parent
+            if args.start is None or args.end is None:
+                inferred_start, inferred_end = _derive_window_from_schedule(
+                    schedule_csv_input,
+                    row_start=schedule_row_start,
+                    row_end=schedule_row_end,
+                )
+                if args.start is None:
+                    args.start = inferred_start.strftime("%Y-%m-%d %H:%M:%S")
+                if args.end is None:
+                    args.end = inferred_end.strftime("%Y-%m-%d %H:%M:%S")
+        else:
+            if args.start is None or args.end is None:
+                logger.error("--start and --end are required unless --schedule-csv is provided")
+                return 1
+            if args.output is None:
+                logger.error("--output is required unless --schedule-csv is provided")
+                return 1
+
+        logger.info(f"Scheduling window: {args.start} to {args.end}")
+        logger.info(f"Output directory: {args.output}")
+
+        # 2. Validate Inputs
+        if args.generate_visibility and not target_def_base:
+            logger.error(
+                "Visibility generation requires target definitions. "
+                "Please provide target definitions via --target-definitions"
+            )
+            return 1
+
+        # Determine whether visibility generation was requested (CLI or JSON)
+        generate_visibility = bool(args.generate_visibility) or (
+            str(
+                extra_inputs.get(
+                    "generate_visibility", json_config.get("generate_visibility", "")
+                )
+            ).lower()
+            in {"1", "true", "yes", "y"}
+        )
+        # `config` is not yet constructed here, so validate the CLI/JSON inputs now
+        if generate_visibility and visibility_gmat is None:
+            logger.error(
+                "Visibility generation requested but no GMAT ephemeris provided. "
+                "Supply --gmat-ephemeris or set extra_inputs.visibility_gmat in the JSON config."
+            )
+            return 1
+
+        # Build PandoraSchedulerConfig with the dataclass field names and types
+        schedule_step_hours = float(
+            _get_val("schedule_step_hours", args.schedule_step_hours, 24.0)
+        )
+        transit_cov = float(
+            _get_val("transit_coverage_min", args.transit_coverage, 0.4)
+        )
+        min_vis = float(_get_val("min_visibility", args.min_visibility, 0.5))
+
+        # Coerce unified transit_scheduling_weights from JSON or CLI into a 3-tuple
+        raw_transit_weights = _get_val(
+            "transit_scheduling_weights", args.weights, transit_scheduling_weights
+        )
+        if isinstance(raw_transit_weights, str):
+            raw_transit_weights = tuple(
+                float(x.strip()) for x in raw_transit_weights.split(",")
+            )
+        transit_weights_tuple = tuple(float(x) for x in raw_transit_weights)
+        if len(transit_weights_tuple) != 3:
+            raise ValueError(
+                "transit_scheduling_weights must contain exactly 3 values"
+            )
+
+        exoplanet_only_mode = _as_bool(
+            _get_val("exoplanet_only_mode", args.exoplanet_only, False),
+            False,
+        )
+
+        if target_def_base:
+            extra_inputs["target_definition_base"] = Path(str(target_def_base))
+            # If the JSON doesn't provide an explicit list, use the standard set.
+            extra_inputs.setdefault(
+                "target_definition_files",
+                [
+                    "exoplanet",
+                    "auxiliary-standard",
+                    "monitoring-standard",
+                    "occultation-standard",
+                ],
+            )
+
+        if exoplanet_only_mode:
+            extra_inputs["target_definition_files"] = ["exoplanet"]
+
+        if args.skip_manifests:
+            extra_inputs["skip_manifests"] = True
+
+        # Allow JSON-only control of skip_manifests
+        if str(extra_inputs.get("skip_manifests", "")).lower() in {"1", "true", "yes", "y"}:
+            extra_inputs["skip_manifests"] = True
+
+        # Visibility GMAT goes into the typed field `gmat_ephemeris` on the config
+        if visibility_gmat is None:
+            gmat_path = None
+        else:
+            gmat_path = Path(str(visibility_gmat)).expanduser().resolve()
+
+        sun_avoid = float(
+            _get_any(
+                ["sun_avoidance_deg", "visibility_sun_deg"], args.sun_avoidance, 91.0
+            )
+        )
+        moon_avoid = float(
+            _get_any(
+                ["moon_avoidance_deg", "visibility_moon_deg"], args.moon_avoidance, 25.0
+            )
+        )
+        earth_avoid = float(
+            _get_any(
+                ["earth_avoidance_deg", "visibility_earth_deg"], args.earth_avoidance, 110.0
+            )
+        )
+        # Day/night Earth avoidance (None = use uniform earth_avoid)
+        earth_keepouts = str(
+            _get_val("earth_keepouts", None, "same")
+        ).strip().lower()
+        if earth_keepouts not in {"same", "different"}:
+            raise ValueError(
+                "earth_keepouts must be 'same' or 'different'"
+            )
+        _raw_day = _get_val("earth_avoidance_day_deg", args.earth_avoidance_day, None)
+        legacy_earth_avoid_day = float(_raw_day) if _raw_day is not None else None
+        _raw_night = _get_val("earth_avoidance_night_deg", args.earth_avoidance_night, None)
+        legacy_earth_avoid_night = (
+            float(_raw_night) if _raw_night is not None else None
+        )
+        _raw_day_science = _get_val("earth_avoidance_day_deg_science", None, None)
+        earth_avoid_day_science = (
+            float(_raw_day_science)
+            if _raw_day_science is not None
+            else legacy_earth_avoid_day
+        )
+        _raw_night_science = _get_val(
+            "earth_avoidance_night_deg_science", None, None
+        )
+        earth_avoid_night_science = (
+            float(_raw_night_science)
+            if _raw_night_science is not None
+            else legacy_earth_avoid_night
+        )
+        _raw_day_occultation = _get_val(
+            "earth_avoidance_day_deg_occultation", None, None
+        )
+        earth_avoid_day_occultation = (
+            float(_raw_day_occultation)
+            if _raw_day_occultation is not None
+            else None
+        )
+        _raw_night_occultation = _get_val(
+            "earth_avoidance_night_deg_occultation", None, None
+        )
+        earth_avoid_night_occultation = (
+            float(_raw_night_occultation)
+            if _raw_night_occultation is not None
+            else None
+        )
+        earth_avoid_day = earth_avoid_day_science
+        earth_avoid_night = earth_avoid_night_science
+        data_subdir = resolve_data_subdir(
+            extra_inputs,
+            sun_avoidance_deg=sun_avoid,
+            moon_avoidance_deg=moon_avoid,
+            earth_avoidance_deg=earth_avoid,
+            earth_avoidance_day_deg=earth_avoid_day,
+            earth_keepouts=earth_keepouts,
+            earth_avoidance_night_deg=earth_avoid_night,
+            earth_avoidance_day_deg_occultation=earth_avoid_day_occultation,
+            earth_avoidance_night_deg_occultation=earth_avoid_night_occultation,
+        )
+        extra_inputs["data_subdir"] = data_subdir
+
+        twilight_margin = float(
+            _get_val("twilight_margin_deg", args.twilight_margin, 0.0)
+        )
+
+        daynight_mode = str(
+            _get_val("daynight_mode", args.daynight_mode, "subsatellite")
+        ).lower()
+
+        # Star tracker keepouts
+        st_sun_min = float(
+            _get_val("st_sun_min_deg", args.st_sun_min, 0.0)
+        )
+        st_moon_min = float(
+            _get_val("st_moon_min_deg", args.st_moon_min, 0.0)
+        )
+        st_earthlimb_min = float(
+            _get_val("st_earthlimb_min_deg", args.st_earthlimb_min, 0.0)
+        )
+        _raw_st1_el = _get_any(
+            ["st1_earthlimb_min_deg"],
+            getattr(args, "st1_earthlimb_min", None),
+            None,
+        )
+        st1_earthlimb_min = float(_raw_st1_el) if _raw_st1_el is not None else None
+        _raw_st2_el = _get_any(
+            ["st2_earthlimb_min_deg"],
+            getattr(args, "st2_earthlimb_min", None),
+            None,
+        )
+        st2_earthlimb_min = float(_raw_st2_el) if _raw_st2_el is not None else None
+        st_required = int(
+            _get_val("st_required", args.st_required, 1)
+        )
+
+        # Roll sweep
+        roll_step = float(
+            _get_val("roll_step_deg", args.roll_step, 2.0)
+        )
+        min_power_frac = float(
+            _get_val("min_power_frac", args.min_power_frac, 0.7)
+        )
+
+        short_visit_threshold_hours = float(
+            _get_val("short_visit_threshold_hours", None, 12.0)
+        )
+        short_visit_edge_buffer_hours = float(
+            _get_val("short_visit_edge_buffer_hours", None, 1.5)
+        )
+        long_visit_edge_buffer_hours = float(
+            _get_val("long_visit_edge_buffer_hours", None, 4.0)
+        )
+        primary_visit_start_policy = str(
+            _get_val("primary_visit_start_policy", None, "earliest")
+        ).strip().lower()
+        if primary_visit_start_policy not in {"earliest", "centered", "latest"}:
+            raise ValueError(
+                "primary_visit_start_policy must be 'earliest', 'centered', or 'latest'"
+            )
+
+        obs_sequence_duration_min = int(_get_val("obs_sequence_duration_min", None, 90))
+        occ_sequence_limit_min = int(_get_val("occ_sequence_limit_min", None, 50))
+        min_sequence_minutes = int(_get_val("min_sequence_minutes", args.min_sequence_minutes, 8))
+        raw_min_science_sequence_minutes = _get_val(
+            "min_science_sequence_minutes",
+            args.min_science_sequence_minutes,
+            None,
+        )
+        min_science_sequence_minutes = (
+            int(raw_min_science_sequence_minutes)
+            if raw_min_science_sequence_minutes is not None
+            else None
+        )
+        raw_min_occultation_sequence_minutes = _get_val(
+            "min_occultation_sequence_minutes",
+            args.min_occultation_sequence_minutes,
+            None,
+        )
+        min_occultation_sequence_minutes = (
+            int(raw_min_occultation_sequence_minutes)
+            if raw_min_occultation_sequence_minutes is not None
+            else None
+        )
+        occultation_nonvisible_tolerance_minutes = int(
+            _get_val("occultation_nonvisible_tolerance_minutes", None, 3)
+        )
+        allow_science_soft_startracker_tail = _as_bool(
+            _get_val("allow_science_soft_startracker_tail", None, False),
+            False,
+        )
+        science_soft_startracker_tail_minutes = int(
+            _get_val("science_soft_startracker_tail_minutes", None, 10)
+        )
+        allow_science_startracker_gap_fill = _as_bool(
+            _get_val("allow_science_startracker_gap_fill", None, False),
+            False,
+        )
+        science_startracker_gap_max_minutes = int(
+            _get_val("science_startracker_gap_max_minutes", None, 10)
+        )
+        priority_buffer = _as_bool(
+            _get_any(["priority_buffer", "buffer"], None, False),
+            False,
+        )
+        priority_buffer_mode = str(
+            _get_val("priority_buffer_mode", None, "absolute_minutes")
+        ).strip().lower()
+        priority_buffer_minutes = int(
+            _get_any(["priority_buffer_minutes", "buffer_minutes"], None, 80)
+        )
+        _raw_soft_st_sun = _get_val("science_soft_st_sun_min_deg", None, None)
+        science_soft_st_sun_min_deg = (
+            float(_raw_soft_st_sun) if _raw_soft_st_sun is not None else None
+        )
+        _raw_soft_st_moon = _get_val("science_soft_st_moon_min_deg", None, None)
+        science_soft_st_moon_min_deg = (
+            float(_raw_soft_st_moon) if _raw_soft_st_moon is not None else None
+        )
+        _raw_soft_st_el = _get_val("science_soft_st_earthlimb_min_deg", None, None)
+        science_soft_st_earthlimb_min_deg = (
+            float(_raw_soft_st_el) if _raw_soft_st_el is not None else None
+        )
+        _raw_soft_st1_el = _get_val("science_soft_st1_earthlimb_min_deg", None, None)
+        science_soft_st1_earthlimb_min_deg = (
+            float(_raw_soft_st1_el) if _raw_soft_st1_el is not None else None
+        )
+        _raw_soft_st2_el = _get_val("science_soft_st2_earthlimb_min_deg", None, None)
+        science_soft_st2_earthlimb_min_deg = (
+            float(_raw_soft_st2_el) if _raw_soft_st2_el is not None else None
+        )
+        _raw_soft_st_required = _get_val("science_soft_st_required", None, None)
+        science_soft_st_required = (
+            int(_raw_soft_st_required) if _raw_soft_st_required is not None else None
+        )
+
+        std_obs_duration_hours = float(_get_val("std_obs_duration_hours", None, 0.5))
+        std_obs_frequency_days = float(_get_val("std_obs_frequency_days", None, 3.0))
+
+        force_regenerate = bool(_get_val("force_regenerate", None, False))
+        primary_only_mode = bool(
+            _get_val("primary_only_mode", args.primary_only, False)
+        )
+        exoplanet_only_mode = _as_bool(
+            _get_val("exoplanet_only_mode", args.exoplanet_only, exoplanet_only_mode),
+            exoplanet_only_mode,
+        )
+        use_target_list_for_occultations = _as_bool(
+            _get_val("use_target_list_for_occultations", args.use_target_list_for_occultations, False),
+            False,
+        )
+        prioritise_occultations_by_slew = _as_bool(
+            _get_val("prioritise_occultations_by_slew", args.prioritise_occultations_by_slew, False),
+            False,
+        )
+        # CLI --no-break-occultation-sequences inverts the default-True field
+        break_occ_cli = not args.no_break_occultation_sequences if args.no_break_occultation_sequences else None
+        break_occultation_sequences = _as_bool(
+            _get_val("break_occultation_sequences", break_occ_cli, True), True
+        )
+        enable_occultation_xml = _as_bool(
+            _get_any(
+                [
+                    "include_occultation_sequences_in_xml",
+                    "generate_occultation_xml",
+                    "enable_occultation_xml",
+                ],
+                not args.no_occultation_xml if args.no_occultation_xml else None,
+                True,
+            ),
+            True,
+        )
+        enable_occultation_pass1 = _as_bool(
+            _get_any(
+                ["one_occultation_target", "enable_occultation_pass1"],
+                not args.skip_occultation_pass1 if args.skip_occultation_pass1 else None,
+                True,
+            ),
+            True,
+        )
+        only_occultation_pass1 = _as_bool(
+            _get_val(
+                "only_occultation_pass1",
+                True if args.only_occultation_pass1 else None,
+                False,
+            ),
+            False,
+        )
+        raw_generate_xml = _get_val("generate_xml", None, None)
+        if raw_generate_xml is not None:
+            generate_xml = _as_bool(raw_generate_xml, True)
+        else:
+            skip_xml = _as_bool(
+                _get_val(
+                    "skip_xml",
+                    True if args.skip_xml else None,
+                    None,
+                ),
+                False,
+            )
+            generate_xml = not skip_xml
+        run_visualizer_after_pipeline = _as_bool(
+            _get_val(
+                "run_visualizer_after_pipeline",
+                None,
+                False,
+            ),
+            False,
+        )
+        write_run_config_manifest = _as_bool(
+            _get_val(
+                "write_run_config_manifest",
+                False if args.no_run_config_manifest else None,
+                True,
+            ),
+            True,
+        )
+        visualizer_mode = str(
+            _get_val("visualizer_mode", None, "priority")
+        ).strip().lower()
+        requested_occ_time_override = _as_bool(
+            _get_val(
+                "requested_occ_time_override",
+                True if args.requested_occ_time_override else None,
+                None,
+            ),
+            True,
+        )
+        allow_occ_startracker_violation = _as_bool(
+            _get_val(
+                "allow_occ_startracker_violation",
+                True if args.allow_occ_st_violation else None,
+                None,
+            ),
+            False,
+        )
+        try_catalog_fallback = _as_bool(
+            _get_val(
+                "try_catalog_fallback",
+                None,
+                False,
+            ),
+            False,
+        )
+
+        commissioning_days = int(_get_val("commissioning_days", None, 0))
+
+        show_progress = bool(_get_val("show_progress", args.show_progress, False))
+        use_legacy_mode = bool(_get_any(["use_legacy_mode", "legacy_mode"], args.legacy_mode, False))
+        parallel_workers = int(
+            _get_val("parallel_workers", args.parallel_workers, 0)
+        )
+
+        aux_sort_key = str(_get_val("aux_sort_key", None, "sort_by_tdf_priority"))
+        author = _get_val("author", None, None)
+        created_timestamp = _get_val("created_timestamp", None, None)
+        visit_limit = _get_any(
+            ["visit_limit", "schedule_csv_row_limit"],
+            getattr(args, "schedule_row_limit", None),
+            None,
+        )
+        target_filters = _get_val("target_filters", None, ())
+        if target_filters is None:
+            target_filters = ()
+
+        output_dir = args.output
+
+        if only_occultation_pass1 and not enable_occultation_pass1:
+            logger.warning(
+                "ONLY_OCCULTATION_PASS1 requested while OCCULTATION_PASS1 is disabled; "
+                "forcing OCCULTATION_PASS1=True"
+            )
+            enable_occultation_pass1 = True
+
+        targets_manifest_dir = (
+            xml_data_dir
+            if (xml_only_from_schedule and xml_data_dir is not None)
+            else (output_dir / data_subdir)
+        )
+
+        config = PandoraSchedulerConfig(
+            window_start=parse_datetime(args.start),
+            window_end=parse_datetime(args.end),
+            schedule_step=timedelta(hours=schedule_step_hours),
+            targets_manifest=targets_manifest_dir,
+            gmat_ephemeris=gmat_path,
+            visibility_backend=visibility_backend,
+            visibility_tle_file=visibility_tle_file,
+            visibility_tle_line1=visibility_tle_line1,
+            visibility_tle_line2=visibility_tle_line2,
+            output_dir=output_dir,
+            # Scheduling Thresholds
+            transit_coverage_min=transit_cov,
+            min_visibility=min_vis,
+            commissioning_days=commissioning_days,
+            # Transit edge buffers
+            short_visit_threshold_hours=short_visit_threshold_hours,
+            short_visit_edge_buffer_hours=short_visit_edge_buffer_hours,
+            long_visit_edge_buffer_hours=long_visit_edge_buffer_hours,
+            primary_visit_start_policy=primary_visit_start_policy,
+            # Weights
+            transit_scheduling_weights=transit_weights_tuple,
+            # Keepout angles
+            sun_avoidance_deg=sun_avoid,
+            moon_avoidance_deg=moon_avoid,
+            earth_avoidance_deg=earth_avoid,
+            earth_avoidance_day_deg=earth_avoid_day,
+            earth_avoidance_night_deg=earth_avoid_night,
+            earth_keepouts=earth_keepouts,
+            earth_avoidance_day_deg_science=earth_avoid_day_science,
+            earth_avoidance_night_deg_science=earth_avoid_night_science,
+            earth_avoidance_day_deg_occultation=earth_avoid_day_occultation,
+            earth_avoidance_night_deg_occultation=earth_avoid_night_occultation,
+            twilight_margin_deg=twilight_margin,
+            daynight_mode=daynight_mode,
+            # Star tracker keepouts
+            st_sun_min_deg=st_sun_min,
+            st_moon_min_deg=st_moon_min,
+            st_earthlimb_min_deg=st_earthlimb_min,
+            st1_earthlimb_min_deg=st1_earthlimb_min,
+            st2_earthlimb_min_deg=st2_earthlimb_min,
+            st_required=st_required,
+            # Roll sweep
+            roll_step_deg=roll_step,
+            min_power_frac=min_power_frac,
+            # XML / sequence generation
+            obs_sequence_duration_min=obs_sequence_duration_min,
+            occ_sequence_limit_min=occ_sequence_limit_min,
+            min_sequence_minutes=min_sequence_minutes,
+            min_science_sequence_minutes=min_science_sequence_minutes,
+            min_occultation_sequence_minutes=min_occultation_sequence_minutes,
+            occultation_nonvisible_tolerance_minutes=occultation_nonvisible_tolerance_minutes,
+            allow_science_soft_startracker_tail=allow_science_soft_startracker_tail,
+            science_soft_startracker_tail_minutes=science_soft_startracker_tail_minutes,
+            allow_science_startracker_gap_fill=allow_science_startracker_gap_fill,
+            science_startracker_gap_max_minutes=science_startracker_gap_max_minutes,
+            priority_buffer=priority_buffer,
+            priority_buffer_mode=priority_buffer_mode,
+            priority_buffer_minutes=priority_buffer_minutes,
+            science_soft_st_sun_min_deg=science_soft_st_sun_min_deg,
+            science_soft_st_moon_min_deg=science_soft_st_moon_min_deg,
+            science_soft_st_earthlimb_min_deg=science_soft_st_earthlimb_min_deg,
+            science_soft_st1_earthlimb_min_deg=science_soft_st1_earthlimb_min_deg,
+            science_soft_st2_earthlimb_min_deg=science_soft_st2_earthlimb_min_deg,
+            science_soft_st_required=science_soft_st_required,
+            break_occultation_sequences=break_occultation_sequences,
+            # Standard observations
+            std_obs_duration_hours=std_obs_duration_hours,
+            std_obs_frequency_days=std_obs_frequency_days,
+            # Extra inputs for pipeline
+            extra_inputs=extra_inputs,
+            # Flags
+            show_progress=show_progress,
+            force_regenerate=force_regenerate,
+            primary_only_mode=primary_only_mode,
+            exoplanet_only_mode=exoplanet_only_mode,
+            use_target_list_for_occultations=use_target_list_for_occultations,
+            prioritise_occultations_by_slew=prioritise_occultations_by_slew,
+            enable_occultation_xml=enable_occultation_xml,
+            enable_occultation_pass1=enable_occultation_pass1,
+            only_occultation_pass1=only_occultation_pass1,
+            requested_occ_time_override=requested_occ_time_override,
+            allow_occ_startracker_violation=allow_occ_startracker_violation,
+            try_catalog_fallback=try_catalog_fallback,
+            use_legacy_mode=use_legacy_mode,
+            parallel_workers=parallel_workers,
+            # Sorting / metadata
+            aux_sort_key=aux_sort_key,
+            author=author,
+            created_timestamp=created_timestamp,
+            visit_limit=visit_limit,
+            target_filters=target_filters,
+        )
+
+        # 3. Ensure targets manifest location exists when the pipeline may write to it.
+        if (
+            not xml_only_from_schedule
+            and config.targets_manifest
+            and not config.targets_manifest.exists()
+        ):
+            try:
+                config.targets_manifest.mkdir(parents=True, exist_ok=True)
+                logger.info(
+                    "Created targets manifest directory: %s", config.targets_manifest
+                )
+            except Exception:
+                logger.debug(
+                    "Unable to create targets manifest directory: %s",
+                    config.targets_manifest,
+                )
+
+        run_data_dir = (
+            xml_data_dir
+            if (xml_only_from_schedule and xml_data_dir is not None)
+            else (output_dir / data_subdir)
+        )
+        config_manifest_path = None
+        if write_run_config_manifest:
+            try:
+                config_manifest_path = _write_json_config_manifest(
+                    output_dir,
+                    json_config,
+                    args.config,
+                )
+                _require_manifest_exists(config_manifest_path, output_dir)
+                logger.info("Wrote run config manifest: %s", config_manifest_path)
+            except Exception as exc:
+                raise RuntimeError(
+                    f"Unable to write required run config manifest to {output_dir}: {exc}"
+                ) from exc
+
+        # 4. Run scheduler or reuse an existing schedule CSV
+        logger.info("Run data directory: %s", run_data_dir)
+        logger.info("PRIMARY_ONLY_MODE=%s", str(primary_only_mode).upper())
+        logger.info("EXOPLANET_ONLY_MODE=%s", str(exoplanet_only_mode).upper())
+        logger.info(
+            "INCLUDE_OCCULTATION_SEQUENCES_IN_XML=%s",
+            str(enable_occultation_xml).upper(),
+        )
+        logger.info("OCCULTATION_PASS1=%s", str(enable_occultation_pass1).upper())
+        logger.info("ONLY_OCCULTATION_PASS1=%s", str(only_occultation_pass1).upper())
+        logger.info("REQUESTED_OCC_TIME_OVERRIDE=%s", str(requested_occ_time_override).upper())
+        logger.info(
+            "RUN_VISUALIZER_AFTER_PIPELINE=%s",
+            str(run_visualizer_after_pipeline).upper(),
+        )
+
+        if xml_only_from_schedule:
+            logger.info("Skipping scheduler pipeline; generating XML from existing schedule CSV")
+            result = SchedulerResult(schedule_csv=schedule_csv_input)
+        else:
+            logger.info("Starting scheduler pipeline...")
+            if args.legacy_mode:
+                logger.info("Legacy mode enabled - using MJD-based visibility filtering")
+            result = build_schedule(config)
+
+        # 5. Generate Science Calendar XML
+        xml_path = None
+        if generate_xml and result.schedule_csv:
+            data_dir = xml_data_dir if (xml_only_from_schedule and xml_data_dir is not None) else (output_dir / data_subdir)
+            calendar_config = _calendar_config_for_schedule(
+                config,
+                result.schedule_csv,
+                row_start=schedule_row_start if xml_only_from_schedule else None,
+                row_end=schedule_row_end if xml_only_from_schedule else None,
+            )
+            if calendar_config.window_end > config.window_end:
+                logger.info(
+                    "Extending science-calendar visibility support from %s to %s to match the final scheduled visit",
+                    config.window_end,
+                    calendar_config.window_end,
+                )
+
+            inputs = ScienceCalendarInputs(
+                schedule_csv=result.schedule_csv,
+                data_dir=data_dir,
+                schedule_row_start=schedule_row_start if xml_only_from_schedule else None,
+                schedule_row_end=schedule_row_end if xml_only_from_schedule else None,
+            )
+
+            if calendar_config.allow_science_soft_startracker_tail:
+                baseline_config = replace(
+                    calendar_config,
+                    allow_science_soft_startracker_tail=False,
+                )
+                logger.info("Building baseline science calendar...")
+                baseline_xml_path = generate_science_calendar(
+                    inputs=inputs,
+                    config=baseline_config,
+                    output_path=output_dir / "Pandora_science_calendar.xml",
+                    progress_label="Building baseline science calendar",
+                )
+                logger.info(
+                    "Baseline science calendar written to: %s", baseline_xml_path
+                )
+
+                logger.info("Building soft-ST science calendar...")
+                xml_path = generate_science_calendar(
+                    inputs=inputs,
+                    config=calendar_config,
+                    output_path=apply_output_suffix(
+                        output_dir / "Pandora_science_calendar.xml",
+                        output_filename_suffix(calendar_config),
+                    ),
+                    progress_label="Building soft-ST science calendar",
+                )
+                logger.info("Soft-ST science calendar written to: %s", xml_path)
+            else:
+                logger.info("Building science calendar...")
+                xml_path = generate_science_calendar(
+                    inputs=inputs,
+                    config=calendar_config,
+                    output_path=output_dir / "Pandora_science_calendar.xml",
+                    progress_label="Building science calendar",
+                )
+                logger.info("Science calendar written to: %s", xml_path)
+
+            if run_visualizer_after_pipeline:
+                visualizer_script = Path(__file__).parent / "scripts" / "visualizer.py"
+                visualizer_output = output_dir / f"visualizer_{visualizer_mode}.png"
+                visualizer_cmd = [
+                    sys.executable,
+                    str(visualizer_script),
+                    str(xml_path),
+                    "--mode",
+                    visualizer_mode,
+                    "--out",
+                    str(visualizer_output),
+                ]
+                if visualizer_mode == "visibility":
+                    visualizer_cmd.extend(["--data-dir", str(data_dir)])
+                try:
+                    completed = subprocess.run(
+                        visualizer_cmd,
+                        check=True,
+                        capture_output=True,
+                        text=True,
+                    )
+                    if completed.stdout.strip():
+                        logger.info(completed.stdout.strip())
+                    logger.info("Visualizer written to: %s", visualizer_output)
+                except subprocess.CalledProcessError as exc:
+                    stderr = exc.stderr.strip() if exc.stderr else str(exc)
+                    logger.warning("Visualizer generation failed: %s", stderr)
+        elif run_visualizer_after_pipeline:
+            logger.warning(
+                "run_visualizer_after_pipeline is enabled, but no XML was generated. "
+                    "Set generate_xml=true to enable automatic visualization."
+            )
+
+        # 6. Print Summary
+        if write_run_config_manifest:
+            _require_manifest_exists(config_manifest_path, output_dir)
+        print_summary(result, xml_path)
+
+        return 0
+
+    except KeyboardInterrupt:
+        logger.error("\nInterrupted by user")
+        return 130
+    except Exception as e:
+        logger.error(f"Pipeline failed: {e}", exc_info=args.verbose)
+        return 1
+    finally:
+        if profiler:
+            profiler.disable()
+            stats = pstats.Stats(profiler).sort_stats("cumulative")
+            stats.dump_stats(args.profile_output)
+            print(f"\nProfiling results written to {args.profile_output}")
+            stats.print_stats(30)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
