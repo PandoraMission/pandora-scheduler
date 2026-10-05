@@ -286,7 +286,7 @@ def load_depth_cache(path: Path) -> dict[str, TransitDepth]:
 
 def write_depth_cache(path: Path, depths: dict[str, TransitDepth]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", newline="") as handle:
+    with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
             handle,
             fieldnames=[
@@ -511,7 +511,7 @@ def _float_or_none(value: object) -> float | None:
 
 def write_too_list(path: Path, top_targets: pd.DataFrame) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", newline="") as handle:
+    with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
             handle,
             fieldnames=["Target", "Obs Window Start", "Obs Window Stop"],
@@ -600,7 +600,7 @@ def write_combined_target_definitions(
         )
 
     priority_path = out_exoplanet_dir / "exoplanet_priorities.csv"
-    with priority_path.open("w", newline="") as handle:
+    with priority_path.open("w", newline="", encoding="utf-8") as handle:
         handle.write("# Prioritization file for main science targets plus selected ToOs\n")
         handle.write("# Version: 1.0.0\n")
         handle.write("# Updated by: select_too_targets.py\n")
@@ -641,7 +641,23 @@ def write_combined_target_definitions(
         if not source.exists():
             source = candidate_dir / name
         if source.exists():
-            destination.symlink_to(source)
+            _link_or_copy(source, destination)
+
+
+def _link_or_copy(source: Path, destination: Path) -> None:
+    """Symlink *source* to *destination*, copying instead where symlinks are not permitted.
+
+    Windows only allows symlinks with admin rights or Developer Mode enabled. A copy is a
+    snapshot, so later edits to *source* are not reflected in *destination*.
+    """
+    try:
+        destination.symlink_to(source, target_is_directory=source.is_dir())
+    except OSError as exc:
+        print(f"Symlink not permitted ({exc}); copying {source} instead.", file=sys.stderr)
+        if source.is_dir():
+            shutil.copytree(source, destination)
+        else:
+            shutil.copy2(source, destination)
 
 
 def _read_priority_rows(path: Path) -> pd.DataFrame:

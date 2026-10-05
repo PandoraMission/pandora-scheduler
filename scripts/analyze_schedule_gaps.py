@@ -251,7 +251,7 @@ def analyze_schedule(xml_path: Path, short_threshold_min: float = 5.0):
 
     # ── Export CSV ───────────────────────────────────────────────────────────
     csv_path = xml_path.parent / "schedule_quality.csv"
-    with open(csv_path, 'w') as f:
+    with open(csv_path, 'w', encoding='utf-8', newline='') as f:
         f.write("issue_type,seq_num,target,visit_id,seq_id,start,end,duration_min,"
                 "other_target,other_start,other_end,delta_min\n")
         for g in gaps:

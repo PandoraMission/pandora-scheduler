@@ -52,7 +52,7 @@ def _json_value(cfg: dict, key: str, default):
 
 
 def build_config(config_path: Path, data_dir: Path, output_dir: Path) -> PandoraSchedulerConfig:
-    cfg = json.loads(config_path.read_text())
+    cfg = json.loads(config_path.read_text(encoding="utf-8"))
     extra_inputs = dict(cfg.get("extra_inputs") or {})
 
     start_raw = cfg.get("window_start") or cfg.get("start") or "2026-04-01"

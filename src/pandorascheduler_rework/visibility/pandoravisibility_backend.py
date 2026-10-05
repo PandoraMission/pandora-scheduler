@@ -24,7 +24,7 @@ def earth_center_to_limb_threshold_deg(center_deg, limb_angle_rad):
 def _read_tle(path: Path) -> tuple[str, str]:
     """Read the first valid line-1/line-2 pair from a TLE text file."""
     try:
-        lines = [line.strip() for line in path.expanduser().read_text().splitlines()]
+        lines = [line.strip() for line in path.expanduser().read_text(encoding="utf-8").splitlines()]
     except OSError as exc:
         raise ValueError(f"Could not read visibility TLE file {path}: {exc}") from exc
 

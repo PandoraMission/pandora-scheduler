@@ -318,6 +318,10 @@ class TestSchedulerErrorHandling:
         # Verify tracker was initialized
         assert outputs.tracker is not None
         assert isinstance(outputs.tracker, pd.DataFrame)
+
+        # Report name must be a valid filename on every OS (no ':' from a timestamp).
+        assert outputs.observation_report_path.name == "Observation_Time_Report_2026-01-01.csv"
+        assert outputs.observation_report_path.is_file()
         
         # Verify schedule is valid (may be empty)
         assert outputs.schedule is not None

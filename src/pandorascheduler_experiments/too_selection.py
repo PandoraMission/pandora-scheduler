@@ -320,7 +320,7 @@ def load_depth_cache(path: Path) -> dict[str, TransitDepth]:
 
 def write_depth_cache(path: Path, depths: dict[str, TransitDepth]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", newline="") as handle:
+    with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
             handle,
             fieldnames=[
@@ -475,7 +475,7 @@ def tap_query(query: str) -> pd.DataFrame:
 
 def write_too_list(path: Path, selected: pd.DataFrame) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", newline="") as handle:
+    with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(
             handle,
             fieldnames=["Target", "Obs Window Start", "Obs Window Stop"],

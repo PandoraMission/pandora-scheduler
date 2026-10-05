@@ -582,7 +582,8 @@ def _write_observation_report(
     pandora_start: datetime,
     config: PandoraSchedulerConfig,
 ) -> Path:
-    report_name = f"Observation_Time_Report_{pandora_start}.csv"
+    # Date only: a full timestamp would put ':' in the name, which Windows forbids.
+    report_name = f"Observation_Time_Report_{pandora_start.strftime('%Y-%m-%d')}.csv"
     report_path = apply_output_suffix(
         inputs.output_dir / report_name,
         output_filename_suffix(config),

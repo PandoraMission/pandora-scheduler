@@ -22,12 +22,12 @@ from pandorascheduler_rework.scheduler import (
 
 
 @pytest.fixture
-def mock_config():
+def mock_config(tmp_path):
     """Create a minimal config with min_sequence_minutes=5."""
     return PandoraSchedulerConfig(
         window_start=datetime(2026, 1, 1),
         window_end=datetime(2026, 2, 1),
-        output_dir="/tmp/test_output",
+        output_dir=tmp_path,
         min_sequence_minutes=5,
     )
 
@@ -166,12 +166,12 @@ class TestShortGapHandling:
             # Auxiliary scheduler SHOULD be called for a 10-minute gap
             mock_aux.assert_called_once()
 
-    def test_primary_only_gap_becomes_free_time(self, mock_state, mock_inputs):
+    def test_primary_only_gap_becomes_free_time(self, mock_state, mock_inputs, tmp_path):
         """Primary-only mode should convert a pre-primary gap into Free Time."""
         config = PandoraSchedulerConfig(
             window_start=datetime(2026, 1, 1),
             window_end=datetime(2026, 2, 1),
-            output_dir="/tmp/test_output",
+            output_dir=tmp_path,
             min_sequence_minutes=5,
             primary_only_mode=True,
         )

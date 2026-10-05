@@ -30,9 +30,11 @@ class TestCoercePath:
         assert isinstance(result, Path)
         assert result.is_absolute()
 
-    def test_path_passthrough(self):
-        result = _coerce_path(Path("/absolute/path"), Path("/default"))
-        assert result == Path("/absolute/path")
+    def test_path_passthrough(self, tmp_path):
+        # Build the absolute path from tmp_path; "/absolute/path" gains a drive letter on Windows.
+        absolute_path = (tmp_path / "absolute" / "path").resolve()
+        result = _coerce_path(absolute_path, Path("/default"))
+        assert result == absolute_path
 
 
 class TestCoerceOptionalPath:

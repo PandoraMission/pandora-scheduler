@@ -14,33 +14,18 @@ to finish, generating all necessary output files including:
   - Observation time reports
   - Tracker files (CSV and pickle)
 
-Usage:
- # Basic run with default configuration
-    poetry run python run_scheduler.py \\
-        --start "2026-02-05" \\
-        --end "2026-02-12" \\
-        --output ./output
+Usage (single-line commands work in bash, zsh, PowerShell, and cmd):
+    # Basic run with default configuration
+    python run_scheduler.py --start "2026-02-05" --end "2026-02-12" --output ./output
 
     # Run with custom configuration
-    poetry run python run_scheduler.py \\
-        --start "2026-02-05" \\
-        --end "2026-02-12" \\
-        --output ./output \\
-        --config config.json
+    python run_scheduler.py --start "2026-02-05" --end "2026-02-12" --output ./output --config config.json
 
     # Generate visibility data as part of the run
-    poetry run python run_scheduler.py \\
-        --start "2026-02-05" \\
-        --end "2026-02-12" \\
-        --output ./output \\
-        --generate-visibility
+    python run_scheduler.py --start "2026-02-05" --end "2026-02-12" --output ./output --generate-visibility
 
     # Use custom target definition files
-    poetry run python run_scheduler.py \\
-        --start "2026-02-05" \\
-        --end "2026-02-12" \\
-        --output ./output \\
-        --target-definitions ./custom_targets
+    python run_scheduler.py --start "2026-02-05" --end "2026-02-12" --output ./output --target-definitions ./targets
 """
 
 from __future__ import annotations
@@ -797,7 +782,7 @@ def main() -> int:
         # 1. Load Configuration
         json_config = {}
         if args.config:
-            with open(args.config, "r") as f:
+            with open(args.config, "r", encoding="utf-8") as f:
                 json_config = json.load(f)
 
         def _get_val(key: str, cli_value: Any, default: Any) -> Any:
