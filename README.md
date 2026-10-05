@@ -16,17 +16,12 @@ For detailed JSON key descriptions, see `docs/EXAMPLE_SCHEDULER_CONFIG.md`.
 From the repository root:
 
 ```bash
-cd /Users/vkostov/Documents/GitHub/pandora-scheduler
 poetry install
 ```
 
-If you prefer not to use `poetry run`, the commands below also work with:
+The pipeline runs on Windows, macOS, and Linux. The examples below call `python` from the repository root with the project environment active; prefix them with `poetry run` to use Poetry's environment instead. Each command is on a single line so it works unchanged in bash, zsh, PowerShell, and cmd.
 
-```bash
-.venv/bin/python ...
-```
-
-The examples below use `.venv/bin/python` explicitly.
+To run the tests: `python -m pytest` (the pytest settings in `pyproject.toml` add `src/` to the import path, so no install is needed).
 
 ## Common Inputs
 
@@ -186,13 +181,7 @@ This is the normal end-to-end run: manifests, visibility, schedule, XML, and
 reports.
 
 ```bash
-cd /Users/vkostov/Documents/GitHub/pandora-scheduler
-
-.venv/bin/python run_scheduler.py \
-  --start "2026-06-22 00:00:00" \
-  --end "2026-06-29 00:00:00" \
-  --output output_20260622_20260629_EarthDay111 \
-  --config scheduler_config_20260622_20260629_with_too.json
+python run_scheduler.py --start "2026-06-22 00:00:00" --end "2026-06-29 00:00:00" --output output_20260622_20260629_EarthDay111 --config scheduler_config_20260622_20260629_with_too.json
 ```
 
 Use this mode whenever the output directory does not already contain the
@@ -204,16 +193,7 @@ Use this when you want the command line to supply the target-definition base and
 GMAT ephemeris directly instead of relying on the JSON.
 
 ```bash
-cd /Users/vkostov/Documents/GitHub/pandora-scheduler
-
-.venv/bin/python run_scheduler.py \
-  --start "2026-06-29 00:00:00" \
-  --end "2026-07-06 00:00:00" \
-  --output output_20260629_20260706_EarthDay111 \
-  --config scheduler_config.json \
-  --target-definitions /Users/vkostov/Documents/GitHub/PandoraTargetList/target_definition_files \
-  --generate-visibility \
-  --gmat-ephemeris /Users/vkostov/Documents/GitHub/pandora-scheduler/gmat/PAN-GMAT-COM-20260610-VF20260610-EX20270710.txt
+python run_scheduler.py --start "2026-06-29 00:00:00" --end "2026-07-06 00:00:00" --output output_20260629_20260706_EarthDay111 --config scheduler_config.json --target-definitions ../PandoraTargetList/target_definition_files --generate-visibility --gmat-ephemeris gmat/PAN-GMAT-COM-20260610-VF20260610-EX20270710.txt
 ```
 
 ### 3. XML Only From An Existing Schedule CSV
@@ -222,13 +202,7 @@ Use this when the schedule already exists and you only want to regenerate the
 science calendar XML.
 
 ```bash
-cd /Users/vkostov/Documents/GitHub/pandora-scheduler
-
-.venv/bin/python run_scheduler.py \
-  --schedule-csv output_20260622_20260629_EarthDay111/Pandora_Schedule_0.8_0.0_0.2_2026-06-22_to_2026-06-29.csv \
-  --xml-data-dir output_20260622_20260629_EarthDay111/data_91_20_111 \
-  --output output_20260622_20260629_EarthDay111 \
-  --config scheduler_config_20260622_20260629_with_too.json
+python run_scheduler.py --schedule-csv output_20260622_20260629_EarthDay111/Pandora_Schedule_0.8_0.0_0.2_2026-06-22_to_2026-06-29.csv --xml-data-dir output_20260622_20260629_EarthDay111/data_91_20_111 --output output_20260622_20260629_EarthDay111 --config scheduler_config_20260622_20260629_with_too.json
 ```
 
 Notes:
@@ -242,15 +216,7 @@ Notes:
 Useful for debugging a subset of rows.
 
 ```bash
-cd /Users/vkostov/Documents/GitHub/pandora-scheduler
-
-.venv/bin/python run_scheduler.py \
-  --schedule-csv output_20260622_20260629_EarthDay111/Pandora_Schedule_0.8_0.0_0.2_2026-06-22_to_2026-06-29.csv \
-  --schedule-row-start 1 \
-  --schedule-row-end 20 \
-  --xml-data-dir output_20260622_20260629_EarthDay111/data_91_20_111 \
-  --output output_20260622_20260629_EarthDay111 \
-  --config scheduler_config_20260622_20260629_with_too.json
+python run_scheduler.py --schedule-csv output_20260622_20260629_EarthDay111/Pandora_Schedule_0.8_0.0_0.2_2026-06-22_to_2026-06-29.csv --schedule-row-start 1 --schedule-row-end 20 --xml-data-dir output_20260622_20260629_EarthDay111/data_91_20_111 --output output_20260622_20260629_EarthDay111 --config scheduler_config_20260622_20260629_with_too.json
 ```
 
 ### 5. Visualizer Only For An Existing XML
@@ -259,13 +225,7 @@ Use this when XML already exists and you want the plot without rerunning the
 pipeline.
 
 ```bash
-cd /Users/vkostov/Documents/GitHub/pandora-scheduler
-
-.venv/bin/python scripts/visualizer.py \
-  output_20260622_20260629_EarthDay111/Pandora_science_calendar.xml \
-  --mode visibility \
-  --data-dir output_20260622_20260629_EarthDay111/data_91_20_111 \
-  --out output_20260622_20260629_EarthDay111/visualizer_visibility.png
+python scripts/visualizer.py output_20260622_20260629_EarthDay111/Pandora_science_calendar.xml --mode visibility --data-dir output_20260622_20260629_EarthDay111/data_91_20_111 --out output_20260622_20260629_EarthDay111/visualizer_visibility.png
 ```
 
 Supported `--mode` values:
@@ -290,23 +250,13 @@ Set these keys in the JSON config:
 Then run the normal full pipeline command:
 
 ```bash
-cd /Users/vkostov/Documents/GitHub/pandora-scheduler
-
-.venv/bin/python run_scheduler.py \
-  --start "2026-06-22 00:00:00" \
-  --end "2026-06-29 00:00:00" \
-  --output output_20260622_20260629_EarthDay111 \
-  --config scheduler_config_20260622_20260629_with_too.json
+python run_scheduler.py --start "2026-06-22 00:00:00" --end "2026-06-29 00:00:00" --output output_20260622_20260629_EarthDay111 --config scheduler_config_20260622_20260629_with_too.json
 ```
 
 ### 7. Validate XML Against Visibility Products
 
 ```bash
-cd /Users/vkostov/Documents/GitHub/pandora-scheduler
-
-.venv/bin/python scripts/validate_xml_visibility.py \
-  output_20260622_20260629_EarthDay111/Pandora_science_calendar.xml \
-  --data-dir output_20260622_20260629_EarthDay111/data_91_20_111
+python scripts/validate_xml_visibility.py output_20260622_20260629_EarthDay111/Pandora_science_calendar.xml --data-dir output_20260622_20260629_EarthDay111/data_91_20_111
 ```
 
 This writes:
@@ -315,15 +265,7 @@ This writes:
 ### 8. Export Minute-By-Minute Visit Visibility Diagnostics
 
 ```bash
-cd /Users/vkostov/Documents/GitHub/pandora-scheduler
-
-.venv/bin/python scripts/export_visit_visibility_diagnostics.py \
-  --start "2026-06-04 15:30:00" \
-  --stop "2026-06-07 15:30:00" \
-  --target-name DS_Tuc_Ab \
-  --schedule-csv output_20260601_20260608_EarthDay111/Pandora_Schedule_0.8_0.0_0.2_2026-06-01_to_2026-06-08.csv \
-  --config scheduler_config_20260601_20260608_with_too.json \
-  --output output_20260601_20260608_EarthDay111/DS_Tuc_Ab_2026-06-04_1530_2026-06-07_1530_visibility_diagnostics.csv
+python scripts/export_visit_visibility_diagnostics.py --start "2026-06-04 15:30:00" --stop "2026-06-07 15:30:00" --target-name DS_Tuc_Ab --schedule-csv output_20260601_20260608_EarthDay111/Pandora_Schedule_0.8_0.0_0.2_2026-06-01_to_2026-06-08.csv --config scheduler_config_20260601_20260608_with_too.json --output output_20260601_20260608_EarthDay111/DS_Tuc_Ab_2026-06-04_1530_2026-06-07_1530_visibility_diagnostics.csv
 ```
 
 Use this for minute-by-minute Sun, Moon, Earth, and star-tracker keepout
@@ -349,13 +291,7 @@ Required CSV columns:
 Then run the normal full pipeline command:
 
 ```bash
-cd /Users/vkostov/Documents/GitHub/pandora-scheduler
-
-.venv/bin/python run_scheduler.py \
-  --start "2026-06-22 00:00:00" \
-  --end "2026-06-29 00:00:00" \
-  --output output_20260622_20260629_EarthDay111 \
-  --config scheduler_config_20260622_20260629_with_too.json
+python run_scheduler.py --start "2026-06-22 00:00:00" --end "2026-06-29 00:00:00" --output output_20260622_20260629_EarthDay111 --config scheduler_config_20260622_20260629_with_too.json
 ```
 
 Notes:
@@ -368,13 +304,7 @@ Notes:
 This is separate from the main `run_scheduler.py` pipeline.
 
 ```bash
-cd /Users/vkostov/Documents/GitHub/pandora-scheduler
-
-.venv/bin/python run_10_hjs_toos.py \
-  --start "2026-04-27 00:00:00" \
-  --end "2026-05-04 00:00:00" \
-  --output output_1_week_10_HJs_5_ToOs \
-  --config scheduler_config_10_HJs_5_ToOs.json
+python run_10_hjs_toos.py --start "2026-04-27 00:00:00" --end "2026-05-04 00:00:00" --output output_1_week_10_HJs_5_ToOs --config scheduler_config_10_HJs_5_ToOs.json
 ```
 
 ## Files To Read Next
