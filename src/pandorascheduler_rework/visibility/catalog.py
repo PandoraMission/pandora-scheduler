@@ -7,6 +7,7 @@ import io
 import logging
 import multiprocessing
 import os
+import sys
 from pathlib import Path
 from typing import Iterable
 
@@ -39,6 +40,9 @@ from .geometry import (
 from .pandoravisibility_backend import PandoraVisibilityBackend
 
 LOGGER = logging.getLogger(__name__)
+
+# ProcessPoolExecutor raises ValueError on Windows when max_workers exceeds 61.
+_WINDOWS_MAX_PROCESS_WORKERS = 61
 
 
 def _visibility_file_matches_backend(path: Path, backend: str) -> bool:
@@ -201,6 +205,13 @@ def build_visibility_catalog(
 
         n_stars = len(work_items)
         max_workers = config.parallel_workers or (os.cpu_count() or 1)
+        if sys.platform == "win32" and max_workers > _WINDOWS_MAX_PROCESS_WORKERS:
+            LOGGER.info(
+                "Capping visibility workers at %d (Windows limit; %d requested)",
+                _WINDOWS_MAX_PROCESS_WORKERS,
+                max_workers,
+            )
+            max_workers = _WINDOWS_MAX_PROCESS_WORKERS
         n_workers = min(n_stars, max_workers)
 
         if n_workers > 1:
